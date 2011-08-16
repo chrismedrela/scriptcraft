@@ -404,7 +404,12 @@ class GameMap (list):
 		"""
 		
 		return x>=0 and y>=0 and x<self.size and y<self.size
-		
+	
+	def find_path_from_to(self, source, dest):
+		""" Zwraca kierunek, w którym należy pójsć od source """
+	
+		return NotImplemented
+	
 	def __str__(self):
 		""" Wielowierszowa reprezentacja mapy """
 	
