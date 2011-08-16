@@ -115,9 +115,9 @@ def get_game_object_ID(field):
 
 
 """
-Klasy *Command reprezentują akcje wykonywane przez instancje klasy GameObject. Są to:
- MoveCommand
+Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
  StopCommand
+ MoveCommand
  GatherCommand -- zbieraj minerały ze złoża lub oddaj je do obiektu
   przechowującego minerały
  FireCommand
@@ -136,6 +136,30 @@ BuildCommand = namedtuple('build_command', ['type_ID', 'direction_or_None'])
 
 
 
+"""
+Klasy *Action reprezentują czynności wykonywane przez jednostkę.
+
+*Action nie są tym samym, co *Command. Np. obiekt może mieć komendę ruchu,
+ale będzie stać, jeśli docelowe pole jest zajęte.
+
+Reprezentanci:
+ StopAction
+ MoveAction
+ GatherAction
+ StoreAction
+ FireAction
+ BuildAction
+ 
+"""
+StopAction = namedtuple('stop_action', [])
+MoveAction = namedtuple('move_action', ['source'])
+GatherAction = namedtuple('gather_action', ['destination'])
+StoreAction = namedtuple('store_action', ['storage_ID'])
+FireAction = namedtuple('fire_action', ['destination'])
+BuildAction = namedtuple('build_action', ['type_ID', 'destination'])
+
+
+
 GameObject_doc = \
 """
 Reprezentuje jednostkę (bazę, zbieracz lub czołg) w grze. Każda jednostka musi
@@ -147,12 +171,13 @@ Atrybuty:
  ID -- unikalny identyfikator liczbowy nadawany i używany wewnętrznie przez instancję klasy Game
  player_ID -- gracz, do którego należy jednostka (zawsze określone!)
  x, y -- położenie na mapie
- command -- wykonywane polecenie (np. move, stop, attack itp.)(instancja jednej z klas *Command)
+ command -- nadany rozkaz (np. move, stop, attack itp.)(instancja *Command)
+ action -- wykonana czynność (np. move, stop)(instancja *Action)
  minerals -- zależy od rodzaju obiektu
  
 """
 
-GameObject = recordtype('game_object', ['player_ID', 'type_ID'], {'command':StopCommand(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
+GameObject = recordtype('game_object', ['player_ID', 'type_ID'], {'command':StopCommand(), 'action':StopAction(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
 del GameObject_doc
 
 
@@ -318,6 +343,7 @@ DIRECTIONS = {'N':DIRECTION_N, 'E':DIRECTION_E, 'S':DIRECTION_S, 'W':DIRECTION_W
 NotEmptyFieldException = exception('NotEmptyFieldException')
 NoFreeStartPositions = exception('NoFreeStartPositions')
 ParseError = exception('ParseError')
+ExecutingCommandError = exception('ExecutingCommandError')
 
 
 
@@ -550,8 +576,9 @@ class Game (object):
 					# parse object ID
 					if len(splited_line) <= 1:
 						raise ParseError(texts.parse_errors['no_game_object_ID'] % errors_info)
-					object_ID = parse_as_int(splited_line[1],
-						exception=ParseError(texts.parse_errors['parsing_game_object_ID_error'] % errors_info))
+					object_ID = parse_as_int(splited_line[1])
+					if object_ID == None:
+						raise ParseError(texts.parse_errors['parsing_game_object_ID_error'] % errors_info)
 					
 					# parse arguments of command
 					args_of_command = splited_line[2:]			
@@ -561,12 +588,12 @@ class Game (object):
 
 					elif command_as_string in ('move', 'm'):
 						if len(args_of_command) != 1:
-							raise ParseError(texts.parse_errors['invalid_move_command_args'] % errors_info)						
+							raise ParseError(texts.parse_errors['invalid_move_command_args'] % errors_info)				
 							
 						direction = parse_as_direction(args_of_command[0])
 						if direction == None:
 							errors_info['invalid_part'] = args_of_command[0]
-							raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info))
+							raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info)
 
 						command = MoveCommand(direction=direction)
 					
@@ -577,7 +604,7 @@ class Game (object):
 						direction = parse_as_direction(args_of_command[0])
 						if direction == None:
 							errors_info['invalid_part'] = args_of_command[0]
-							raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info))
+							raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info)
 
 						command = GatherCommand(direction=direction)
 					
@@ -588,7 +615,7 @@ class Game (object):
 						dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
 						if dest_x == None or dest_y == None:
 							errors_info['invalid_part'] = args_of_command[0] if dest_x == None else args_of_command[1]
-							raise ParseError(texts.parse_errors['invalid_fire_command_args'] % errors_info))
+							raise ParseError(texts.parse_errors['invalid_fire_command_args'] % errors_info)
 
 						command = FireCommand(destination=(dest_x,dest_y))
 
@@ -599,7 +626,7 @@ class Game (object):
 						type_name = parse_as_str(args_of_command[0])
 						if type_name == None:
 							errors_info['invalid_part'] = args_of_command[0]
-							raise ParseError(texts.parse_errors['invalid_build_command_args'] % errors_info))
+							raise ParseError(texts.parse_errors['invalid_build_command_args'] % errors_info)
 						type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name.upper(), None)
 						if type_ID == None:
 							raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info)
@@ -609,7 +636,7 @@ class Game (object):
 							errors_info['invalid_part'] = args_of_command[1]
 							direction = parse_as_direction(args_of_command[1])
 							if direction == None:
-								raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info))
+								raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info)
 				
 						command = BuildCommand(type_ID=type_ID, direction_or_None=direction)
 					
@@ -647,41 +674,42 @@ class Game (object):
 			if obj == None: # jednostka mogła już zostać zniszczona przez atak innej jednostki; usunięcie jednostki z self._objects_by_ID nie ma wpływu na objects_by_ID
 				continue
 			command = obj.command
-			run_error = None
+			obj.action = StopAction()
 			
-			if isinstance(command, StopCommand):
-				pass
+			try:
+				if isinstance(command, StopCommand):
+					pass
 				
-			elif isinstance(command, MoveCommand):
-				direction = command.direction
-				delta_x, delta_y = DIRECTION_TO_RAY[direction]
-				dest_x, dest_y = obj.x + delta_x, obj.y + delta_y
-				run_error = self._try_move_object(obj, dest_x, dest_y)
+				elif isinstance(command, MoveCommand):
+					direction = command.direction
+					delta_x, delta_y = DIRECTION_TO_RAY[direction]
+					dest_x, dest_y = obj.x + delta_x, obj.y + delta_y
+					self._try_move_object(obj, dest_x, dest_y)
 				
-			elif isinstance(command, GatherCommand):
-				direction = command.direction
-				delta_x, delta_y = DIRECTION_TO_RAY[direction]
-				dest_x, dest_y = obj.x + delta_x, obj.y + delta_y
-				run_error = self._try_gather(obj, dest_x, dest_y)
+				elif isinstance(command, GatherCommand):
+					direction = command.direction
+					delta_x, delta_y = DIRECTION_TO_RAY[direction]
+					dest_x, dest_y = obj.x + delta_x, obj.y + delta_y
+					self._try_gather(obj, dest_x, dest_y)
 				
-			elif isinstance(command, FireCommand):
-				dest_x, dest_y = command.destination
-				run_error = self._try_attack(obj, dest_x, dest_y)
+				elif isinstance(command, FireCommand):
+					dest_x, dest_y = command.destination
+					self._try_attack(obj, dest_x, dest_y)
 				
-			elif isinstance(command, BuildCommand):
-				type_ID, direction_or_None = command.type_ID, command.direction_or_None
-				object_type = GAME_OBJECT_TYPES_BY_ID[type_ID]
-				dest_x, dest_y = obj.x, obj.y
-				if direction_or_None == None:
-					destinations = [(dest_x, dest_y-1), (dest_x+1, dest_y), (dest_x, dest_y+1), (dest_x-1, dest_y)]
-				else:
-					delta_x, delta_y = DIRECTION_TO_RAY[direction_or_None]
-					destinations = [(dest_x+delta_x, dest_y+delta_y)]
-				run_error = self._try_build(obj, object_type, destinations)
-				
-			if run_error != None:
+				elif isinstance(command, BuildCommand):
+					type_ID, direction_or_None = command.type_ID, command.direction_or_None
+					object_type = GAME_OBJECT_TYPES_BY_ID[type_ID]
+					dest_x, dest_y = obj.x, obj.y
+					if direction_or_None == None:
+						destinations = [(dest_x, dest_y-1), (dest_x+1, dest_y), (dest_x, dest_y+1), (dest_x-1, dest_y)]
+					else:
+						delta_x, delta_y = DIRECTION_TO_RAY[direction_or_None]
+						destinations = [(dest_x+delta_x, dest_y+delta_y)]
+					self._try_build(obj, object_type, destinations)
+			
+			except ExecutingCommandError as ex:
 				player = self._players_by_ID[obj.player_ID]
-				player.program_execution.executing_command_errors += run_error
+				player.program_execution.executing_command_errors += ex.args[0]
 
 	def _try_move_object(self, obj, dest_x, dest_y):
 		"""
@@ -694,25 +722,23 @@ class Game (object):
 		Jeśli obiekt nie posiada umiejętności poruszania się, obiekt nie zostaje
 		przemieszony.
 		
-		Zwraca None, jeśli przemieszczenie zakończyło się sukcesem, w przeciwnym
-		razie zwraca komunikat błędu. Nigdy nie rzuca wyjątków.
+		Jeśli przemieszczenie *nie* zakończyło się sukcesem, rzuca ExecutingCommandError.
 				
 		"""
 		
 		errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
 		object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 		if not object_type.movable:
-			return texts.executing_command_errors['cannot_move_object_not_movable'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_move_object_not_movable'] % errors_info)
 		if not self._map.is_valid_position(dest_x, dest_y):
-			return texts.executing_command_errors['cannot_move_invalid_map_position'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_move_invalid_map_position'] % errors_info)
 		dest_field = self._map[dest_x][dest_y]
 		if not is_empty(dest_field):
-			return texts.executing_command_errors['cannot_move_field_not_empty'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_move_field_not_empty'] % errors_info)
 		
 		self._map[obj.x][obj.y] = erase_object(self._map[obj.x][obj.y])
 		obj.x, obj.y = dest_x, dest_y
 		self._map[dest_x][dest_y] = put_game_object(dest_field, obj.ID)
-		return None
 		
 	def _try_gather(self, obj, dest_x, dest_y):
 		""" Patrz self._try_move """
@@ -720,35 +746,33 @@ class Game (object):
 		errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
 		object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 		if object_type.gather_size == 0:
-			return texts.executing_command_errors['cannot_gather_object_cannot_gather'] % errors_info		
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_object_cannot_gather'] % errors_info)
 		if not self._map.is_valid_position(dest_x, dest_y):
-			return texts.executing_command_errors['cannot_gather_invalid_map_position'] % errors_info		
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_invalid_map_position'] % errors_info)
 		field = self._map[dest_x][dest_y]
 		
 		if not has_minerals_deposit(field):
 			if not has_game_object(field):
-				return texts.executing_command_errors['cannot_gather_no_minerals_deposit_neither_object'] % errors_info	
+				raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_no_minerals_deposit_neither_object'] % errors_info)
 			dest_object_ID = get_game_object_ID(field)
 			dest_obj = self._objects_by_ID[dest_object_ID]
 			dest_obj_type = GAME_OBJECT_TYPES_BY_ID[dest_obj.type_ID]
 			if not dest_obj_type.can_store_minerals:
-				return texts.executing_command_errors['cannot_gather_destination_object_cannot_store_minerals'] % errors_info	
+				raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_destination_object_cannot_store_minerals'] % errors_info)
 				
 			dest_obj.minerals += obj.minerals
 			obj.minerals = 0
-			return None
 		else:
 			how_much_minerals_can_get_obj = object_type.gather_size-obj.minerals
 			if how_much_minerals_can_get_obj == 0:
-				return texts.executing_command_errors['cannot_gather_object_is_full'] % errors_info
+				raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_object_is_full'] % errors_info)
 			how_much_minerals_in_deposit = get_minerals(field)
 			if how_much_minerals_in_deposit == 0:
-				return texts.executing_command_errors['cannot_gather_mineral_deposit_is_empty'] % errors_info
+				raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_mineral_deposit_is_empty'] % errors_info)
 			
 			how_much_minerals = min(how_much_minerals_can_get_obj, how_much_minerals_in_deposit)
 			obj.minerals += how_much_minerals
 			self._map[dest_x][dest_y] = put_minerals(field, how_much_minerals_in_deposit-how_much_minerals)
-			return None
 		
 	def _try_attack(self, obj, dest_x, dest_y):
 		""" Patrz self._try_move """
@@ -756,18 +780,17 @@ class Game (object):
 		errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
 		object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 		if object_type.attack_range == 0:
-			return texts.executing_command_errors['cannot_attack_object_cannot_attack'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_object_cannot_attack'] % errors_info)
 		if not self._map.is_valid_position(dest_x, dest_y):
-			return texts.executing_command_errors['cannot_attack_invalid_map_position'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_invalid_map_position'] % errors_info)
 		distance = distance_between((obj.x,obj.y),(dest_x,dest_y))
 		if object_type.attack_range < distance:
 			errors_info['distance'], errors_info['attack_range'] = distance, attack_range
-			return texts.executing_command_errors['cannot_attack_destination_too_far'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_destination_too_far'] % errors_info)
 		if distance == 0:
-			return texts.executing_command_errors['cannot_attack_itself'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_itself'] % errors_info)
 		
 		self._attack(dest_x, dest_y)
-		return None
 		
 	def _attack(self, dest_x, dest_y):
 		field = self._map[dest_x][dest_y]
@@ -776,7 +799,7 @@ class Game (object):
 		elif has_game_object(field):
 			obj = self._objects_by_ID[get_game_object_ID(field)]
 			if GAME_OBJECT_TYPES_BY_ID[obj.type_ID].when_attacked_get_minerals and obj.minerals > 0:
-					obj.minerals -= 1
+				obj.minerals -= 1
 			else:
 				self._remove_game_object_at(dest_x, dest_y)
 			
@@ -786,13 +809,13 @@ class Game (object):
 		errors_info = {'object_ID':builder_object.ID, 'built_object_name':built_object_type.name}		
 		builder_object_type = GAME_OBJECT_TYPES_BY_ID[builder_object.type_ID]
 		if not builder_object_type.can_build:
-			return texts.executing_command_errors['cannot_build_object_cannot_build'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_object_cannot_build'] % errors_info)
 		if built_object_type.cost_of_build == -1:
-			return texts.executing_command_errors['cannot_build_built_object_cannot_be_built'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_built_object_cannot_be_built'] % errors_info)
 		if builder_object.minerals < built_object_type.cost_of_build:
 			errors_info['minerals_in_builder'] = builder_object.minerals
 			errors_info['required_minerals'] = built_object_type.cost_of_build
-			return texts.executing_command_errors['cannot_build_too_few_minerals'] % errors_info
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_too_few_minerals'] % errors_info)
 		for dest_x, dest_y in destinations:
 			if self._map.is_valid_position(dest_x, dest_y):
 				field = self._map[dest_x][dest_y]
@@ -800,8 +823,7 @@ class Game (object):
 					built_object = built_object_type.constructor(builder_object.player_ID)
 					builder_object.minerals -= built_object_type.cost_of_build
 					self._add_game_object(built_object, dest_x, dest_y)
-					return None
-		return texts.executing_command_errors['cannot_build_no_free_space'] % errors_info
+		raise ExecutingCommandError(texts.executing_command_errors['cannot_build_no_free_space'] % errors_info)
 		
 	def _add_game_object(self, game_object, x, y):
 		""" Może rzucić NotEmptyFieldException """

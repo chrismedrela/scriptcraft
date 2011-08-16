@@ -19,14 +19,13 @@ for k in parse_errors:
 	parse_errors[k] = _error_prefix + parse_errors[k] + _error_sufix
 
 
-_warning_prefix = 'WARN (wiersz %(line_no)5d) : '
+_warning_prefix_with_line_no = 'WARN (wiersz %(line_no)5d) : '
+_warning_prefix_with_object_ID = 'WARN (obiekt %(object_ID)5d) : '
 _warning_sufix = '\n'
 warnings = {
-	'changing_command_of_game_object' : 'obiektowi ID=%(object_ID)d nadano już wcześniej komendę',
-	'no_command_for_object' : 'nie nadano komendy obiektowi ID=%(object_ID)d',
+	'changing_command_of_game_object' : _warning_prefix_with_line_no+'obiektowi ID=%(object_ID)d nadano już wcześniej komendę'+_warning_sufix,
+	'no_command_for_object' : _warning_prefix_with_object_ID+'nie nadano komendy obiektowi ID=%(object_ID)d'+_warning_sufix,
 }
-for k in warnings:
-	warnings[k] = _warning_prefix + warnings[k] + _warning_sufix
 
 
 _executing_command_error_prefix = 'BŁĄD (obiekt %(object_ID)5d) : '
