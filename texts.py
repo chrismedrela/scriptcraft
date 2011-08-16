@@ -13,6 +13,7 @@ parse_errors = {
 	'invalid_object_type' : 'nieznany typ obiektu "%(invalid_part)s"',
 	'unknown_command' : 'nieznane polecenie "(%(invalid_part)s)"',
 	'invalid_game_object_ID' : 'nie ma obiektu o podanym ID (%(invalid_part)s)',
+	'parsing_direction_error' : 'nieznany kierunek świata "%(invalid_part)s"',
 }
 for k in parse_errors:
 	parse_errors[k] = _error_prefix + parse_errors[k] + _error_sufix
@@ -22,6 +23,7 @@ _warning_prefix = 'WARN (wiersz %(line_no)5d) : '
 _warning_sufix = '\n'
 warnings = {
 	'changing_command_of_game_object' : 'obiektowi ID=%(object_ID)d nadano już wcześniej komendę',
+	'no_command_for_object' : 'nie nadano komendy obiektowi ID=%(object_ID)d',
 }
 for k in warnings:
 	warnings[k] = _warning_prefix + warnings[k] + _warning_sufix

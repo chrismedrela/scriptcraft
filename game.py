@@ -317,7 +317,7 @@ DIRECTIONS = {'N':DIRECTION_N, 'E':DIRECTION_E, 'S':DIRECTION_S, 'W':DIRECTION_W
 """ Exceptions """
 NotEmptyFieldException = exception('NotEmptyFieldException')
 NoFreeStartPositions = exception('NoFreeStartPositions')
-InvalidDataException = exception('InvalidDataException')
+ParseError = exception('ParseError')
 
 
 
@@ -504,31 +504,32 @@ class Game (object):
 
 	def _parse_programs_outputs(self):
 		def parse_as_int(data):
-			""" W przypadku niepowodzenia rzuca InvalidDataException """
+			""" W przypadku niepowodzenia zwraca None """
 
 			if len(data)>8:
-				raise InvalidDataException("Zbyt długa liczba %s" % data)	
+				return None
 			try:
 				return int(data)
 			except ValueError:
-				raise InvalidDataException("Niepoprawna liczba %s" % data)	
+				return None
 	
 		def parse_as_direction(data):
-			""" W przypadku niepowodzenia rzuca InvalidDataException """
+			""" W przypadku niepowodzenia zwraca None """
 
 			try:
 				return DIRECTIONS[data.upper()]
 			except KeyError:
-				raise InvalidDataException("Nieznany kierunek świata %s" % data)	
+				return None
 
 		def parse_as_str(data, max_string_length=256):
-			""" W przypadku, gdy długość stringa przekracza max_string_length, rzuca InvalidDataException """
+			""" W przypadku, gdy długość stringa przekracza max_string_length,
+			zwraca None """
 	
 			if len(data) > max_string_length:
-				raise InvalidDataException("Za długi string")
+				return None
 			return data	
 
-	
+
 		for game_object in self._objects_by_ID.values():
 			game_object.command = None
 			
@@ -537,100 +538,103 @@ class Game (object):
 			player.program_execution.parse_errors = ''
 			
 			for line_no, line in enumerate(output.split('\n')):
-				errors_info = {'line_no':line_no+1, 'line':line, 'invalid_part':line}
-			
-				# parse command
-				splited_line = line.split()
-				if len(splited_line) == 0: # empty line
-					continue
-				command_as_string = splited_line[0].lower()
-
-				# parse object ID
-				if len(splited_line) <= 1:
-					player.program_execution.parse_errors += texts.parse_errors['no_game_object_ID'] % errors_info
-					continue					
-				try:
-					object_ID = parse_as_int(splited_line[1])
-				except InvalidDataException:
-					player.program_execution.parse_errors += texts.parse_errors['parsing_game_object_ID_error'] % errors_info
-					continue
-
-				# parse arguments of command
-				args_of_command = splited_line[2:]
-				errors_info['invalid_part'] = " ".join(args_of_command)
+				errors_info = {'line_no':line_no+1, 'line':line, 'invalid_part':line}			
 				
-				if command_as_string in ('stop', 's'):
-					command = StopCommand()
+				try:
+					# parse command
+					splited_line = line.split()
+					if len(splited_line) == 0: # empty line
+						continue
+					command_as_string = splited_line[0].lower()
+
+					# parse object ID
+					if len(splited_line) <= 1:
+						raise ParseError(texts.parse_errors['no_game_object_ID'] % errors_info)
+					object_ID = parse_as_int(splited_line[1],
+						exception=ParseError(texts.parse_errors['parsing_game_object_ID_error'] % errors_info))
 					
-				elif command_as_string in ('move', 'm'):
-					try:
+					# parse arguments of command
+					args_of_command = splited_line[2:]			
+					
+					if command_as_string in ('stop', 's'):
+						command = StopCommand()				
+
+					elif command_as_string in ('move', 'm'):
 						if len(args_of_command) != 1:
-							raise InvalidDataException("Nieprawidłowa liczba argumentów")						
+							raise ParseError(texts.parse_errors['invalid_move_command_args'] % errors_info)						
+							
 						direction = parse_as_direction(args_of_command[0])
+						if direction == None:
+							errors_info['invalid_part'] = args_of_command[0]
+							raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info))
+
 						command = MoveCommand(direction=direction)
-					except InvalidDataException:
-						player.program_execution.parse_errors += texts.parse_errors['invalid_move_command_args'] % errors_info
-						continue
-
-				elif command_as_string in ('gather', 'g'):
-					try:
+					
+					elif command_as_string in ('gather', 'g'):
 						if len(args_of_command) != 1:
-							raise InvalidDataException("Nieprawidłowa liczba argumentów")											
+							raise ParseError(texts.parse_errors['invalid_gather_command_args'] % errors_info)
+
 						direction = parse_as_direction(args_of_command[0])
+						if direction == None:
+							errors_info['invalid_part'] = args_of_command[0]
+							raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info))
+
 						command = GatherCommand(direction=direction)
-					except InvalidDataException:
-						player.program_execution.parse_errors += texts.parse_errors['invalid_gather_command_args'] % errors_info
-						continue
-
-				elif command_as_string in ('fire', 'f'):
-					try:
+					
+					elif command_as_string in ('fire', 'f'):
 						if len(args_of_command) != 2:
-							raise InvalidDataException("Nieprawidłowa liczba argumentów")											
-						dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
-						command = FireCommand(destination=(dest_x,dest_y))
-					except InvalidDataException:
-						player.program_execution.parse_errors += texts.parse_errors['invalid_fire_command_args'] % errors_info		
-						continue
+							raise ParseError(texts.parse_errors['invalid_fire_command_args'] % errors_info)			
 
-				elif command_as_string in ('build', 'b'):
-					try:
+						dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
+						if dest_x == None or dest_y == None:
+							errors_info['invalid_part'] = args_of_command[0] if dest_x == None else args_of_command[1]
+							raise ParseError(texts.parse_errors['invalid_fire_command_args'] % errors_info))
+
+						command = FireCommand(destination=(dest_x,dest_y))
+
+					elif command_as_string in ('build', 'b'):
 						if len(args_of_command) not in (1, 2):
-							raise InvalidDataException("Nieprawidłowa liczba argumentów")					
+							raise ParseError(texts.parse_errors['invalid_build_command_args'] % errors_info)				
 
 						type_name = parse_as_str(args_of_command[0])
+						if type_name == None:
+							errors_info['invalid_part'] = args_of_command[0]
+							raise ParseError(texts.parse_errors['invalid_build_command_args'] % errors_info))
 						type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name.upper(), None)
 						if type_ID == None:
-							player.program_execution.parse_errors += texts.parse_errors['invalid_object_type'] % errors_info
-							continue
-
+							raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info)
+						
 						direction = None
 						if len(args_of_command) == 2:
+							errors_info['invalid_part'] = args_of_command[1]
 							direction = parse_as_direction(args_of_command[1])
-
-						command = BuildCommand(type_ID=type_ID, direction_or_None=direction)					
-					except InvalidDataException:
-						player.program_execution.parse_errors += texts.parse_errors['invalid_build_command_args'] % errors_info
-						continue								
-							
-				else: # unknown command
-					errors_info['invalid_part'] = command_as_string
-					player.program_execution.parse_errors += texts.parse_errors['unknown_command'] % errors_info
-					continue
-	
-				# we are here only if there is no errors
-				game_object = self._objects_by_ID.get(object_ID, None)
-				if game_object == None:
-					errors_info['invalid_part'] = splited_line[1]
-					player.program_execution.parse_errors += texts.parse_errors['invalid_game_object_ID'] % errors_info
-					continue
-				else:
-					if game_object.command != None:
-						player.program_execution.parse_errors += texts.warnings['changing_command_of_game_object'] % {'line_no':line_no, 'line':line, 'object_ID':game_object.ID}
-					game_object.command = command
+							if direction == None:
+								raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info))
+				
+						command = BuildCommand(type_ID=type_ID, direction_or_None=direction)
+					
+					else: # unknown command
+						errors_info['invalid_part'] = command_as_string
+						raise ParseError(texts.parse_errors['unknown_command'] % errors_info)
+					
+					# we are here only if there is no errors
+					game_object = self._objects_by_ID.get(object_ID, None)
+					if game_object == None:
+						errors_info['invalid_part'] = splited_line[1]
+						raise ParseError(texts.parse_errors['invalid_game_object_ID'] % errors_info)
+					else:
+						if game_object.command != None:
+							player.program_execution.parse_errors += texts.warnings['changing_command_of_game_object'] % {'line_no':line_no, 'line':line, 'object_ID':game_object.ID}
+						game_object.command = command					
+					
+				except ParseException as ex:
+					player.program_execution.parse_errors += ex.args[0]
 		
 		# set default commands
 		for obj in self._objects_by_ID.values():
 			if obj.command == None:
+				player = self._players_by_ID[obj.player_ID]
+				player.program_execution.parse_errors += texts.warnings['no_command_for_object'] % {'object_ID':obj.ID}
 				obj.command = StopCommand()
 		
 	def _run_commands(self):
