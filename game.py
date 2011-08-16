@@ -373,7 +373,7 @@ class GameMap (list):
 
 		assert all(map(lambda (x,y): 0<x<size-1 and 0<y<size-1, start_positions)) # check start positions
 
-		super(GameMap, self).__init__(  [[new_field() for x in xrange(size)] for y in xrange(size)]  )
+		super(GameMap, self).__init__(  [[new_field() for y in xrange(size)] for x in xrange(size)]  )
 		self._free_start_positions = start_positions
 		self.size = size
 		
