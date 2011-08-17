@@ -466,7 +466,8 @@ class GameMap (list):
 		next_x, next_y = previous_node.state
 		delta_x, delta_y = next_x-source[0], next_y-source[1]
 		
-		return RAY_TO_DIRECTION[(delta_x, delta_y)]	
+		if is_flat_and_empty(result_node.state):
+			return RAY_TO_DIRECTION[(delta_x, delta_y)]	
 	
 	def __str__(self):
 		""" Wielowierszowa reprezentacja mapy """
