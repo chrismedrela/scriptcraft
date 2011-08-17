@@ -848,7 +848,7 @@ class Game (object):
 			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_invalid_map_position'] % errors_info)
 		distance = distance_between((obj.x,obj.y),(dest_x,dest_y))
 		if object_type.attack_range < distance:
-			errors_info['distance'], errors_info['attack_range'] = distance, attack_range
+			errors_info['distance'], errors_info['attack_range'] = distance, object_type.attack_range
 			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_destination_too_far'] % errors_info)
 		if distance == 0:
 			raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_itself'] % errors_info)
