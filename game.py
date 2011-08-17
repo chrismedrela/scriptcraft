@@ -607,7 +607,8 @@ class Game (object):
 				return None
 	
 		def parse_as_direction(data):
-			""" W przypadku niepowodzenia zwraca None """
+			""" W przypadku niepowodzenia zwraca None w przeciwnym razie zwraca
+			identyfikator kierunku świata (DIRECTION_*). """
 
 			try:
 				return DIRECTIONS[data.upper()]
@@ -621,7 +622,52 @@ class Game (object):
 			if len(data) > max_string_length:
 				return None
 			return data	
+		
+		def parse_as_object_type_name(data):
+			""" Zwraca identyfikator typu jednostki lub None w przypadku
+			niepowodzenia """
+			
+			type_name = parse_as_str(data, max_string_length=16)
+			type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name, None)
+			print type_ID
+			return type_ID
 
+
+		def build_function(type_ID, direction=None): # see below commands['build']
+			if player.base_ID == None:
+				raise ParseError(texts.parse_errors['no_base'] % errors_info)
+			return player.base_ID, BuildCommand(type_ID=type_ID, direction_or_None=None)
+
+		commands = {} # commands { <name of command> : { <number of args> : ( <signature>, <function returning (object_ID, *Command)> ) }}
+		commands['stop'] = commands['s'] = {
+			0 : ( (parse_as_int,), lambda object_ID: (object_ID, StopCommand()) ),
+		}
+		commands['move'] = commands['m'] = {
+			2 : ( (parse_as_int, parse_as_direction), 
+				lambda object_ID, direction: (object_ID, MoveCommand(direction=direction)) ),
+			3 : ( (parse_as_int, parse_as_int, parse_as_int),
+				lambda object_ID, x, y: (object_ID, ComplexMoveCommand(destination=(x,y))) ),
+		}
+		commands['gather'] = commands['g'] = {
+			2 : ( (parse_as_int, parse_as_direction),
+				lambda object_ID, direction: (object_ID, GatherCommand(direction=direction)) ),
+			3 : ( (parse_as_int, parse_as_int, parse_as_int),
+				lambda object_ID, x, y: (object_ID, ComplexGatherCommand(destination=(x,y))) ),
+		}
+		commands['fire'] = commands['f'] = {
+			3 : ( (parse_as_int, parse_as_int, parse_as_int),
+				lambda object_ID, x, y: (object_ID, FireCommand(destination=(x,y))) ),
+		}
+		commands['attack'] = commands['a'] = {
+			3 : ( (parse_as_int, parse_as_int, parse_as_int),
+				lambda object_ID, x, y: (object_ID, ComplexAttackCommand(destination=(x,y))) ),
+		}
+		commands['build'] = commands['b'] = {
+			1 : ( (parse_as_object_type_name,),
+				build_function),
+			2 : ( (parse_as_object_type_name, parse_as_direction),
+				build_function),
+		}
 
 		for game_object in self._objects_by_ID.values():
 			game_object.command = None
@@ -631,131 +677,54 @@ class Game (object):
 			player.program_execution.parse_errors = ''
 			
 			for line_no, line in enumerate(output.split('\n')):
-				errors_info = {'line_no':line_no+1, 'line':line, 'invalid_part':line}			
-				
+				splited_line = line.split()
+				if len(splited_line) == 0: # empty line
+					continue
+				command_as_string = splited_line[0].lower()
+				args_of_command = splited_line[1:]
+				errors_info = {
+					'line_no':line_no+1,
+					'line':line,
+					'command':command_as_string,
+					'number_of_args':len(args_of_command)
+				}
+
 				try:
-					# parse command
-					splited_line = line.split()
-					if len(splited_line) == 0: # empty line
-						continue
-					command_as_string = splited_line[0].lower()
-					args_of_command = splited_line[1:]
-					errors_info['invalid_part'] = " ".join(args_of_command)
-
-					if command_as_string in ('build', 'b'):
-
-						if len(args_of_command) not in (1, 2):
-							raise ParseError(texts.parse_errors['invalid_build_command_args'] % errors_info)				
-
-						type_name = parse_as_str(args_of_command[0])
-						if type_name == None:
-							errors_info['invalid_part'] = args_of_command[0]
-							raise ParseError(texts.parse_errors['invalid_build_command_args'] % errors_info)
-						type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name.upper(), None)
-						if type_ID == None:
-							raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info)
-					
-						direction = None
-						if len(args_of_command) == 2:
-							errors_info['invalid_part'] = args_of_command[1]
-							direction = parse_as_direction(args_of_command[1])
-							if direction == None:
-								raise ParseError(texts.parse_errors['invalid_object_type'] % errors_info)
-			
-						if player.base_ID == None:
-							raise ParseError(texts.parse_errors['no_base_no_building'] % errors_info)
-						game_object = self._objects_by_ID[player.base_ID]
-						command = BuildCommand(type_ID=type_ID, direction_or_None=direction)						
-					
-					else:					
-					
-						# parse object ID
-						if len(splited_line) <= 1:
-							raise ParseError(texts.parse_errors['no_game_object_ID'] % errors_info)
-						object_ID = parse_as_int(splited_line[1])
-						if object_ID == None:
-							raise ParseError(texts.parse_errors['parsing_game_object_ID_error'] % errors_info)
-					
-						# parse arguments of command
-						args_of_command = splited_line[2:]
-						errors_info['invalid_part'] = " ".join(args_of_command)	
-					
-						if command_as_string in ('stop', 's'):
-							command = StopCommand()				
-
-						elif command_as_string in ('move', 'm'):
-							if len(args_of_command) not in (1,2):
-								raise ParseError(texts.parse_errors['invalid_move_command_args'] % errors_info)				
-							
-							if len(args_of_command) == 1:
-								direction = parse_as_direction(args_of_command[0])
-								if direction == None:
-									errors_info['invalid_part'] = args_of_command[0]
-									raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info)
-
-								command = MoveCommand(direction=direction)
-							
-							else:
-								dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
-								if dest_x == None or dest_y == None:
-									errors_info['invalid_part'] = args_of_command[0] if dest_x == None else args_of_command[1]
-									raise ParseError(texts.parse_errors['invalid_complex_move_command_args'] % errors_info)								
-									
-								command = ComplexMoveCommand(destination=(dest_x, dest_y))
-					
-						elif command_as_string in ('gather', 'g'):
-							if len(args_of_command) not in (1,2):
-								raise ParseError(texts.parse_errors['invalid_gather_command_args'] % errors_info)
-								
-							if len(args_of_command) == 1:
-								direction = parse_as_direction(args_of_command[0])
-								if direction == None:
-									errors_info['invalid_part'] = args_of_command[0]
-									raise ParseError(texts.parse_errors['parsing_direction_error'] % errors_info)
-
-								command = GatherCommand(direction=direction)
-							
-							else:
-								dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
-								if dest_x == None or dest_y == None:
-									errors_info['invalid_part'] = args_of_command[0] if dest_x == None else args_of_command[1]
-									raise ParseError(texts.parse_errors['invalid_complex_gather_command_args'] % errors_info)								
-									
-								command = ComplexMoveCommand(destination=(dest_x, dest_y))								
-					
-						elif command_as_string in ('fire', 'f'):
-							if len(args_of_command) != 2:
-								raise ParseError(texts.parse_errors['invalid_fire_command_args'] % errors_info)			
-
-							dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
-							if dest_x == None or dest_y == None:
-								errors_info['invalid_part'] = args_of_command[0] if dest_x == None else args_of_command[1]
-								raise ParseError(texts.parse_errors['invalid_fire_command_args'] % errors_info)
-
-							command = FireCommand(destination=(dest_x,dest_y))
+					# search command
+					signatures_with_functions_by_number_of_args = commands.get(command_as_string, None)
+					if signatures_with_functions_by_number_of_args == None:
+						raise ParseError(texts.parse_errors['unknown_command'] % errors_info)
 				
-						elif command_as_string in ('attack', 'a'):
-							dest_x, dest_y = parse_as_int(args_of_command[0]), parse_as_int(args_of_command[1])
-							if dest_x == None or dest_y == None:
-								errors_info['invalid_part'] = args_of_command[0] if dest_x == None else args_of_command[1]
-								raise ParseError(texts.parse_errors['invalid_complex_attack_command_args'] % errors_info)								
-								
-							command = ComplexAttackCommand(destination=(dest_x, dest_y))								
+					# check number of args
+					signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
+					if signature_with_function == None:
+						raise ParseError(texts.parse_errors['wrong_number_of_argument'] % errors_info)
+					signature, method = signature_with_function
+					
+					# convert args
+					args = []
+					for i, (function, arg) in enumerate(zip(signature, args_of_command)):
+						result = function(arg)
+						print arg, function, result
+						if result == None:
+							errors_info['invalid_arg'] = arg
+							errors_info['invalid_arg_no'] = i+1
+							raise ParseError(texts.parse_errors['invalid_argument'] % errors_info)
+						args.append(result)
 				
-						else: # unknown command
-							errors_info['invalid_part'] = command_as_string
-							raise ParseError(texts.parse_errors['unknown_command'] % errors_info)
+					object_ID, command = method(*args)
 					
-					# jeśli wszystko jest w porządku (nie został rzucony wyjątek), to jesteśmy tutaj
-					game_object = self._objects_by_ID.get(object_ID, None)
-					if game_object == None:
-						errors_info['invalid_part'] = splited_line[1]
-						raise ParseError(texts.parse_errors['invalid_game_object_ID'] % errors_info)
-					else:
-						if game_object.command != None:
-							player.program_execution.parse_errors += texts.warnings['changing_command_of_game_object'] % {'line_no':line_no, 'line':line, 'object_ID':game_object.ID}
-						game_object.command = command					
-					
+					# check object_ID
+					obj = self._objects_by_ID.get(object_ID, None)
+					if obj == None:
+						errors_info['object_ID'] = object_ID
+						raise ParseError(texts.parse_errors['invalid_object_ID'] % errors_info)
+					elif obj.player_ID != player_ID:
+						errors_info['object_ID'] = object_ID					
+						raise ParseError(texts.parse_errors['object_not_belong_to_player'] % errors_info)
+
+					self._objects_by_ID[object_ID].command = command
+
 				except ParseError as ex:
 					player.program_execution.parse_errors += ex.args[0]
 		
@@ -953,7 +922,7 @@ class Game (object):
 		
 		
 tprogram_code = """
-print "BUILD 1 T"
+print "BUILD T"
 print "MOVE 2 E"
 """
 tgame = Game(game_map=GameMap(size=8, start_positions=[(2,2),(4,2),(6,2)]), players=[Player(name='blb',program_code=tprogram_code, language_ID=PYTHON_LANGUAGE_ID)])

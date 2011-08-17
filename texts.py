@@ -4,20 +4,12 @@
 _error_prefix = 'BŁĄD (wiersz %(line_no)5d) : '
 _error_sufix = '\n'
 parse_errors = {
-	'no_game_object_ID' : 'brak ID obiektu do którego odnosi się polecenie "%(invalid_part)s"',
-	'parsing_game_object_ID_error' : 'błąd podczas parsowania ID obiektu (podano "(%(invalid_part)s)", nie jest to liczba)',
-	'invalid_move_command_args' : 'błąd podczas parsowania argumentów polecenia move (%(invalid_part)s)',
-	'invalid_complex_move_command_args' : 'błąd podczas parsowania argumentów polecenia move (%(invalid_part)s)',
-	'invalid_gather_command_args' : 'błąd podczas parsowania argumentów polecenia gather (%(invalid_part)s)',
-	'invalid_complex_gather_command_args' : 'błąd podczas parsowania argumentów polecenia gather (%(invalid_part)s)',
-	'invalid_fire_command_args' : 'błąd podczas parsowania argumentów polecenia fire (%(invalid_part)s)',
-	'invalid_complex_attack_command_args' : 'błąd podczas parsowania argumentów polecenia attack (%(invalid_part)s)',
-	'invalid_build_command_args' : 'błąd podczas parsowania argumentów polecenia build (%(invalid_part)s)',				
-	'no_base_no_building' : 'gościu, nie masz bazy, więc nie ma budowania!',
-	'invalid_object_type' : 'nieznany typ obiektu "%(invalid_part)s"',
-	'unknown_command' : 'nieznane polecenie "(%(invalid_part)s)"',
-	'invalid_game_object_ID' : 'nie ma obiektu o podanym ID (%(invalid_part)s)',
-	'parsing_direction_error' : 'nieznany kierunek świata "%(invalid_part)s"',
+	'unknown_command' : 'nieznane polecenie "%(command)s"',
+	'wrong_number_of_arguments' : 'nieprawidłowa liczba argumentów (%(number_of_args)d) dla polecenia "%(command)s"',
+	'invalid_argument' : 'nieprawidłowy %(invalid_arg_no)d. argument "%(invalid_arg)s" polecenia "%(command)s"',
+	'invalid_object_ID' : 'nie istnieje obiekt o ID=%(object_ID)d',
+	'no_base' : 'nie masz już bazy - nie możesz budować',
+	'object_not_belong_to_player' : 'nie możesz sterować obiektem o ID=%(object_ID)d, ponieważ należy on do przeciwnika',
 }
 for k in parse_errors:
 	parse_errors[k] = _error_prefix + parse_errors[k] + _error_sufix
