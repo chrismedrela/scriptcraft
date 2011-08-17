@@ -6,6 +6,8 @@
 
 from collections import namedtuple
 
+import aima.search
+
 from tools import recordtype, Counter, exception, enum
 from bash_executor import bash_executor
 import texts
@@ -336,6 +338,7 @@ del Player_doc
 """ kierunki świata """
 DIRECTION_N, DIRECTION_E, DIRECTION_S, DIRECTION_W = 'n', 'e', 's', 'w'
 DIRECTION_TO_RAY = {DIRECTION_N:(0,-1), DIRECTION_E:(1,0), DIRECTION_S:(0,1), DIRECTION_W:(-1,0)}
+RAY_TO_DIRECTION = {(0,-1):DIRECTION_N, (1,0):DIRECTION_E, (0,1):DIRECTION_S, (-1,0):DIRECTION_W}
 DIRECTIONS = {'N':DIRECTION_N, 'E':DIRECTION_E, 'S':DIRECTION_S, 'W':DIRECTION_W}
 
 
@@ -356,6 +359,43 @@ def distance_between(p1, p2):
 		
 
 """ Klasy """
+class FindPathProblem(aima.search.Problem):
+    u""" Reprezentuje problem znajdowania najkrótszej ścieżki do wskazanego pola
+    *lub jednego z jego sąsiadów*.
+    
+    """
+
+    def __init__(self, start_position, goal, gamemap):
+    	aima.search.Problem.__init__(self, start_position, goal)
+        self.gamemap = gamemap
+
+    def successor(self, state):
+        x, y = state
+        neightbours = []
+        gamemap = self.gamemap
+        goal = self.goal
+        if gamemap.is_valid_position(x-1,y) and (is_flat_and_empty(gamemap[x-1][y]) or (x-1,y)==goal):
+        	neightbours.append( (None, (x-1,y)) )
+        if gamemap.is_valid_position(x,y-1) and (is_flat_and_empty(gamemap[x][y-1]) or (x,y-1)==goal):
+        	neightbours.append( (None, (x,y-1)) )
+        if gamemap.is_valid_position(x+1,y) and (is_flat_and_empty(gamemap[x+1][y]) or (x+1,y)==goal):
+        	neightbours.append( (None, (x+1,y)) )
+        if gamemap.is_valid_position(x,y+1) and (is_flat_and_empty(gamemap[x][y+1]) or (x,y+1)==goal):
+        	neightbours.append( (None, (x,y+1)) )
+       	return neightbours
+
+    def goal_test(self, state):
+        return state == self.goal
+
+    def path_cost(self, c, state1, action, state2):
+        return c + 1
+        
+    def h(self, node):
+    	x, y = node.state
+    	return distance_between((x,y), self.goal)
+    	
+    		
+
 class GameMap (list):
 
 	def __init__(self, size, start_positions=[]):
@@ -407,9 +447,26 @@ class GameMap (list):
 		return x>=0 and y>=0 and x<self.size and y<self.size
 	
 	def find_path_from_to(self, source, dest):
-		""" Zwraca kierunek, w którym należy pójsć od source """
-	
-		return NotImplemented
+		""" Zwraca kierunek, w którym należy pójść od source do dest
+		lub None, jeśli się	nie da dojść do celu *i żadnego jego sąsiada*
+		lub gdy znajduje się już na docelowym polu. """
+		
+		if source == dest:
+			return None
+		
+		problem = FindPathProblem(source, dest, self)
+		result_node = aima.search.astar_search(problem)
+		if result_node == None: # no path found
+			return None
+			
+		previous_node = None
+		while result_node.parent != None:
+			result_node, previous_node = result_node.parent, result_node
+			
+		next_x, next_y = previous_node.state
+		delta_x, delta_y = next_x-source[0], next_y-source[1]
+		
+		return RAY_TO_DIRECTION[(delta_x, delta_y)]	
 	
 	def __str__(self):
 		""" Wielowierszowa reprezentacja mapy """
