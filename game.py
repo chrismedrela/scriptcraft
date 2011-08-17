@@ -717,7 +717,7 @@ class Game (object):
 							player.program_execution.parse_errors += texts.warnings['changing_command_of_game_object'] % {'line_no':line_no, 'line':line, 'object_ID':game_object.ID}
 						game_object.command = command					
 					
-				except ParseException as ex:
+				except ParseError as ex:
 					player.program_execution.parse_errors += ex.args[0]
 		
 		# set default commands
