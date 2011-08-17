@@ -18,7 +18,8 @@ Klasa Field reprezentuje jednostkowy obszar na mapie gry. Posiada dwa atrybuty:
  type -- określa czym jest pole; 1 to płaski teren, 2 to wyżyny
  arg -- określa, co znajduje się *na* polu; 0 oznacza, że na polu nie znajduje
   się nic; -1 to drzewa; -2 i mniejsze liczby oznaczają złoża minerałów
-  (-2 to wyeksploatowane złoża, -3 to złoża z jedną jednostką minerałów...);
+  (-2 to wyeksploatowane złoża, -3 to złoża z jedną jednostką minerałów...,
+  -4 to złoża z dwoma jednostkami...);
   dodatnia liczba oznacza identyfikator obiektu
 
 Zawsze używaj specjalnych funkcji do tworzenia i manipulowania polami.
