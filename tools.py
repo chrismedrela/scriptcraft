@@ -15,7 +15,7 @@ class recordtype(type):
 	 
 	"""
 	
-	def __new__(cls, name, args=[], extra_args={}, bases=[], doc=None):
+	def __new__(cls, name, args=(), extra_args={}, bases=(), doc=None):
 		"""
 		Arguments:
 		 name -- name of structure
@@ -28,6 +28,7 @@ class recordtype(type):
 		 
 		"""
 		def init(self, **kwargs):
+			self._name = name
 			for i in args:
 				try:
 					v = kwargs[i]

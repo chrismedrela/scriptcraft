@@ -27,23 +27,25 @@ warnings = {
 _executing_command_error_prefix = 'BŁĄD (obiekt %(object_ID)5d) : '
 _executing_command_error_sufix = '\n'
 executing_command_errors = {
-	'cannot_move_invalid_map_position' : 'obiekt nie może się ruszyć - ruch poza mapę (%(x)d, %(y)d) niedozwolony',
-	'cannot_move_field_not_empty' : 'obiekt nie może się ruszyć - docelowe pole (%(x)d, %(y)d) jest już zajęte',
-	'cannot_move_object_not_movable' : 'obiekt nie może się ruszyć - nie ma takiej umiejętności',
-	'cannot_gather_invalid_map_position' : 'obiekt nie może zbierać minerałów - zbieranie minerałów spoza mapy (%(x)d, %(y)d) niedozwolone',
-	'cannot_gather_no_minerals_deposit_neither_object' : 'obiekt nie może zbierać ani oddać minerałów - brak złóż minerałów ani obiektu przechowującego minerały w (%(x)d, %(y)d)',
-	'cannot_gather_destination_object_cannot_store_minerals' : 'obiekt nie może oddać minerałów - docelowy obiekt nie ma umiejętności przechowywania minerałów',
-	'cannot_gather_object_cannot_gather' : 'obiekt nie może zbierać minerałów - nie ma takiej umiejętności',
-	'cannot_gather_object_is_full' : 'obiekt nie może zbierać minerałów - jego zbiornik minerałów jest już pełny',
-	'cannot_gather_mineral_deposit_is_empty' : 'obiekt nie może zbierać minerałów - złoża w (%(x)d, %(y)d) są już wyczerpane',
-	'cannot_attack_invalid_map_position' : 'obiekt nie może atakować - atak miejsc znajdujących się poza mapą (%(x)d, %(y)d) niedozwolony',
-	'cannot_attack_object_cannot_attack' : 'obiekt nie może atakować - nie ma takiej umiejętności',
+	'object_not_movable' : 'nie można wykonać polecenia, bo obiekt nie ma umiejętności poruszania się',
+	'invalid_position' : 'nie można wykonać polecenia, bo koordynaty leżą poza granicami mapy',
+	'no_path' : 'nie znaleziono ścieżki',
+	'cannot_move_field_not_empty' : 'nie można się przemieścić na zajęte pole',
+	'object_cannot_gather' : 'ten obiekt nie potrafi wydobywać złóż minerałów',
+	'cannot_gather_no_minerals_deposit_neither_base' : 'nie można wykonać polecenia GATHER - we wskazanym miejscu nie ma złóż minerałów ani bazy',
+	'cannot_gather_destination_object_cannot_store_minerals' : 'nie można magazynować minerałów w obiektach innych niż baza',
+	'cannot_gather_object_is_full' : 'nie można już zebrać więcej minerałów - zbiornik na minerały już pełny',
+	'cannot_gather_mineral_deposit_is_empty' : 'to złoże jest wyeksploatowane',
+	'no_base_no_gather' : 'nie masz bazy => nie masz gdzie magazynować minerałków!',
+	'object_cannot_attack' : 'ta jednostka nie potrafi atakować',
 	'cannot_attack_destination_too_far' : 'obiekt nie może atakować - miejsce ataku (%(x)d, %(y)d) leży za daleko (%(distance)d odległości, zasięg ataku to jedynie %(attack_range)d)',
-	'cannot_attack_itself' : 'obiekt nie może atakować - nie można zaatakować siebie',
+	'cannot_attack_itself' : 'nie można zaatakować siebie',
+	'attacking_your_objects_stopped' : 'na polu do zaatakowania znajduje się Twoja jednostka - atak wstrzymano',
 	'cannot_build_object_cannot_build' : 'obiekt nie może budować - nie ma takiej umiejętności',
 	'cannot_build_built_object_cannot_be_built' : 'obiekt nie może budować - nie można budować jednostek "%(built_object_name)s"',
 	'cannot_build_too_few_minerals' : 'obiekt nie może budować - za mało minerałów (potrzeba %(required_minerals)d jednostek, obiekt budujący ma tylko %(minerals_in_builder)d jednostek)',
 	'cannot_build_no_free_space' : 'obiekt nie może budować - brak wolnego miejsca dla nowej jednostki typu "%(built_object_name)s"',
+	'cannot_complex_gather_destination_has_no_deposit' : 'w docelowym polu nie ma złóż minerałów',
 }
 
 for k in executing_command_errors:
