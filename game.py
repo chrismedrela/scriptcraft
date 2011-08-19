@@ -7,6 +7,7 @@
 from collections import namedtuple
 import hashlib
 import os
+import random
 
 import aima.search
 
@@ -1126,7 +1127,8 @@ class Game (object):
 		for obj in self._objects_by_ID.values():
 			obj.program_execution.executing_command_errors = ''	
 	
-		objects_by_ID = self._objects_by_ID.copy()
+		objects_by_ID = self._objects_by_ID.keys()
+		random.shuffle(objects_by_ID)
 		for object_ID in objects_by_ID:
 			obj = self._objects_by_ID.get(object_ID, None)
 			if obj == None: # jednostka mogła już zostać zniszczona przez atak innej jednostki; usunięcie jednostki z self._objects_by_ID nie ma wpływu na objects_by_ID
