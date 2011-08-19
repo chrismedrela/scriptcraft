@@ -117,6 +117,73 @@ def get_game_object_ID(field):
 
 
 
+Language_doc = \
+"""
+Reprezentuje język programowania.
+
+Atrybuty:
+ ID -- unikalny identyfikator
+ name -- pełna nazwa (np. 'Python 2.7.2')
+ compilation_command -- polecenie konsoli służące do kompilacji
+ run_command -- polecenie konsoli służące do uruchomienia
+ source_file_name -- nazwa, jaką powinnien mieć plik źródłowy
+ binary_file_name -- nazwa, jaką będzie mieć binarka
+ 
+* compilation_command i run_command powinny być poleceniami, które zadziałają
+zarówno na Windowsie, jak i Linuksie! *
+
+"""
+
+Language = recordtype('language', ['ID', 'name', 'compilation_command', 'run_command', 'source_file_name', 'binary_file_name'], doc=Language_doc)
+del Language_doc
+
+NO_LANGUAGE_ID = ''
+NO_LANGUAGE = Language(
+	ID = NO_LANGUAGE_ID,
+	name = '',
+	compilation_command = '',
+	run_command = '',
+	source_file_name = 'file',
+	binary_file_name = 'file',
+)
+CPP_LANGUAGE_ID = 'cpp'
+CPP_LANGUAGE = Language(
+	ID = CPP_LANGUAGE_ID,
+	name = 'c++',
+	compilation_command = 'gcc input.cpp -o output.exe',
+	run_command = './output.exe',
+	source_file_name = 'input.cpp',
+	binary_file_name = 'output.exe',
+)
+PYTHON_LANGUAGE_ID = 'py'
+PYTHON_LANGUAGE = Language(
+	ID = PYTHON_LANGUAGE_ID,
+	name = 'python',
+	compilation_command = 'python -c "import py_compile; py_compile.compile(\'file.py\')"',
+	run_command = 'python file.pyc',
+	source_file_name = 'file.py',
+	binary_file_name = 'file.pyc',
+)
+LANGUAGES_BY_ID = {
+	NO_LANGUAGE_ID : NO_LANGUAGE,
+	CPP_LANGUAGE_ID : CPP_LANGUAGE,
+	PYTHON_LANGUAGE_ID : PYTHON_LANGUAGE,
+}
+
+
+
+Program_doc = \
+"""
+Reprezentuje program. Składa się z opcjonalnych atrybutów 'code' i 'language_ID'.
+W przypadku nie podania ich, domyślne wartości to odpowiednio '' i NO_LANGUAGE_ID
+
+"""
+
+Program = recordtype('program', [], {'code':'', 'language_ID':NO_LANGUAGE_ID}, doc=Program_doc)
+del Program_doc
+
+
+
 """
 Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
  StopCommand
@@ -183,7 +250,8 @@ Atrybuty:
  
 """
 
-GameObject = recordtype('game_object', ['player_ID', 'type_ID'], {'command':StopCommand(), 'action':StopAction(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
+GameObject = recordtype('game_object', ['player_ID', 'type_ID',],
+	{'program_execution':None, 'program':Program(), 'command':StopCommand(), 'action':StopAction(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
 del GameObject_doc
 
 
@@ -239,62 +307,6 @@ GAME_OBJECT_TYPES_BY_ID = {
 
 
 
-
-Language_doc = \
-"""
-Reprezentuje język programowania.
-
-Atrybuty:
- ID -- unikalny identyfikator
- name -- pełna nazwa (np. 'Python 2.7.2')
- compilation_command -- polecenie konsoli służące do kompilacji
- run_command -- polecenie konsoli służące do uruchomienia
- source_file_name -- nazwa, jaką powinnien mieć plik źródłowy
- binary_file_name -- nazwa, jaką będzie mieć binarka
- 
-* compilation_command i run_command powinny być poleceniami, które zadziałają
-zarówno na Windowsie, jak i Linuksie! *
-
-"""
-
-Language = recordtype('language', ['ID', 'name', 'compilation_command', 'run_command', 'source_file_name', 'binary_file_name'], doc=Language_doc)
-del Language_doc
-
-NO_LANGUAGE_ID = ''
-NO_LANGUAGE = Language(
-	ID = NO_LANGUAGE_ID,
-	name = '',
-	compilation_command = '',
-	run_command = '',
-	source_file_name = 'file',
-	binary_file_name = 'file',
-)
-CPP_LANGUAGE_ID = 'cpp'
-CPP_LANGUAGE = Language(
-	ID = CPP_LANGUAGE_ID,
-	name = 'c++',
-	compilation_command = 'gcc input.cpp -o output.exe',
-	run_command = './output.exe',
-	source_file_name = 'input.cpp',
-	binary_file_name = 'output.exe',
-)
-PYTHON_LANGUAGE_ID = 'py'
-PYTHON_LANGUAGE = Language(
-	ID = PYTHON_LANGUAGE_ID,
-	name = 'python',
-	compilation_command = 'python -c "import py_compile; py_compile.compile(\'file.py\')"',
-	run_command = 'python file.pyc',
-	source_file_name = 'file.py',
-	binary_file_name = 'file.pyc',
-)
-LANGUAGES_BY_ID = {
-	NO_LANGUAGE_ID : NO_LANGUAGE,
-	CPP_LANGUAGE_ID : CPP_LANGUAGE,
-	PYTHON_LANGUAGE_ID : PYTHON_LANGUAGE,
-}
-	
-
-
 ProgramExecution_doc = \
 """
 Mutowalny rekord reprezentujący informacje o wykonania i prasowaniu wyjścia
@@ -333,7 +345,7 @@ Atrybuty
  
 """
 
-Player = recordtype('player', ['name', 'program_code', 'language_ID'], {'ID':None, 'program_execution':None, 'base_ID':None, 'object_IDs':[]}, doc=Player_doc)
+Player = recordtype('player', ['name'], {'ID':None, 'base_ID':None, 'object_IDs':[]}, doc=Player_doc)
 del Player_doc
 
 
@@ -518,7 +530,7 @@ class Game (object):
 		
 		map(self.add_player, players)
 			
-	def add_player(self, player):
+	def add_player(self, player, program_for_base=None):
 		"""
 		Dodaje nowego gracza, bazę z minerałami na wolnej pozycji startowej
 		oraz 4 minery dookoła bazy.
@@ -529,8 +541,11 @@ class Game (object):
 		
 		"""
 	
+		if program_for_base == None:
+			program_for_base = Program()
+	
 		assert isinstance(player, Player)
-		assert player.language_ID in LANGUAGES_BY_ID
+		assert isinstance(program_for_base, Program)
 	
 		x, y = self._map.reserve_next_free_start_position() # może rzucić NoFreeStartPositions
 	
@@ -540,8 +555,9 @@ class Game (object):
 
 		# add base
 		base = BASE_TYPE.constructor(player.ID)
-		self._add_game_object(base, x, y)
+		base.program = program_for_base.copy()
 		base.minerals = self.minerals_for_base_at_start
+		self._add_game_object(base, x, y)
 		player.base_ID = base.ID
 		
 		# add miners
@@ -551,14 +567,12 @@ class Game (object):
 		self._add_game_object(miner.copy(), x, y+1)
 		self._add_game_object(miner.copy(), x, y-1)						
 		
-	def set_program(self, player_ID, program_code, language_ID):
-		assert language_ID in LANGUAGES_BY_ID
-		assert player_ID in self._players_by_ID
-		assert isinstance(program_code, str)
+	def set_program(self, object_ID, program):
+		assert object_ID in self._objects_by_ID
+		assert isinstance(program, Program)
 		
-		player = self._players_by_ID[player_ID]
-		player.program_code = program_code
-		player.language_ID = language_ID
+		obj = self._objects_by_ID[object_ID]
+		obj.program = program
 		
 	def tic(self):
 		self._compile_and_run_programs()
@@ -566,34 +580,34 @@ class Game (object):
 		self._run_commands()
 		
 	def _compile_and_run_programs(self):
-		for player_ID, player in self._players_by_ID.items():
+		for object_ID, obj in self._objects_by_ID.items():
 			# compilation
-			s = open('cache/plik', 'w'); s.write(player.program_code); s.close()
-			language = LANGUAGES_BY_ID[player.language_ID]
+			s = open('cache/plik', 'w'); s.write(obj.program.code); s.close()
+			language = LANGUAGES_BY_ID[obj.program.language_ID]
 			_, errors_output, exit_code = self._bash_executor(language.compilation_command, 
 				{'cache/plik':language.source_file_name},
-				{language.binary_file_name:'cache/binary'}
+				{language.binary_file_name:'cache/binary'} if language.ID != NO_LANGUAGE_ID else {}
 			)
 			compilation_successful = exit_code == 0
-			player.program_execution = ProgramExecution(compilation_errors=errors_output, is_compilation_successful=compilation_successful)
+			obj.program_execution = ProgramExecution(compilation_errors=errors_output, is_compilation_successful=compilation_successful)
 			
 			# prepare input for running
 			input_data = ''
-			player.program_execution.input = input_data
+			obj.program_execution.input = input_data
 			
 			# run!
-			if player.program_execution.is_compilation_successful:
+			if obj.program_execution.is_compilation_successful:
 				output, errors_output, exit_code = self._bash_executor(language.run_command, 
 					{'cache/binary':language.binary_file_name},
 					input_data=input_data,
 				)
-				player.program_execution.output = output
-				player.program_execution.errors_output = errors_output
-				player.program_execution.is_run_successful = exit_code == 0
+				obj.program_execution.output = output
+				obj.program_execution.errors_output = errors_output
+				obj.program_execution.is_run_successful = exit_code == 0
 			else:
-				player.program_execution.output = ''
-				player.program_execution.errors_output = ''
-				player.program_execution.is_run_successful = False
+				obj.program_execution.output = ''
+				obj.program_execution.errors_output = ''
+				obj.program_execution.is_run_successful = False
 
 	def _parse_programs_outputs(self):
 		def parse_as_int(data):
@@ -631,49 +645,62 @@ class Game (object):
 			type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name, None)
 			return type_ID
 
-
-		def build_function(type_ID, direction=None): # see below commands['build']
-			if player.base_ID == None:
-				raise ParseError(texts.parse_errors['no_base'] % errors_info)
-			return player.base_ID, BuildCommand(type_ID=type_ID, direction_or_None=None)
-
 		commands = {} # commands { <name of command> : { <number of args> : ( <signature>, <function returning (object_ID, *Command)> ) }}
 		commands['stop'] = commands['s'] = {
-			0 : ( (parse_as_int,), lambda object_ID: (object_ID, StopCommand()) ),
+			0 : (
+					(parse_as_int,),
+					lambda : StopCommand(),
+				),
 		}
 		commands['move'] = commands['m'] = {
-			2 : ( (parse_as_int, parse_as_direction), 
-				lambda object_ID, direction: (object_ID, MoveCommand(direction=direction)) ),
-			3 : ( (parse_as_int, parse_as_int, parse_as_int),
-				lambda object_ID, x, y: (object_ID, ComplexMoveCommand(destination=(x,y))) ),
+			2 : (
+					(parse_as_direction,), 
+					lambda direction: MoveCommand(direction=direction),
+				),
+			3 : (
+					(parse_as_int, parse_as_int),
+					lambda x, y: ComplexMoveCommand(destination=(x,y)),
+				),
 		}
 		commands['gather'] = commands['g'] = {
-			2 : ( (parse_as_int, parse_as_direction),
-				lambda object_ID, direction: (object_ID, GatherCommand(direction=direction)) ),
-			3 : ( (parse_as_int, parse_as_int, parse_as_int),
-				lambda object_ID, x, y: (object_ID, ComplexGatherCommand(destination=(x,y))) ),
+			2 : (
+					(parse_as_direction,),
+					lambda direction: GatherCommand(direction=direction),
+				),
+			3 : (
+					(parse_as_int, parse_as_int),
+					lambda x, y: ComplexGatherCommand(destination=(x,y)),
+				),
 		}
 		commands['fire'] = commands['f'] = {
-			3 : ( (parse_as_int, parse_as_int, parse_as_int),
-				lambda object_ID, x, y: (object_ID, FireCommand(destination=(x,y))) ),
+			3 : (
+					(parse_as_int, parse_as_int),
+					lambda x, y: FireCommand(destination=(x,y)),
+				),
 		}
 		commands['attack'] = commands['a'] = {
-			3 : ( (parse_as_int, parse_as_int, parse_as_int),
-				lambda object_ID, x, y: (object_ID, ComplexAttackCommand(destination=(x,y))) ),
+			3 : (
+					(parse_as_int, parse_as_int),
+					lambda x, y: ComplexAttackCommand(destination=(x,y)),
+				),
 		}
 		commands['build'] = commands['b'] = {
-			1 : ( (parse_as_object_type_name,),
-				build_function),
-			2 : ( (parse_as_object_type_name, parse_as_direction),
-				build_function),
+			1 : (
+					(parse_as_object_type_name,),
+					lambda type_ID: BuildCommand(type_ID=type_ID, direction_or_None=None),
+				),
+			2 : (
+					(parse_as_object_type_name, parse_as_direction),
+					lambda type_ID, direction: BuildCommand(type_ID=type_ID, direction_or_None=direction),
+				),
 		}
 
 		for game_object in self._objects_by_ID.values():
 			game_object.command = None
 			
-		for player_ID, player in self._players_by_ID.items():
-			output = player.program_execution.output
-			player.program_execution.parse_errors = ''
+		for object_ID, obj in self._objects_by_ID.items():
+			output = obj.program_execution.output
+			obj.program_execution.parse_errors = ''
 			
 			for line_no, line in enumerate(output.split('\n')):
 				splited_line = line.split()
@@ -684,6 +711,7 @@ class Game (object):
 				errors_info = {
 					'line_no':line_no+1,
 					'line':line,
+					'object_ID':object_ID,
 					'command':command_as_string,
 					'number_of_args':len(args_of_command)
 				}
@@ -710,27 +738,16 @@ class Game (object):
 							raise ParseError(texts.parse_errors['invalid_argument'] % errors_info)
 						args.append(result)
 				
-					object_ID, command = method(*args)
-					
-					# check object_ID
-					obj = self._objects_by_ID.get(object_ID, None)
-					if obj == None:
-						errors_info['object_ID'] = object_ID
-						raise ParseError(texts.parse_errors['invalid_object_ID'] % errors_info)
-					elif obj.player_ID != player_ID:
-						errors_info['object_ID'] = object_ID					
-						raise ParseError(texts.parse_errors['object_not_belong_to_player'] % errors_info)
-
+					command = method(*args)
 					self._objects_by_ID[object_ID].command = command
 
 				except ParseError as ex:
-					player.program_execution.parse_errors += ex.args[0]
+					obj.program_execution.parse_errors += ex.args[0]
 		
 		# set default commands
 		for obj in self._objects_by_ID.values():
 			if obj.command == None:
-				player = self._players_by_ID[obj.player_ID]
-				player.program_execution.parse_errors += texts.warnings['no_command_for_object'] % {'object_ID':obj.ID}
+				obj.program_execution.parse_errors += texts.warnings['no_command_for_object'] % {'object_ID':obj.ID}
 				obj.command = StopCommand()
 		
 	def _run_commands(self):
@@ -936,11 +953,11 @@ class Game (object):
 			
 			else:
 				the_nearest_alien = _get_the_nearest_alien_in_attack_range((dest_x, dest_y), obj)
-				if the_nearest_alien != None: # jeśli w zasięgu jest wróg
-					obj.action = FireAction(destination=(dest_x, dest_y))
-					self._attack(dest_x, dest_y)
+				if the_nearest_alien != None:
+					obj.action = FireAction(destination=(the_nearest_alien.x, the_nearest_alien.y))
+					self._attack(the_nearest_alien.x, the_nearest_alien.y)
 				else:
-					direction = self._map.find_path_from_to((obj.x, obj.y), (base.x, base.y))
+					direction = self._map.find_path_from_to((obj.x, obj.y), (dest_x, dest_y))
 					if direction == None:
 						raise ExecutingCommandError(texts.executing_command_errors['no_path'])
 					else:
@@ -1001,8 +1018,8 @@ class Game (object):
 			BuildCommand : execute_build_command_of,															
 		}
 	
-		for player in self._players_by_ID.values():
-			player.program_execution.executing_command_errors = ''
+		for obj in self._objects_by_ID.values():
+			obj.program_execution.executing_command_errors = ''	
 	
 		objects_by_ID = self._objects_by_ID.copy()
 		for object_ID in objects_by_ID:
@@ -1015,8 +1032,8 @@ class Game (object):
 				method = commands[obj.command.__class__]
 				method(obj, obj.command)
 			except ExecutingCommandError as ex:
-				player = self._players_by_ID[obj.player_ID]
-				player.program_execution.executing_command_errors += ex.args[0]
+				obj = self._objects_by_ID[obj.player_ID]
+				obj.program_execution.executing_command_errors += ex.args[0]
 
 	def _attack(self, dest_x, dest_y):
 		""" Atakuje zadane pole """
@@ -1088,27 +1105,27 @@ class Game (object):
 			player.base_ID = None		
 		
 		
-tprogram_code = """
+tprogram_code_for_base = """
 print "BUILD T"
-print "MOVE 2 7 7"
-print "GATHER 3 5 6"
-print "GATHER 4 5 6"
-print "ATTACK 6 7 7"
+
 """
-tgame_map = GameMap(size=8, start_positions=[(2,2),(4,2),(6,2)])
-tgame_map[5][6] = put_minerals(tgame_map[5][6], 3)
-tgame = Game(game_map=tgame_map, players=[Player(name='blb',program_code=tprogram_code, language_ID=PYTHON_LANGUAGE_ID)])
+tgame = Game(game_map=GameMap(size=8, start_positions=[(2,2),(4,2),(6,2)]), players=[])
+tgame.add_player(Player(name='blb'), Program(code=tprogram_code_for_base, language_ID=PYTHON_LANGUAGE_ID))
+
 def t():
 	tgame.tic()
-	print "Objects:"
-	for k,v in tgame._objects_by_ID.items():
-		print "%d -> %s" % (k, v)
+
 	print "Players:"
 	for k,v in tgame._players_by_ID.items():
 		print "  player %d -> object_IDs = %s" % (k, v.object_IDs)
+
+	print "Objects:"
+	for k,v in tgame._objects_by_ID.items():
+		print "%d -> %s" % (k, v)
 		print "\n".join(map(lambda x: ' '*4+x, v.program_execution.parse_errors.split('\n')))
 		print "\n".join(map(lambda x: ' '*4+x, v.program_execution.executing_command_errors.split('\n')))
 		print "\n".join(map(lambda x: ' '*4+x, v.program_execution.output.split('\n')))
+
 	print tgame._map
 		
 def c():
