@@ -527,6 +527,7 @@ class Game (object):
 		assert isinstance(players, list)
 		
 		self.minerals_for_base_at_start = 50
+		self.probability_of_mineral_deposit_growing = 0.1
 
 		self._bash_executor = bash_executor
 		self._map = game_map
@@ -582,9 +583,24 @@ class Game (object):
 		obj.program = program
 		
 	def tic(self):
+		self._tic_for_world
 		self._compile_and_run_programs()
 		self._parse_programs_outputs()
 		self._run_commands()
+		
+	def _tic_for_world(self):
+		"""
+		Modyfikuje przyrodę:
+		 - odnawia złoża minerałów
+		
+		"""
+		
+		for x in xrange(self._map.size):
+			for y in xrange(self._map.size):
+				if has_minerals_deposit(self._map[x][y]):
+					if random.random() < self.probability_of_mineral_deposit_growing:
+						field = self._map[x][y]
+						self._map[x][y] = put_minerals(field, get_minerals(field)+1)
 		
 	def _compile_and_run_programs(self):
 		def make_input_for(obj):
