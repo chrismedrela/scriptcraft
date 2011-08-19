@@ -1165,37 +1165,5 @@ class Game (object):
 		player.object_IDs.remove(object_ID)
 		if player.base_ID == object_ID:
 			player.base_ID = None		
-		
-		
-tprogram_code_for_base = """
-print input()
 
-"""
-tgame = Game(game_map=GameMap(size=8, start_positions=[(2,2),(4,2),(6,2)]), players=[])
-tgame.add_player(Player(name='blb'), Program(code=tprogram_code_for_base, language_ID=PYTHON_LANGUAGE_ID))
-
-def t():
-	tgame.tic()
-
-	print "Players:"
-	for k,v in tgame._players_by_ID.items():
-		print "  player %d -> object_IDs = %s" % (k, v.object_IDs)
-
-	print "Objects:"
-	for k,v in tgame._objects_by_ID.items():
-		print "%d -> %s" % (k, v)
-		print "\n".join(map(lambda x: ' '*4+x, v.program_execution.parse_errors.split('\n')))
-		print "\n".join(map(lambda x: ' '*4+x, v.program_execution.executing_command_errors.split('\n')))
-		print "\n".join(map(lambda x: ' '*4+x, v.program_execution.output.split('\n')))
-
-	print tgame._map
-		
-def c():
-	l = 0
-	import time
-	while True:
-		print "Tura %d" % l
-		l += 1
-		t()
-		time.sleep(0.5)
 

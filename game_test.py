@@ -4,50 +4,39 @@
 import unittest
 import game
 
-def skip(_=''):
-	return lambda x: None
+def basic_test():	
+	tprogram_code_for_base = """
+	print input()
 
-class TestField(unittest.TestCase):
-	def test_is_empty(self):
-		self.assertTrue(game.new_field())
+	"""
+	
+	tgame = game.Game(game_map=game.GameMap(size=16, start_positions=[(2,2),(14,2),(2,14)]), players=[])
+	tgame.add_player(game.Player(name='Bob'), game.Program(code=tprogram_code_for_base, language_ID=game.PYTHON_LANGUAGE_ID))
 
-class TestParseLine(unittest.TestCase):
-	def test_basic(self):
-		self.assertEqual(game.parse_line('3 n ala', ['int', 'dir', 'str']), (3, game.DIRECTION_N, 'ala'))
+	def t():
+		tgame.tic()
 
-class TestGameMap(unittest.TestCase):
-	""" Testuje klasę GameMap """
-	def setUp(self):
-		self.game_map = game.GameMap(size=8, start_positions=[(2,3)])
-				
-	def tearDown(self):
-		pass
-		
-	def test_getting_fields(self):
-		self.game_map[0][0]
-		
-	def test_exists_free_start_positions(self):
-		self.assertTrue(self.game_map.exists_free_flat_start_position())
+		print "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nPlayers:"
+		for k,v in tgame._players_by_ID.items():
+			#print "  player %d -> object_IDs = %s" % (k, v.object_IDs)
+			print "%d -> %s" % (k, v)
 
-class TestGame(unittest.TestCase):
-	""" Testuje klasę Game """
-	def setUp(self):
-		self.player = game.Player(name='player1', program_code='print "MOVE N"')
-		self.game = game.Game(game_map=game.GameMap(size=8, start_positions=[(2,2),(3,2),(4,2)]), players=[self.player])
-				
-	def tearDown(self):
-		pass
+		print "\n\n\nObjects:"
+		for k,v in tgame._objects_by_ID.items():
+			print "%d -> %s" % (k, v)
+			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.parse_errors.split('\n')))
+			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.executing_command_errors.split('\n')))
+			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.output.split('\n')))
+
+		print '\n\n\n\n'
+		print tgame._map
 		
-	def test_add_player(self):
-		self.game.add_player(game.Player(name='player2', program_code=''))
-		self.assertEqual(len(self.game._players_by_ID), 2)
-		
-	def test_set_program_code(self):
-		new_program_code = 'print "MOVE S"'
-		self.game.set_program_code(self.player.ID, new_program_code)
-		self.assertEqual(self.game._players_by_ID[self.player.ID].program_code, new_program_code)
-		
-	@skip()
-	def test_tic(self):
-		self.game.add_object
-		self.game.tic()
+	while True:
+		t()
+		i = input()
+		if i.lower() == 'e':
+			return
+			
+if __name__ == '__main__':
+	basic_test()
+
