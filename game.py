@@ -528,6 +528,7 @@ class Game (object):
 		
 		self.minerals_for_base_at_start = 50
 		self.probability_of_mineral_deposit_growing = 0.1
+		self.probability_of_successful_attack_on_alien = 0.5
 
 		self._bash_executor = bash_executor
 		self._map = game_map
@@ -1169,7 +1170,8 @@ class Game (object):
 			if GAME_OBJECT_TYPES_BY_ID[obj.type_ID].when_attacked_get_minerals and obj.minerals > 0:
 				obj.minerals -= 1
 			else:
-				self._remove_game_object_at(dest_x, dest_y)
+				if random.random() < self.probability_of_successful_attack_on_alien:
+					self._remove_game_object_at(dest_x, dest_y)
 		
 	def _add_game_object(self, game_object, x, y):
 		""" Może rzucić NotEmptyFieldException """
