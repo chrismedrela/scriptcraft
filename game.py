@@ -273,6 +273,7 @@ Atrybuty:
   jeżeli False, to zaatakowany obiekt jest niszczony (z pewnym prawdopodobieństwem);
   jeżeli True, to zaatakowany obiekt traci minerały i jest niszczony na 100% dopiero
   wtedy, gdy zabraknie mu minerałów
+ vision_range -- promień widzenia (0 <==> obiekt widzi tylko siebie)
  
 ** Obecna implementacja wyklucza (gather_size != 0 and can_store_minerals) ** 
 """
@@ -285,25 +286,27 @@ d = {
 	'cost_of_build' : -1,
 	'when_attacked_get_minerals' : False,
 }
-GameObjectType = recordtype('game_object_type', ['name', 'constructor', 'ID'], d, doc=GameObjectType_doc)
+GameObjectType = recordtype('game_object_type', ['name', 'constructor', 'ID', 'vision_range'], d, doc=GameObjectType_doc)
 del GameObjectType_doc, d
-OBJECT_TYPE_NAME_TO_TYPE_ID = {'TANK':'t', 'T':'t', 'MINER':'m', 'M':'m', 'BASE':'b', 'B':'b'}
 
-BASE_TYPE_ID = 'b'
-MINER_TYPE_ID = 'm'
-TANK_TYPE_ID = 't'
-BASE_TYPE = GameObjectType(ID=BASE_TYPE_ID, name='base', movable=False, can_build=True, when_attacked_get_minerals=True, can_store_minerals=True,
-						 	constructor=lambda player_ID: GameObject(type_ID='b', player_ID=player_ID))
-MINER_TYPE = GameObjectType(ID=MINER_TYPE_ID, name='miner', gather_size=1, cost_of_build=3,
-						 	constructor=lambda player_ID: GameObject(type_ID='m', player_ID=player_ID, minerals=0))
-TANK_TYPE = GameObjectType(ID=BASE_TYPE_ID, name='tank', attack_range=3, cost_of_build=10,
-						 	constructor=lambda player_ID: GameObject(type_ID='t', player_ID=player_ID))
+BASE_TYPE_ID = 4
+MINER_TYPE_ID = 5
+TANK_TYPE_ID = 6
+
+BASE_TYPE = GameObjectType(ID=BASE_TYPE_ID, name='base', vision_range=16, movable=False, can_build=True, when_attacked_get_minerals=True, can_store_minerals=True,
+						 	constructor=lambda player_ID: GameObject(type_ID=BASE_TYPE_ID, player_ID=player_ID))
+MINER_TYPE = GameObjectType(ID=MINER_TYPE_ID, name='miner', vision_range=7, gather_size=1, cost_of_build=3,
+						 	constructor=lambda player_ID: GameObject(type_ID=MINER_TYPE_ID, player_ID=player_ID, minerals=0))
+TANK_TYPE = GameObjectType(ID=BASE_TYPE_ID, name='tank', vision_range=7, attack_range=3, cost_of_build=10,
+						 	constructor=lambda player_ID: GameObject(type_ID=TANK_TYPE_ID, player_ID=player_ID))
 					
 GAME_OBJECT_TYPES_BY_ID = {
 	TANK_TYPE_ID : TANK_TYPE,
 	MINER_TYPE_ID : MINER_TYPE,
 	BASE_TYPE_ID : BASE_TYPE,
 }
+
+OBJECT_TYPE_NAME_TO_TYPE_ID = {'TANK':TANK_TYPE_ID, 'T':TANK_TYPE_ID, 'MINER':MINER_TYPE_ID, 'M':MINER_TYPE_ID, 'BASE':BASE_TYPE_ID, 'B':BASE_TYPE_ID}
 
 
 
@@ -580,6 +583,47 @@ class Game (object):
 		self._run_commands()
 		
 	def _compile_and_run_programs(self):
+		def make_input_for(obj):
+			obj_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
+			vision_range = obj_type.vision_range
+			input_data = '%d %d %d %d %d %d %d\n' % (
+				obj.type_ID,
+				obj.ID,
+				obj.player_ID,
+				0,
+				obj.x, obj.y,
+				obj_type.vision_range*2+1,
+			)
+			input_data += '%d\n' % obj.minerals \
+				if obj_type.ID in (BASE_TYPE_ID, MINER_TYPE_ID) \
+				else '%d\n' % obj_type.attack_range
+			input_data += '\n'.join(map(' '.join,
+				[	[	'%d %d %d' % (
+							0 \
+								if is_flat_and_empty(self._map[x][y]) \
+								else 1 \
+									if is_empty(self._map[x][y]) and is_upland(self._map[x][y]) \
+									else 2 \
+										if has_minerals_deposit(self._map[x][y]) \
+										else 3 \
+											if has_trees(self._map[x][y]) \
+											else self._objects_by_ID[get_game_object_ID(self._map[x][y])].type_ID,
+							get_minerals(self._map[x][y]) \
+								if has_minerals_deposit(self._map[x][y]) \
+								else get_game_object_ID(self._map[x][y]) \
+									if has_game_object(self._map[x][y]) \
+									else 0,
+							self._objects_by_ID[get_game_object_ID(self._map[x][y])].player_ID \
+								if has_game_object(self._map[x][y]) \
+								else 0,
+						) \
+						if self._map.is_valid_position(x,y) \
+						else '1 0 0'
+					for y in xrange(obj.y-vision_range, obj.y+vision_range+1)]
+				for x in xrange(obj.x-vision_range, obj.x+vision_range+1)]
+			))
+				
+	
 		for object_ID, obj in self._objects_by_ID.items():
 			# compilation
 			s = open('cache/plik', 'w'); s.write(obj.program.code); s.close()
@@ -592,7 +636,7 @@ class Game (object):
 			obj.program_execution = ProgramExecution(compilation_errors=errors_output, is_compilation_successful=compilation_successful)
 			
 			# prepare input for running
-			input_data = ''
+			input_data = make_input_for(obj)
 			obj.program_execution.input = input_data
 			
 			# run!
@@ -1124,7 +1168,7 @@ class Game (object):
 		
 		
 tprogram_code_for_base = """
-print "BUILD T"
+print input()
 
 """
 tgame = Game(game_map=GameMap(size=8, start_positions=[(2,2),(4,2),(6,2)]), players=[])
