@@ -175,6 +175,18 @@ LANGUAGES_BY_ID = {
 
 
 
+Message_doc = \
+"""
+sender_ID i receiver_ID mogą być równe zero; wtedy oznacza to, że nadawcą/odbiorcą
+jest system gry.
+
+"""
+
+Message = namedtuple('message', ['sender_ID', 'receiver_ID', 'text'])
+
+
+
+
 Program_doc = \
 """
 Reprezentuje program. Składa się z opcjonalnych atrybutów 'code' i 'language_ID'.
@@ -255,7 +267,9 @@ Atrybuty:
 """
 
 GameObject = recordtype('game_object', ['player_ID', 'type_ID',],
-	{'program_execution':None, 'program':Program(), 'command':StopCommand(), 'action':StopAction(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
+	{'program_execution':None, 'program':Program(), 'command':StopCommand(),
+		'action':StopAction(), 'messages':[], 'ID':None, 'x':None, 'y':None, 'minerals':0
+	}, doc=GameObject_doc)
 del GameObject_doc
 
 
@@ -377,8 +391,44 @@ ExecutingCommandError = exception('ExecutingCommandError')
 def distance_between(p1, p2):
 	""" Zwraca odległość między p1=(x1,y1) a p2=(x2,y2) w metryce miejskiej. """
 	return abs(p1[0]-p2[0]) + abs(p1[1]-p2[1])
+
+
+def parse_as_int(data):
+	""" W przypadku niepowodzenia zwraca None """
+
+	if len(data)>8:
+		return None
+	try:
+		return int(data)
+	except ValueError:
+		return None
+
+def parse_as_direction(data):
+	""" W przypadku niepowodzenia zwraca None w przeciwnym razie zwraca
+	identyfikator kierunku świata (DIRECTION_*). """
+
+	try:
+		return DIRECTIONS[data.upper()]
+	except KeyError:
+		return None
+
+def parse_as_str(data, max_string_length=256):
+	""" W przypadku, gdy długość stringa przekracza max_string_length,
+	zwraca None """
+
+	if len(data) > max_string_length:
+		return None
+	return data	
+
+def parse_as_object_type_name(data):
+	""" Zwraca identyfikator typu jednostki lub None w przypadku
+	niepowodzenia """
+	
+	type_name = parse_as_str(data, max_string_length=16)
+	type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name, None)
+	return type_ID		
 		
-		
+
 
 """ Klasy """
 class FindPathProblem(aima.search.Problem):
@@ -536,6 +586,7 @@ class Game (object):
 		self._players_by_ID = {}
 		self._objects_counter = Counter(1)		
 		self._players_counter = Counter(1)	
+		self._messages = []
 		
 		map(self.add_player, players)
 			
@@ -584,10 +635,12 @@ class Game (object):
 		obj.program = program
 		
 	def tic(self):
-		self._tic_for_world
+		self._tic_for_world()
 		self._compile_and_run_programs()
+		self._clear_messages()
 		self._parse_programs_outputs()
 		self._run_commands()
+		self._answer_messages()
 		
 	def _tic_for_world(self):
 		"""
@@ -611,7 +664,7 @@ class Game (object):
 				obj.type_ID,
 				obj.ID,
 				obj.player_ID,
-				0,
+				len(obj.messages),
 				obj.x, obj.y,
 				obj_type.vision_range*2+1,
 			)
@@ -643,6 +696,7 @@ class Game (object):
 					for y in xrange(obj.y-vision_range, obj.y+vision_range+1)]
 				for x in xrange(obj.x-vision_range, obj.x+vision_range+1)]
 			))
+			input_data += '\n'.join(map(lambda m: '%d %s' % (m.sender_ID, m.text), obj.messages))
 			return input_data
 				
 	
@@ -704,42 +758,14 @@ class Game (object):
 			obj.program_execution.input = input_data	
 				
 
+	def _clear_messages(self):
+		self._messages = []
+
+		for game_object in self._objects_by_ID.values():
+			game_object.command = None
+			game_object.messages = []		
+
 	def _parse_programs_outputs(self):
-		def parse_as_int(data):
-			""" W przypadku niepowodzenia zwraca None """
-
-			if len(data)>8:
-				return None
-			try:
-				return int(data)
-			except ValueError:
-				return None
-	
-		def parse_as_direction(data):
-			""" W przypadku niepowodzenia zwraca None w przeciwnym razie zwraca
-			identyfikator kierunku świata (DIRECTION_*). """
-
-			try:
-				return DIRECTIONS[data.upper()]
-			except KeyError:
-				return None
-
-		def parse_as_str(data, max_string_length=256):
-			""" W przypadku, gdy długość stringa przekracza max_string_length,
-			zwraca None """
-	
-			if len(data) > max_string_length:
-				return None
-			return data	
-		
-		def parse_as_object_type_name(data):
-			""" Zwraca identyfikator typu jednostki lub None w przypadku
-			niepowodzenia """
-			
-			type_name = parse_as_str(data, max_string_length=16)
-			type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name, None)
-			return type_ID
-
 		commands = {} # commands { <name of command> : { <number of args> : ( <signature>, <function returning (object_ID, *Command)> ) }}
 		commands['stop'] = commands['s'] = {
 			0 : (
@@ -790,9 +816,6 @@ class Game (object):
 				),
 		}
 
-		for game_object in self._objects_by_ID.values():
-			game_object.command = None
-			
 		for object_ID, obj in self._objects_by_ID.items():
 			output = obj.program_execution.output
 			obj.program_execution.parse_errors = ''
@@ -812,29 +835,47 @@ class Game (object):
 				}
 
 				try:
-					# search command
-					signatures_with_functions_by_number_of_args = commands.get(command_as_string, None)
-					if signatures_with_functions_by_number_of_args == None:
-						raise ParseError(texts.parse_errors['unknown_command'] % errors_info)
+					command_as_int = parse_as_int(command_as_string)
+					if command_as_int != None: # mamy polecenie wysłania message zamiast komendy
+
+						message_text = line[len(command_as_string)+1:]
+						
+						if command_as_int == 0:
+							message = Message(sender=obj.ID, receiver_ID=0, text=message_text)
+							self._messages.append(message)
+						else:
+							receiver = self._objects_by_ID.get(command_as_int, None)
+							if receiver == None:
+								raise ParseError(texts.parse_errors['cannot_send_message_invalid_receiver'] % errors_info)
+
+							message = Message(sender_ID=obj.ID, receiver_ID=receiver.ID, text=message_text)
+							receiver.messages.append(message)
+							
+					else: # mamy komendę, a nie polecenie wysłania message
 				
-					# check number of args
-					signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
-					if signature_with_function == None:
-						raise ParseError(texts.parse_errors['wrong_number_of_argument'] % errors_info)
-					signature, method = signature_with_function
+						# search command
+						signatures_with_functions_by_number_of_args = commands.get(command_as_string, None)
+						if signatures_with_functions_by_number_of_args == None:
+							raise ParseError(texts.parse_errors['unknown_command'] % errors_info)
+				
+						# check number of args
+						signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
+						if signature_with_function == None:
+							raise ParseError(texts.parse_errors['wrong_number_of_argument'] % errors_info)
+						signature, method = signature_with_function
 					
-					# convert args
-					args = []
-					for i, (function, arg) in enumerate(zip(signature, args_of_command)):
-						result = function(arg)
-						if result == None:
-							errors_info['invalid_arg'] = arg
-							errors_info['invalid_arg_no'] = i+1
-							raise ParseError(texts.parse_errors['invalid_argument'] % errors_info)
-						args.append(result)
+						# convert args
+						args = []
+						for i, (function, arg) in enumerate(zip(signature, args_of_command)):
+							result = function(arg)
+							if result == None:
+								errors_info['invalid_arg'] = arg
+								errors_info['invalid_arg_no'] = i+1
+								raise ParseError(texts.parse_errors['invalid_argument'] % errors_info)
+							args.append(result)
 				
-					command = method(*args)
-					self._objects_by_ID[object_ID].command = command
+						command = method(*args)
+						self._objects_by_ID[object_ID].command = command
 
 				except ParseError as ex:
 					obj.program_execution.parse_errors += ex.args[0]
@@ -1159,6 +1200,46 @@ class Game (object):
 				obj = self._objects_by_ID[obj.player_ID]
 				obj.program_execution.executing_command_errors += ex.args[0]
 
+	def _answer_messages(self):
+		""" Odpowiada na messages z zapytaniami wysłane do systemu gry. """
+		
+		for message in self._messages:
+			text = message.text
+			sender_ID = message.sender_ID
+			sender = self._objects_by_ID.get(sender_ID, None)
+			if sender == None:
+				continue
+				
+			splited_text = text.split()
+			if (len(splited_text) == 2 and splited_text[0].lower() == 'list' and splited_text[1].lower() == 'units') \
+				or (len(splited_text) == 1 and splited_text[0].lower() == 'lu'):
+				
+				player = self._players_by_ID[sender.player_ID]
+				answer_text = "%d " % len(player.object_IDs)
+				for object_ID in player.object_IDs:
+					object_type = self._objects_by_ID[object_ID].type_ID
+					answer_text += "%d %d " % (object_ID, object_type)
+				
+			elif (len(splited_text) == 2 and splited_text[0].lower() in ('unit', 'u')):
+				unit_ID = parse_as_int(splited_text[1])
+				if unit_ID == None:
+					continue
+				
+				unit = self._objects_by_ID.get(unit_ID, None)
+				if unit == None:
+					continue
+					
+				answer_text = "%d %d %d %d %d" % (
+					unit.ID,
+					unit.type_ID,
+					unit.x, unit.y,
+					unit.minerals if unit.type_ID != TANK_TYPE_ID else GAME_OBJECT_TYPES_BY_ID[unit.type_ID].attack_range,
+				)
+				
+			answer = Message(sender_ID=0, receiver_ID=sender_ID, text=answer_text)
+			sender.messages.append(answer)				
+	
+
 	def _attack(self, dest_x, dest_y):
 		""" Atakuje zadane pole """
 	
@@ -1172,7 +1253,7 @@ class Game (object):
 			else:
 				if random.random() < self.probability_of_successful_attack_on_alien:
 					self._remove_game_object_at(dest_x, dest_y)
-		
+	
 	def _add_game_object(self, game_object, x, y):
 		""" Może rzucić NotEmptyFieldException """
 		

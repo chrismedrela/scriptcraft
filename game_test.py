@@ -6,7 +6,10 @@ import game
 
 def basic_test():	
 	tprogram_code_for_base = """
-	print 'ala'
+print '2 bl bl'
+print '3 no no'
+print '1 a a '
+print 'build 6'
 	"""
 	
 	tgame = game.Game(game_map=game.GameMap(size=16, start_positions=[(2,2),(14,2),(2,14)]), players=[])
@@ -27,6 +30,8 @@ def basic_test():
 			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.executing_command_errors.split('\n')))
 			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.output.split('\n')))
 
+		#print '\n\n'
+		#print tgame._objects_by_ID[1].program_execution.errors_output
 		print '\n\n\n\n'
 		print tgame._map
 		

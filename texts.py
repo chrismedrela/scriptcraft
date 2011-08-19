@@ -10,6 +10,7 @@ parse_errors = {
 	'invalid_object_ID' : 'nie istnieje obiekt o ID=%(object_ID)d',
 	'no_base' : 'nie masz już bazy - nie możesz budować',
 	'object_not_belong_to_player' : 'nie możesz sterować obiektem o ID=%(object_ID)d, ponieważ należy on do przeciwnika',
+	'cannot_send_message_invalid_receiver' : 'wysyłanie wiadomości zakończyło się niepowodzeniem - nieznany odbiorca o podanym ID',
 }
 for k in parse_errors:
 	parse_errors[k] = _error_prefix + parse_errors[k] + _error_sufix
