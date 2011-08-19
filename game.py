@@ -1005,7 +1005,25 @@ class Game (object):
 			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_no_free_space'] % errors_info)			
 	
 		def _get_the_nearest_alien_in_attack_range_to(obj):
-			return NotImplemented
+			obj_x, obj_y = obj.x, obj.y
+			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
+			attack_range = object_type.attack_range
+			
+			the_distance = 9999999
+			the_nearest_alien = None
+			for x in xrange(obj_x-attack_range, obj_x+attack_range+1):
+				for y in xrange(obj_y-attack_range, obj_y+attack_range+1):
+					if self._map.is_valid_position(x, y) and distance_between((x,y), (obj_x, obj_y)) <= attack_range:
+						field = self._map[x][y]
+						if has_game_object(field):
+							alien = self._objects_by_ID[get_game_object_ID(field)]
+							if obj.player_ID != alien.player_ID:
+								distance = distance_between((x, y), (obj_x, obj_y))
+								if distance < the_distance:
+									the_distance = distance
+									the_nearest_alien = alien
+								
+			return the_nearest_alien
 	
 		commands = {
 			StopCommand : execute_stop_command_of,
