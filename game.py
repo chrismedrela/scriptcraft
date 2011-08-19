@@ -5,6 +5,8 @@
 """
 
 from collections import namedtuple
+import hashlib
+import os
 
 import aima.search
 
@@ -191,7 +193,8 @@ Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
  GatherCommand -- zbieraj minerały ze złoża lub oddaj je do obiektu
   przechowującego minerały
  FireCommand
- BuildCommand
+ BuildCommand -- program_object_ID_or_zero to ID obiektu, którego program ma być
+  użyty dla nowo budowanej jednostki
  
 Atrybuty tych klas muszą mieć odpowiedni typ, ale nie muszą być sensowne
 (może być np. destination=(-2,-3); type_ID musi być poprawnym identyfikatorem
@@ -205,7 +208,7 @@ GatherCommand = namedtuple('gather_command', ['direction'])
 ComplexGatherCommand = namedtuple('complex_gather_command', ['destination'])
 FireCommand = namedtuple('fire_command', ['destination'])
 ComplexAttackCommand = namedtuple('complex_attack_command', ['destination'])
-BuildCommand = namedtuple('build_command', ['type_ID', 'direction_or_None'])
+BuildCommand = namedtuple('build_command', ['type_ID', 'direction_or_None', 'program_object_ID_or_zero'])
 
 
 
@@ -328,7 +331,7 @@ Atrybuty
 """
 
 ProgramExecution = recordtype('program_execution', ['compilation_errors', 'is_compilation_successful'],
-	{'input':'', 'output':'', 'error_output':'', 'is_run_successful':False, 'parse_errors':'', 'executing_command_errors':''},
+	{'input':'', 'output':'', 'errors_output':'', 'is_run_successful':False, 'parse_errors':'', 'executing_command_errors':''},
 	doc=ProgramExecution_doc
 )
 del ProgramExecution_doc
@@ -622,36 +625,66 @@ class Game (object):
 					for y in xrange(obj.y-vision_range, obj.y+vision_range+1)]
 				for x in xrange(obj.x-vision_range, obj.x+vision_range+1)]
 			))
+			return input_data
 				
 	
 		for object_ID, obj in self._objects_by_ID.items():
-			# compilation
-			s = open('cache/plik', 'w'); s.write(obj.program.code); s.close()
+			sha = hashlib.sha1()
+			sha.update(obj.program.code)
+			sha = sha.hexdigest()
+			binary_file_path = 'cache/' + sha
 			language = LANGUAGES_BY_ID[obj.program.language_ID]
-			_, errors_output, exit_code = self._bash_executor(language.compilation_command, 
-				{'cache/plik':language.source_file_name},
-				{language.binary_file_name:'cache/binary'} if language.ID != NO_LANGUAGE_ID else {}
-			)
-			compilation_successful = exit_code == 0
-			obj.program_execution = ProgramExecution(compilation_errors=errors_output, is_compilation_successful=compilation_successful)
-			
-			# prepare input for running
-			input_data = make_input_for(obj)
-			obj.program_execution.input = input_data
-			
-			# run!
-			if obj.program_execution.is_compilation_successful:
-				output, errors_output, exit_code = self._bash_executor(language.run_command, 
-					{'cache/binary':language.binary_file_name},
-					input_data=input_data,
+
+			if obj.program_execution == None:
+				obj.program_execution = ProgramExecution(
+					compilation_errors=texts.warnings['compilation_done_in_another_session'],
+					is_compilation_successful=True
 				)
-				obj.program_execution.output = output
-				obj.program_execution.errors_output = errors_output
-				obj.program_execution.is_run_successful = exit_code == 0
+
+			input_data = make_input_for(obj)
+
+			if language.ID == NO_LANGUAGE_ID:
+				output = ''
+				errors_output = ''
+				is_run_successful = True
+			
 			else:
-				obj.program_execution.output = ''
-				obj.program_execution.errors_output = ''
-				obj.program_execution.is_run_successful = False
+				# compilation
+				if not os.path.exists(binary_file_path): # if compilation is needed
+					s = open('cache/source', 'w')
+					s.write(obj.program.code)
+					s.close()
+					
+					_, errors_output, exit_code = self._bash_executor(language.compilation_command, 
+						{'cache/source':language.source_file_name},
+						{language.binary_file_name:binary_file_path},
+					)
+					compilation_successful = exit_code == 0
+					
+					obj.program_execution = ProgramExecution(
+						compilation_errors=errors_output,
+						is_compilation_successful=compilation_successful,
+					)
+			
+				# run!
+				if os.path.exists(binary_file_path): #obj.program_execution.is_compilation_successful:
+					output, errors_output, exit_code = self._bash_executor(language.run_command, 
+						{'cache/binary':language.binary_file_name},
+						input_data=input_data,
+					)
+					is_run_successful = exit_code == 0
+					
+				else:
+					output = ''
+					errors_output = ''
+					is_run_successful = False
+				
+			# finishing
+			obj.program_execution.output = output
+			obj.program_execution.errors_output = errors_output
+			obj.program_execution.is_run_successful = is_run_successful
+			obj.program_execution.input = input_data	
+				
 
 	def _parse_programs_outputs(self):
 		def parse_as_int(data):
@@ -731,11 +764,11 @@ class Game (object):
 		commands['build'] = commands['b'] = {
 			1 : (
 					(parse_as_object_type_name,),
-					lambda type_ID: BuildCommand(type_ID=type_ID, direction_or_None=None),
+					lambda type_ID: BuildCommand(type_ID=type_ID, direction_or_None=None, program_object_ID_or_zero=0),
 				),
 			2 : (
-					(parse_as_object_type_name, parse_as_direction),
-					lambda type_ID, direction: BuildCommand(type_ID=type_ID, direction_or_None=direction),
+					(parse_as_object_type_name, parse_as_int),
+					lambda type_ID, object_ID: BuildCommand(type_ID=type_ID, direction_or_None=None, program_object_ID_or_zero=object_ID),
 				),
 		}
 
@@ -883,6 +916,7 @@ class Game (object):
 				if not dest_obj_type.can_store_minerals:
 					raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_destination_object_cannot_store_minerals'] % errors_info)
 			
+				obj.action = StoreAction(storage_ID=dest_object_ID)
 				self._store_minerals_from_obj_to_obj(obj, dest_obj) 
 
 			else:
@@ -895,6 +929,7 @@ class Game (object):
 				if how_much_minerals_in_deposit == 0:
 					raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_mineral_deposit_is_empty'] % errors_info)
 			
+				obj.action = GatherAction(destination=(dest_x, dest_y))
 				how_much_minerals = min(how_much_minerals_can_get_obj, how_much_minerals_in_deposit)
 				self._store_minerals_from_deposit_to_obj((dest_x, dest_y), obj, how_much_minerals)
 		
@@ -968,6 +1003,7 @@ class Game (object):
 			if distance == 0:
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_itself'] % errors_info)
 		
+			obj.action = FireAction(destination=(dest_x, dest_y))
 			self._attack(dest_x, dest_y)
 
 		def execute_complex_attack_command_of(obj, command):
@@ -1044,7 +1080,14 @@ class Game (object):
 						# build object
 						built_object = built_object_type.constructor(builder_object.player_ID)
 						builder_object.minerals -= built_object_type.cost_of_build
+						builder_object.action = BuildAction(type_ID=built_object_type, destination=(dest_x, dest_y))
 						self._add_game_object(built_object, dest_x, dest_y)
+
+						if command.program_object_ID_or_zero != 0:
+							program_object = self._objects_by_ID.get(command.program_object_ID_or_zero, None)
+							if program_object == None:
+								raise ExecutingCommandError(texts.executing_command_errors['build_warning_unknown_object_ID'] % errors_info)
+							built_object.program = program_object.program.copy()
 						return
 			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_no_free_space'] % errors_info)			
 	

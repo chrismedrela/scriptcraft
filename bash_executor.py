@@ -14,7 +14,8 @@ def bash_executor(command, input_files={}, output_files={}, input_data='', execu
 	do input_files.values().
 	
 	Po wykonaniu polecenia kopiuje pliki z output_files.keys()
-	do output_files.values() i sprząta po sobie.
+	do output_files.values() i sprząta po sobie. W przypadku niepowodzenia
+	*nie* zgłasza błędów!
 		
 	executing_folder to folder, który ma zostać wyizolowany.
 	* Ten folder musi istnieć! *
@@ -34,12 +35,18 @@ def bash_executor(command, input_files={}, output_files={}, input_data='', execu
 	os.chdir(oldCwd)
 	
 	# clean up
-	for f in input_files.values():
-		os.remove(os.path.join(executing_folder, f))
+	try:
+		for f in input_files.values():
+			os.remove(os.path.join(executing_folder, f))
+	except IOError:
+		pass
 
 	# copy output files
-	for file_source, file_destination in output_files.items():
-		shutil.copy(os.path.join(executing_folder, file_source), file_destination)
+	try:
+		for file_source, file_destination in output_files.items():
+			shutil.copy(os.path.join(executing_folder, file_source), file_destination)
+	except IOError:
+		pass
 
 	# finish
 	return (output, errors_output, exit_code) 

@@ -6,8 +6,7 @@ import game
 
 def basic_test():	
 	tprogram_code_for_base = """
-	print input()
-
+	print 'ala'
 	"""
 	
 	tgame = game.Game(game_map=game.GameMap(size=16, start_positions=[(2,2),(14,2),(2,14)]), players=[])
@@ -33,7 +32,7 @@ def basic_test():
 		
 	while True:
 		t()
-		i = input()
+		i = raw_input()
 		if i.lower() == 'e':
 			return
 			

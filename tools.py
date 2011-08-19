@@ -28,6 +28,8 @@ class recordtype(type):
 		 
 		"""
 		def init(self, **kwargs):
+			#assert all(map(lambda k: k in args or k in extra_args, kwargs.keys())), 'not known keyword argument'
+			
 			self._name = name
 			for i in args:
 				try:
@@ -44,8 +46,7 @@ class recordtype(type):
 			return str(self)
 		def copy_func(self):
 			return copy.copy(self)
-			
-			
+	
 		doc_string = '' if doc==None else doc
 		attrs = {'__init__':init, '__str__':tostr, '__repr__':torepr, '__doc__':doc_string, 'copy':copy_func}
 		return type(name, tuple(bases), attrs)

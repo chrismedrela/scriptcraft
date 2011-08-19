@@ -21,6 +21,7 @@ _warning_sufix = '\n'
 warnings = {
 	'changing_command_of_game_object' : _warning_prefix_with_line_no+'obiektowi ID=%(object_ID)d nadano już wcześniej komendę'+_warning_sufix,
 	'no_command_for_object' : _warning_prefix_with_object_ID+'nie nadano komendy obiektowi ID=%(object_ID)d'+_warning_sufix,
+	'compilation_done_in_another_session' : 'brak informacji - kompilacja programu nastąpiła podczas innej sesji',
 }
 
 
@@ -46,6 +47,7 @@ executing_command_errors = {
 	'cannot_build_too_few_minerals' : 'obiekt nie może budować - za mało minerałów (potrzeba %(required_minerals)d jednostek, obiekt budujący ma tylko %(minerals_in_builder)d jednostek)',
 	'cannot_build_no_free_space' : 'obiekt nie może budować - brak wolnego miejsca dla nowej jednostki typu "%(built_object_name)s"',
 	'cannot_complex_gather_destination_has_no_deposit' : 'w docelowym polu nie ma złóż minerałów',
+	'build_warning_unknown_object_ID' : 'nieprawidłowy ID obiektu, od którego ma być skopiowany program - mimo to jednostkę zbudowano'
 }
 
 for k in executing_command_errors:

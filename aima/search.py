@@ -28,7 +28,7 @@ class Problem:
         from this state. If there are many successors, consider an iterator
         that yields the successors one at a time, rather than building them
         all at once. Iterators will work fine within the framework."""
-        abstract
+        #abstract
     
     def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
@@ -47,7 +47,7 @@ class Problem:
     def value(self):
         """For optimization problems, each state has a value.  Hill-climbing
         and related algorithms try to maximize this value."""
-        abstract
+        #abstract
 #______________________________________________________________________________
     
 class Node:
