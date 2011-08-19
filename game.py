@@ -172,6 +172,18 @@ LANGUAGES_BY_ID = {
 
 
 
+Program_doc = \
+"""
+Reprezentuje program. Składa się z opcjonalnych atrybutów 'code' i 'language_ID'.
+W przypadku nie podania ich, domyślne wartości to odpowiednio '' i NO_LANGUAGE_ID
+
+"""
+
+Program = recordtype('program', [], {'code':'', 'language_ID':NO_LANGUAGE_ID}, doc=Program_doc)
+del Program_doc
+
+
+
 """
 Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
  StopCommand
@@ -239,7 +251,7 @@ Atrybuty:
 """
 
 GameObject = recordtype('game_object', ['player_ID', 'type_ID',],
-	{'program_execution':None, 'program_code':'', 'program_language_ID':NO_LANGUAGE_ID, 'command':StopCommand(), 'action':StopAction(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
+	{'program_execution':None, 'program':Program(), 'command':StopCommand(), 'action':StopAction(), 'ID':None, 'x':None, 'y':None, 'minerals':0}, doc=GameObject_doc)
 del GameObject_doc
 
 
@@ -518,7 +530,7 @@ class Game (object):
 		
 		map(self.add_player, players)
 			
-	def add_player(self, player, program_code_for_base='', program_language_ID_for_base=NO_LANGUAGE_ID):
+	def add_player(self, player, program_for_base=None):
 		"""
 		Dodaje nowego gracza, bazę z minerałami na wolnej pozycji startowej
 		oraz 4 minery dookoła bazy.
@@ -529,7 +541,11 @@ class Game (object):
 		
 		"""
 	
+		if program_for_base == None:
+			program_for_base = Program()
+	
 		assert isinstance(player, Player)
+		assert isinstance(program_for_base, Program)
 	
 		x, y = self._map.reserve_next_free_start_position() # może rzucić NoFreeStartPositions
 	
@@ -539,8 +555,7 @@ class Game (object):
 
 		# add base
 		base = BASE_TYPE.constructor(player.ID)
-		base.program_code = program_code_for_base
-		base.program_language_ID = program_language_ID_for_base
+		base.program = program_for_base.copy()
 		base.minerals = self.minerals_for_base_at_start
 		self._add_game_object(base, x, y)
 		player.base_ID = base.ID
@@ -552,14 +567,12 @@ class Game (object):
 		self._add_game_object(miner.copy(), x, y+1)
 		self._add_game_object(miner.copy(), x, y-1)						
 		
-	def set_program(self, object_ID, program_code, language_ID):
+	def set_program(self, object_ID, program):
 		assert object_ID in self._objects_by_ID
-		assert isinstance(program_code, str)
-		assert language_ID in LANGUAGES_BY_ID
+		assert isinstance(program, Program)
 		
 		obj = self._objects_by_ID[object_ID]
-		obj.program_code = program_code
-		obj.program_language_ID = language_ID
+		obj.program = program
 		
 	def tic(self):
 		self._compile_and_run_programs()
@@ -569,8 +582,8 @@ class Game (object):
 	def _compile_and_run_programs(self):
 		for object_ID, obj in self._objects_by_ID.items():
 			# compilation
-			s = open('cache/plik', 'w'); s.write(obj.program_code); s.close()
-			language = LANGUAGES_BY_ID[obj.program_language_ID]
+			s = open('cache/plik', 'w'); s.write(obj.program.code); s.close()
+			language = LANGUAGES_BY_ID[obj.program.language_ID]
 			_, errors_output, exit_code = self._bash_executor(language.compilation_command, 
 				{'cache/plik':language.source_file_name},
 				{language.binary_file_name:'cache/binary'} if language.ID != NO_LANGUAGE_ID else {}
@@ -929,7 +942,7 @@ tprogram_code_for_base = """
 print "BUILD T"
 """
 tgame = Game(game_map=GameMap(size=8, start_positions=[(2,2),(4,2),(6,2)]), players=[])
-tgame.add_player(Player(name='blb'), program_code_for_base=tprogram_code_for_base, program_language_ID_for_base=PYTHON_LANGUAGE_ID)
+tgame.add_player(Player(name='blb'), Program(code=tprogram_code_for_base, language_ID=PYTHON_LANGUAGE_ID))
 def t():
 	tgame.tic()
 
