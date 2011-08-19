@@ -952,7 +952,7 @@ class Game (object):
 					self._attack(dest_x, dest_y)
 			
 			else:
-				the_nearest_alien = _get_the_nearest_alien_in_attack_range((dest_x, dest_y), obj)
+				the_nearest_alien = _get_the_nearest_alien_in_attack_range_to(obj)
 				if the_nearest_alien != None:
 					obj.action = FireAction(destination=(the_nearest_alien.x, the_nearest_alien.y))
 					self._attack(the_nearest_alien.x, the_nearest_alien.y)
@@ -1004,7 +1004,7 @@ class Game (object):
 						return
 			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_no_free_space'] % errors_info)			
 	
-		def _get_the_nearest_alien_in_attack_range(point, obj):
+		def _get_the_nearest_alien_in_attack_range_to(obj):
 			return NotImplemented
 	
 		commands = {
