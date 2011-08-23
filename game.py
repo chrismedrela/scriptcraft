@@ -32,26 +32,26 @@ Nie polegaj na atrybutach klasy Field - mogą się one zmienić. Oto lista funkc
 
 Konstruktor:
  new_field
- 
+
 Funkcje związane z atrybutem 'type' (czyli z tym, czym pole jest)
  is_flat
  is_upland
- 
+
 Funkcje związane z atrybutem 'arg' (czyli z tym, co znajduje się na polu)
  is_empty -- zero drzew, game_object i minerałów
  erase_object
- 
+
  has_trees
  put_trees
- 
+
  has_minerals_deposit
  get_minerals
  put_minerals
- 
+
  has_game_object
  get_game_object_ID
  put_game_object
- 
+
 Funkcje kompleksowe
  is_flat_and_empty
 """
@@ -77,44 +77,44 @@ def new_field(uplands=False, minerals=None, object_ID=None, tree=False):
 			raise ValueError("pole moze miec zloza mineralow *albo* game_object *albo* drzewa")
 		arg = -1
 	return Field(type=t, arg=arg)
-	
+
 def is_flat(field):
 	return field.type == 1
-	
+
 def is_upland(field):
 	return field.type == 2
 
 def is_flat_and_empty(field):
 	return field.type == 1 and field.arg == 0
-		
+
 def is_empty(field):
 	return field.arg == 0
-	
+
 def erase_object(field):
 	return field._replace(arg=0)
-	
+
 def put_game_object(field, obj_ID):
 	return field._replace(arg=obj_ID)
 
 def put_trees(field):
 	return field._replace(arg=-1)
-	
+
 def put_minerals(field, how_much=0):
 	return field._replace(arg=-2-how_much)
 
 def has_trees(field):
 	return field.arg == -1
-	
+
 def has_minerals_deposit(field):
 	return field.arg <= -2
-	
+
 def get_minerals(field):
 	assert field.arg <= -2
 	return -(field.arg+2)
-	
+
 def has_game_object(field):
 	return field.arg > 0
-	
+
 def get_game_object_ID(field):
 	return field.arg
 
@@ -131,7 +131,7 @@ Atrybuty:
  run_command -- polecenie konsoli służące do uruchomienia
  source_file_name -- nazwa, jaką powinnien mieć plik źródłowy
  binary_file_name -- nazwa, jaką będzie mieć binarka
- 
+
 * compilation_command i run_command powinny być poleceniami, które zadziałają
 zarówno na Windowsie, jak i Linuksie! *
 
@@ -208,7 +208,7 @@ Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
  FireCommand
  BuildCommand -- program_object_ID_or_zero to ID obiektu, którego program ma być
   użyty dla nowo budowanej jednostki
- 
+
 Atrybuty tych klas muszą mieć odpowiedni typ, ale nie muszą być sensowne
 (może być np. destination=(-2,-3); type_ID musi być poprawnym identyfikatorem
 typu i direction musi przyjąć jedną z wartości DIRECTION_*).
@@ -238,7 +238,7 @@ Reprezentanci:
  StoreAction
  FireAction
  BuildAction
- 
+
 """
 StopAction = namedtuple('stop_action', [])
 MoveAction = namedtuple('move_action', ['source'])
@@ -263,7 +263,7 @@ Atrybuty:
  command -- nadany rozkaz (np. move, stop, attack itp.)(instancja *Command)
  action -- wykonana czynność (np. move, stop)(instancja *Action)
  minerals -- zależy od rodzaju obiektu
- 
+
 """
 
 GameObject = recordtype('game_object', ['player_ID', 'type_ID',],
@@ -280,7 +280,7 @@ Definiuje nowy typ obiektu.
 
 Atrybuty:
  movable -- czy obiekt potrafi się poruszać (tylko na 4 sąsiednie pola!)
- attack_range -- zasięg ataku; nie można atakować siebie; 
+ attack_range -- zasięg ataku; nie można atakować siebie;
   0 <==> obiekt nie potrafi atakować;
  gather_size -- wielkość zbiornika na minerały; 0 <==> obiekt nie potrafi wydobywać
   złóż minerałów
@@ -292,8 +292,8 @@ Atrybuty:
   jeżeli True, to zaatakowany obiekt traci minerały i jest niszczony na 100% dopiero
   wtedy, gdy zabraknie mu minerałów
  vision_range -- promień widzenia (0 <==> obiekt widzi tylko siebie)
- 
-** Obecna implementacja wyklucza (gather_size != 0 and can_store_minerals) ** 
+
+** Obecna implementacja wyklucza (gather_size != 0 and can_store_minerals) **
 """
 d = {
 	'movable' : True,
@@ -317,7 +317,7 @@ MINER_TYPE = GameObjectType(ID=MINER_TYPE_ID, name='miner', vision_range=7, gath
 						 	constructor=lambda player_ID: GameObject(type_ID=MINER_TYPE_ID, player_ID=player_ID, minerals=0))
 TANK_TYPE = GameObjectType(ID=BASE_TYPE_ID, name='tank', vision_range=7, attack_range=3, cost_of_build=10,
 						 	constructor=lambda player_ID: GameObject(type_ID=TANK_TYPE_ID, player_ID=player_ID))
-					
+
 GAME_OBJECT_TYPES_BY_ID = {
 	TANK_TYPE_ID : TANK_TYPE,
 	MINER_TYPE_ID : MINER_TYPE,
@@ -342,7 +342,7 @@ Atrybuty
  errors_output -- wyjście strumienia błędów
  parse_errors -- komunikaty błędów, jakie wystąpiły podczas parsowania wyjścia programu
  executing_command_errors -- komunikaty błędów, jakie wystąpiły podczas wykonywania komend
- 
+
 """
 
 ProgramExecution = recordtype('program_execution', ['compilation_errors', 'is_compilation_successful'],
@@ -363,7 +363,7 @@ Atrybuty
  program_code -- kod programu gracza
  language_ID -- identyfikator języka, w którym jest napisany program
  program_execution -- instancja klasy ProgramExecution, używane przez instancję klasy Game
- 
+
 """
 
 Player = recordtype('player', ['name'], {'ID':None, 'base_ID':None, 'object_IDs':[]}, doc=Player_doc)
@@ -418,23 +418,23 @@ def parse_as_str(data, max_string_length=256):
 
 	if len(data) > max_string_length:
 		return None
-	return data	
+	return data
 
 def parse_as_object_type_name(data):
 	""" Zwraca identyfikator typu jednostki lub None w przypadku
 	niepowodzenia """
-	
+
 	type_name = parse_as_str(data, max_string_length=16)
 	type_ID = OBJECT_TYPE_NAME_TO_TYPE_ID.get(type_name, None)
-	return type_ID		
-		
+	return type_ID
+
 
 
 """ Klasy """
 class FindPathProblem(aima.search.Problem):
     u""" Reprezentuje problem znajdowania najkrótszej ścieżki do wskazanego pola
     *lub jednego z jego sąsiadów*.
-    
+
     """
 
     def __init__(self, start_position, goal, gamemap):
@@ -461,12 +461,12 @@ class FindPathProblem(aima.search.Problem):
 
     def path_cost(self, c, state1, action, state2):
         return c + 1
-        
+
     def h(self, node):
     	x, y = node.state
     	return distance_between((x,y), self.goal)
-    	
-    		
+
+
 
 class GameMap (list):
 
@@ -479,9 +479,9 @@ class GameMap (list):
 		start_positions -- lista pozycji startowych (x,y);
 		 metoda reserve_next_free_start_position może zwracać pozycje startowe
 		 w innej kolejności!
-		 
+
 		* Pozycje startowe nie mogą znajdować się na skraju mapy! *
-		
+
 	    """
 
 		assert all(map(lambda (x,y): 0<x<size-1 and 0<y<size-1, start_positions)) # check start positions
@@ -489,18 +489,18 @@ class GameMap (list):
 		super(GameMap, self).__init__(  [[new_field() for y in xrange(size)] for x in xrange(size)]  )
 		self._free_start_positions = start_positions
 		self.size = size
-		
+
 	def reserve_next_free_start_position(self):
 		"""
 		Nigdy nie zwraca dwa razy tej samej pozycji startowej.
-		
+
 		Jako wolną pozycję startową traktuje się taką pozycję, że ta pozycja oraz
 		cztery sąsiadujące do niej pola są puste i płaskie.
-		
+
 		Może rzucić NoFreeStartPositions.
-		
+
 		"""
-		
+
 		for i in self._free_start_positions:
 			x, y = i
 			fields = (self[x][y], self[x][y-1], self[x][y+1], self[x+1][y], self[x-1][y])
@@ -508,42 +508,42 @@ class GameMap (list):
 				self._free_start_positions.remove(i)
 				return i
 		raise NoFreeStartPositions()
-		
+
 	def is_valid_position(self, x, y):
 		"""
 		Sprawdza, czy podane współrzędne mieszczą się w granicach mapy. Pomaga
 		zapobiegać IndexErrorom.
-		
+
 		"""
-		
+
 		return x>=0 and y>=0 and x<self.size and y<self.size
-	
+
 	def find_path_from_to(self, source, dest):
 		""" Zwraca kierunek, w którym należy pójść od source do dest
 		lub None, jeśli się	nie da dojść do celu *i żadnego jego sąsiada*
 		lub gdy znajduje się już na docelowym polu. """
-		
+
 		if source == dest:
 			return None
-		
+
 		problem = FindPathProblem(source, dest, self)
 		result_node = aima.search.astar_search(problem)
 		if result_node == None: # no path found
 			return None
-			
+
 		previous_node = None
 		while result_node.parent != None:
 			result_node, previous_node = result_node.parent, result_node
-			
+
 		next_x, next_y = previous_node.state
 		delta_x, delta_y = next_x-source[0], next_y-source[1]
-		
+
 		if is_flat_and_empty(self[next_x][next_y]):
-			return RAY_TO_DIRECTION[(delta_x, delta_y)]	
-	
+			return RAY_TO_DIRECTION[(delta_x, delta_y)]
+
 	def __str__(self):
 		""" Wielowierszowa reprezentacja mapy """
-	
+
 		s = "Map (size=%d)\n" % self.size
 		for y in xrange(self.size):
 			for x in xrange(self.size):
@@ -559,8 +559,8 @@ class GameMap (list):
 				s += " "
 			s += "\n"
 		return s
-				
-	    	    
+
+
 
 class Game (object):
 
@@ -572,10 +572,10 @@ class Game (object):
 		  name i program_code
 
 		"""
-		
+
 		assert isinstance(game_map, GameMap)
 		assert isinstance(players, list)
-		
+
 		self.minerals_for_base_at_start = 50
 		self.probability_of_mineral_deposit_growing = 0.1
 		self.probability_of_successful_attack_on_alien = 0.5
@@ -584,31 +584,31 @@ class Game (object):
 		self._map = game_map
 		self._objects_by_ID = {}
 		self._players_by_ID = {}
-		self._objects_counter = Counter(1)		
-		self._players_counter = Counter(1)	
+		self._objects_counter = Counter(1)
+		self._players_counter = Counter(1)
 		self._messages = []
-		
+
 		map(self.add_player, players)
-			
+
 	def add_player(self, player, program_for_base=None):
 		"""
 		Dodaje nowego gracza, bazę z minerałami na wolnej pozycji startowej
 		oraz 4 minery dookoła bazy.
-		
+
 		player powinien mieć prawidłowo ustawione program_code i language_ID!
-		
+
 		Może rzucić NoFreeStartPositions.
-		
+
 		"""
-	
+
 		if program_for_base == None:
 			program_for_base = Program()
-	
+
 		assert isinstance(player, Player)
 		assert isinstance(program_for_base, Program)
-	
+
 		x, y = self._map.reserve_next_free_start_position() # może rzucić NoFreeStartPositions
-	
+
 		# add player
 		player.ID = self._players_counter()
 		self._players_by_ID[player.ID] = player
@@ -619,21 +619,21 @@ class Game (object):
 		base.minerals = self.minerals_for_base_at_start
 		self._add_game_object(base, x, y)
 		player.base_ID = base.ID
-		
+
 		# add miners
 		miner = MINER_TYPE.constructor(player.ID)
 		self._add_game_object(miner, x+1, y)
 		self._add_game_object(miner.copy(), x-1, y)
 		self._add_game_object(miner.copy(), x, y+1)
-		self._add_game_object(miner.copy(), x, y-1)						
-		
+		self._add_game_object(miner.copy(), x, y-1)
+
 	def set_program(self, object_ID, program):
 		assert object_ID in self._objects_by_ID
 		assert isinstance(program, Program)
-		
+
 		obj = self._objects_by_ID[object_ID]
 		obj.program = program
-		
+
 	def tic(self):
 		self._tic_for_world()
 		self._compile_and_run_programs()
@@ -641,21 +641,21 @@ class Game (object):
 		self._parse_programs_outputs()
 		self._run_commands()
 		self._answer_messages()
-		
+
 	def _tic_for_world(self):
 		"""
 		Modyfikuje przyrodę:
 		 - odnawia złoża minerałów
-		
+
 		"""
-		
+
 		for x in xrange(self._map.size):
 			for y in xrange(self._map.size):
 				if has_minerals_deposit(self._map[x][y]):
 					if random.random() < self.probability_of_mineral_deposit_growing:
 						field = self._map[x][y]
 						self._map[x][y] = put_minerals(field, get_minerals(field)+1)
-		
+
 	def _compile_and_run_programs(self):
 		def make_input_for(obj):
 			obj_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
@@ -698,8 +698,8 @@ class Game (object):
 			))
 			input_data += '\n'.join(map(lambda m: '%d %s' % (m.sender_ID, m.text), obj.messages))
 			return input_data
-				
-	
+
+
 		for object_ID, obj in self._objects_by_ID.items():
 			sha = hashlib.sha1()
 			sha.update(obj.program.code)
@@ -719,51 +719,51 @@ class Game (object):
 				output = ''
 				errors_output = ''
 				is_run_successful = True
-			
+
 			else:
 				# compilation
 				if not os.path.exists(binary_file_path): # if compilation is needed
 					s = open('cache/source', 'w')
 					s.write(obj.program.code)
 					s.close()
-					
-					_, errors_output, exit_code = self._bash_executor(language.compilation_command, 
+
+					_, errors_output, exit_code = self._bash_executor(language.compilation_command,
 						{'cache/source':language.source_file_name},
 						{language.binary_file_name:binary_file_path},
 					)
 					compilation_successful = exit_code == 0
-					
+
 					obj.program_execution = ProgramExecution(
 						compilation_errors=errors_output,
 						is_compilation_successful=compilation_successful,
 					)
-			
+
 				# run!
 				if os.path.exists(binary_file_path): #obj.program_execution.is_compilation_successful:
-					output, errors_output, exit_code = self._bash_executor(language.run_command, 
+					output, errors_output, exit_code = self._bash_executor(language.run_command,
 						{'cache/binary':language.binary_file_name},
 						input_data=input_data,
 					)
 					is_run_successful = exit_code == 0
-					
+
 				else:
 					output = ''
 					errors_output = ''
 					is_run_successful = False
-				
+
 			# finishing
 			obj.program_execution.output = output
 			obj.program_execution.errors_output = errors_output
 			obj.program_execution.is_run_successful = is_run_successful
-			obj.program_execution.input = input_data	
-				
+			obj.program_execution.input = input_data
+
 
 	def _clear_messages(self):
 		self._messages = []
 
 		for game_object in self._objects_by_ID.values():
 			game_object.command = None
-			game_object.messages = []		
+			game_object.messages = []
 
 	def _parse_programs_outputs(self):
 		commands = {} # commands { <name of command> : { <number of args> : ( <signature>, <function returning (object_ID, *Command)> ) }}
@@ -775,7 +775,7 @@ class Game (object):
 		}
 		commands['move'] = commands['m'] = {
 			2 : (
-					(parse_as_direction,), 
+					(parse_as_direction,),
 					lambda direction: MoveCommand(direction=direction),
 				),
 			3 : (
@@ -819,7 +819,7 @@ class Game (object):
 		for object_ID, obj in self._objects_by_ID.items():
 			output = obj.program_execution.output
 			obj.program_execution.parse_errors = ''
-			
+
 			for line_no, line in enumerate(output.split('\n')):
 				splited_line = line.split()
 				if len(splited_line) == 0: # empty line
@@ -839,7 +839,7 @@ class Game (object):
 					if command_as_int != None: # mamy polecenie wysłania message zamiast komendy
 
 						message_text = line[len(command_as_string)+1:]
-						
+
 						if command_as_int == 0:
 							message = Message(sender=obj.ID, receiver_ID=0, text=message_text)
 							self._messages.append(message)
@@ -850,20 +850,20 @@ class Game (object):
 
 							message = Message(sender_ID=obj.ID, receiver_ID=receiver.ID, text=message_text)
 							receiver.messages.append(message)
-							
+
 					else: # mamy komendę, a nie polecenie wysłania message
-				
+
 						# search command
 						signatures_with_functions_by_number_of_args = commands.get(command_as_string, None)
 						if signatures_with_functions_by_number_of_args == None:
 							raise ParseError(texts.parse_errors['unknown_command'] % errors_info)
-				
+
 						# check number of args
 						signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
 						if signature_with_function == None:
 							raise ParseError(texts.parse_errors['wrong_number_of_argument'] % errors_info)
 						signature, method = signature_with_function
-					
+
 						# convert args
 						args = []
 						for i, (function, arg) in enumerate(zip(signature, args_of_command)):
@@ -873,69 +873,69 @@ class Game (object):
 								errors_info['invalid_arg_no'] = i+1
 								raise ParseError(texts.parse_errors['invalid_argument'] % errors_info)
 							args.append(result)
-				
+
 						command = method(*args)
 						self._objects_by_ID[object_ID].command = command
 
 				except ParseError as ex:
 					obj.program_execution.parse_errors += ex.args[0]
-		
+
 		# set default commands
 		for obj in self._objects_by_ID.values():
 			if obj.command == None:
 				obj.program_execution.parse_errors += texts.warnings['no_command_for_object'] % {'object_ID':obj.ID}
 				obj.command = StopCommand()
-		
+
 	def _run_commands(self):
 		def execute_stop_command_of(obj, command):
 			""" Patrz execute_move_command_of """
-			
+
 			obj.action = StopAction()
-			
+
 		def execute_move_command_of(obj, command):
 			"""
 			Wykonuje komendę command obiektu obj uwzględniając zasady gry:
 			 - jeśli obiekt nie posiada umiejętności poruszania się, obiekt nie zostaje
 			przemieszony,
 			 - jeśli docelowe miejsce jest zajęte, nie przemieszcza obiektu,
-			
+
 			Jeśli przemieszczenie *nie* zakończyło się sukcesem, rzuca ExecutingCommandError.
 			W przeciwnym razie ustawia obj.action.
-			
+
 			"""
-		
+
 			delta_x, delta_y = DIRECTION_TO_RAY[command.direction]
 			dest_x, dest_y = obj.x+delta_x, obj.y+delta_y
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
-			
+
 			if not object_type.movable:
 				raise ExecutingCommandError(texts.executing_command_errors['object_not_movable'] % errors_info)
 
 			if not self._map.is_valid_position(dest_x, dest_y):
 				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)
-			
+
 			dest_field = self._map[dest_x][dest_y]
 			if not is_empty(dest_field):
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_move_field_not_empty'] % errors_info)
-		
+
 			obj.action = MoveAction(source=(obj.x, obj.y))
 			self._move_object_to(obj, (dest_x, dest_y))
-		
+
 		def execute_complex_move_command_of(obj, command):
 			""" Patrz execute_move_command_of """
-			
+
 			source = (obj.x, obj.y)
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			dest_x, dest_y = command.destination
 			errors_info = {'object_ID':obj.ID}
 
 			if not object_type.movable:
-				raise ExecutingCommandError(texts.executing_command_errors['object_not_movable'] % errors_info)			
-			
+				raise ExecutingCommandError(texts.executing_command_errors['object_not_movable'] % errors_info)
+
 			if not self._map.is_valid_position(dest_x, dest_y):
-				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)			
-			
+				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)
+
 			if (dest_x, dest_y) == source:
 				pass
 			else:
@@ -943,9 +943,9 @@ class Game (object):
 				if direction == None:
 					raise ExecutingCommandError(texts.executing_command_errors['no_path'])
 				else:
-					obj.action = MoveAction(source=(obj.x, obj.y))				
+					obj.action = MoveAction(source=(obj.x, obj.y))
 					self._move_object_to_direction(obj, direction)
-	
+
 		def execute_gather_command_of(obj, command):
 			""" Patrz execute_move_command_of """
 
@@ -954,7 +954,7 @@ class Game (object):
 			dest_x, dest_y = obj.x + delta_x, obj.y + delta_y
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
-			
+
 			if object_type.gather_size == 0:
 				raise ExecutingCommandError(texts.executing_command_errors['object_cannot_gather'] % errors_info)
 
@@ -962,7 +962,7 @@ class Game (object):
 				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)
 
 			field = self._map[dest_x][dest_y]
-		
+
 			if not has_minerals_deposit(field):
 
 				if not has_game_object(field):
@@ -974,9 +974,9 @@ class Game (object):
 
 				if not dest_obj_type.can_store_minerals:
 					raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_destination_object_cannot_store_minerals'] % errors_info)
-			
+
 				obj.action = StoreAction(storage_ID=dest_object_ID)
-				self._store_minerals_from_obj_to_obj(obj, dest_obj) 
+				self._store_minerals_from_obj_to_obj(obj, dest_obj)
 
 			else:
 
@@ -987,34 +987,34 @@ class Game (object):
 				how_much_minerals_in_deposit = get_minerals(field)
 				if how_much_minerals_in_deposit == 0:
 					raise ExecutingCommandError(texts.executing_command_errors['cannot_gather_mineral_deposit_is_empty'] % errors_info)
-			
+
 				obj.action = GatherAction(destination=(dest_x, dest_y))
 				how_much_minerals = min(how_much_minerals_can_get_obj, how_much_minerals_in_deposit)
 				self._store_minerals_from_deposit_to_obj((dest_x, dest_y), obj, how_much_minerals)
-		
+
 		def execute_complex_gather_command_of(obj, command):
 			""" Patrz execute_move_command_of """
-			
+
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			player = self._players_by_ID[obj.player_ID]
 			errors_info = {'object_ID':obj.ID}
-			
+
 			if object_type.gather_size == 0:
 				raise ExecutingCommandError(texts.executing_command_errors['object_cannot_gather'] % errors_info)
-				
+
 			if not object_type.movable:
-				raise ExecutingCommandError(texts.executing_command_errors['object_not_movable'] % errors_info)		
+				raise ExecutingCommandError(texts.executing_command_errors['object_not_movable'] % errors_info)
 
 			if obj.minerals < object_type.gather_size:
 				dest_x, dest_y = command.destination
-				
+
 				if not self._map.is_valid_position(dest_x, dest_y):
 					raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)
-					
+
 				field = self._map[dest_x][dest_y]
 				if not has_minerals_deposit(field):
 					raise ExecutingCommandError(texts.executing_command_errors['cannot_complex_gather_destination_has_no_deposit'] % errors_info)
-				
+
 				if distance_between((obj.x, obj.y), (dest_x, dest_y)) == 1:
 					obj.action = GatherAction(destination=(dest_x, dest_y))
 					self._store_minerals_from_deposit_to_obj((dest_x, dest_y), obj, 1)
@@ -1025,12 +1025,12 @@ class Game (object):
 					else:
 						obj.action = MoveAction(source=(obj.x, obj.y))
 						self._move_object_to_direction(obj, direction)
-				
+
 			else:
 				base = self._objects_by_ID.get(player.base_ID, None)
 				if base == None:
 					raise ExecutingCommandError(texts.executing_command_errors['no_base_no_gather'] % errors_info)
-					
+
 				if distance_between((obj.x, obj.y), (base.x, base.y)) == 1:
 					obj.action = StoreAction(storage_ID=base.ID)
 					self._store_minerals_from_obj_to_obj(obj, base)
@@ -1039,48 +1039,48 @@ class Game (object):
 					if direction == None:
 						raise ExecutingCommandError(texts.executing_command_errors['no_path'] % errors_info)
 					else:
-						obj.action = MoveAction(source=(obj.x, obj.y))					
+						obj.action = MoveAction(source=(obj.x, obj.y))
 						self._move_object_to_direction(obj, direction)
-			
+
 		def execute_fire_command_of(obj, command):
 			""" Patrz execute_move_command_of """
 
 			dest_x, dest_y = command.destination
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
-						
+
 			if object_type.attack_range == 0:
 				raise ExecutingCommandError(texts.executing_command_errors['object_cannot_attack'] % errors_info)
-			
+
 			if not self._map.is_valid_position(dest_x, dest_y):
 				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)
-				
+
 			distance = distance_between((obj.x,obj.y),(dest_x,dest_y))
 			if object_type.attack_range < distance:
 				errors_info['distance'], errors_info['attack_range'] = distance, object_type.attack_range
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_destination_too_far'] % errors_info)
 			if distance == 0:
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_attack_itself'] % errors_info)
-		
+
 			obj.action = FireAction(destination=(dest_x, dest_y))
 			self._attack(dest_x, dest_y)
 
 		def execute_complex_attack_command_of(obj, command):
 			""" Patrz execute_move_command_of """
-			
+
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			dest_x, dest_y = command.destination
 			errors_info = {'object_ID':obj.ID, 'x':dest_x, 'y':dest_y}
-			
+
 			if object_type.attack_range == 0:
 				raise ExecutingCommandError(texts.executing_command_errors['object_cannot_attack'] % errors_info)
-				
+
 			if not self._map.is_valid_position(dest_x, dest_y):
-				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)			
-				
+				raise ExecutingCommandError(texts.executing_command_errors['invalid_position'] % errors_info)
+
 			if not object_type.movable:
 				raise ExecutingCommandError(texts.executing_command_errors['object_not_movable'] % errors_info)
-				
+
 			dest_field = self._map[dest_x][dest_y]
 			if has_game_object(dest_field):
 				dest_object = self._objects_by_ID[get_game_object_ID(dest_field)]
@@ -1089,7 +1089,7 @@ class Game (object):
 				else:
 					obj.action = FireAction(destination=(dest_x, dest_y))
 					self._attack(dest_x, dest_y)
-			
+
 			else:
 				the_nearest_alien = _get_the_nearest_alien_in_attack_range_to(obj)
 				if the_nearest_alien != None:
@@ -1100,9 +1100,9 @@ class Game (object):
 					if direction == None:
 						raise ExecutingCommandError(texts.executing_command_errors['no_path'])
 					else:
-						obj.action = MoveAction(source=(obj.x, obj.y))					
-						self._move_object_to_direction(obj, direction)					
-					
+						obj.action = MoveAction(source=(obj.x, obj.y))
+						self._move_object_to_direction(obj, direction)
+
 
 		def execute_build_command_of(builder_object, command):
 			""" Patrz execute_move_command_of """
@@ -1119,19 +1119,19 @@ class Game (object):
 
 			built_object_type = GAME_OBJECT_TYPES_BY_ID[type_ID]
 			builder_object_type = GAME_OBJECT_TYPES_BY_ID[builder_object.type_ID]
-			errors_info = {'object_ID':builder_object.ID, 'built_object_name':built_object_type.name}		
+			errors_info = {'object_ID':builder_object.ID, 'built_object_name':built_object_type.name}
 
 			if not builder_object_type.can_build:
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_build_object_cannot_build'] % errors_info)
-				
+
 			if built_object_type.cost_of_build == -1:
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_build_built_object_cannot_be_built'] % errors_info)
-				
+
 			if builder_object.minerals < built_object_type.cost_of_build:
 				errors_info['minerals_in_builder'] = builder_object.minerals
 				errors_info['required_minerals'] = built_object_type.cost_of_build
 				raise ExecutingCommandError(texts.executing_command_errors['cannot_build_too_few_minerals'] % errors_info)
-				
+
 			for dest_x, dest_y in destinations:
 				if self._map.is_valid_position(dest_x, dest_y):
 					field = self._map[dest_x][dest_y]
@@ -1148,13 +1148,13 @@ class Game (object):
 								raise ExecutingCommandError(texts.executing_command_errors['build_warning_unknown_object_ID'] % errors_info)
 							built_object.program = program_object.program.copy()
 						return
-			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_no_free_space'] % errors_info)			
-	
+			raise ExecutingCommandError(texts.executing_command_errors['cannot_build_no_free_space'] % errors_info)
+
 		def _get_the_nearest_alien_in_attack_range_to(obj):
 			obj_x, obj_y = obj.x, obj.y
 			object_type = GAME_OBJECT_TYPES_BY_ID[obj.type_ID]
 			attack_range = object_type.attack_range
-			
+
 			the_distance = 9999999
 			the_nearest_alien = None
 			for x in xrange(obj_x-attack_range, obj_x+attack_range+1):
@@ -1168,9 +1168,9 @@ class Game (object):
 								if distance < the_distance:
 									the_distance = distance
 									the_nearest_alien = alien
-								
+
 			return the_nearest_alien
-	
+
 		commands = {
 			StopCommand : execute_stop_command_of,
 			MoveCommand : execute_move_command_of,
@@ -1179,12 +1179,12 @@ class Game (object):
 			ComplexGatherCommand : execute_complex_gather_command_of,
 			FireCommand : execute_fire_command_of,
 			ComplexAttackCommand : execute_complex_attack_command_of,
-			BuildCommand : execute_build_command_of,															
+			BuildCommand : execute_build_command_of,
 		}
-	
+
 		for obj in self._objects_by_ID.values():
-			obj.program_execution.executing_command_errors = ''	
-	
+			obj.program_execution.executing_command_errors = ''
+
 		objects_by_ID = self._objects_by_ID.keys()
 		random.shuffle(objects_by_ID)
 		for object_ID in objects_by_ID:
@@ -1192,7 +1192,7 @@ class Game (object):
 			if obj == None: # jednostka mogła już zostać zniszczona przez atak innej jednostki; usunięcie jednostki z self._objects_by_ID nie ma wpływu na objects_by_ID
 				continue
 			obj.action = StopAction()
-			
+
 			try:
 				method = commands[obj.command.__class__]
 				method(obj, obj.command)
@@ -1202,47 +1202,47 @@ class Game (object):
 
 	def _answer_messages(self):
 		""" Odpowiada na messages z zapytaniami wysłane do systemu gry. """
-		
+
 		for message in self._messages:
 			text = message.text
 			sender_ID = message.sender_ID
 			sender = self._objects_by_ID.get(sender_ID, None)
 			if sender == None:
 				continue
-				
+
 			splited_text = text.split()
 			if (len(splited_text) == 2 and splited_text[0].lower() == 'list' and splited_text[1].lower() == 'units') \
 				or (len(splited_text) == 1 and splited_text[0].lower() == 'lu'):
-				
+
 				player = self._players_by_ID[sender.player_ID]
 				answer_text = "%d " % len(player.object_IDs)
 				for object_ID in player.object_IDs:
 					object_type = self._objects_by_ID[object_ID].type_ID
 					answer_text += "%d %d " % (object_ID, object_type)
-				
+
 			elif (len(splited_text) == 2 and splited_text[0].lower() in ('unit', 'u')):
 				unit_ID = parse_as_int(splited_text[1])
 				if unit_ID == None:
 					continue
-				
+
 				unit = self._objects_by_ID.get(unit_ID, None)
 				if unit == None:
 					continue
-					
+
 				answer_text = "%d %d %d %d %d" % (
 					unit.ID,
 					unit.type_ID,
 					unit.x, unit.y,
 					unit.minerals if unit.type_ID != TANK_TYPE_ID else GAME_OBJECT_TYPES_BY_ID[unit.type_ID].attack_range,
 				)
-				
+
 			answer = Message(sender_ID=0, receiver_ID=sender_ID, text=answer_text)
-			sender.messages.append(answer)				
-	
+			sender.messages.append(answer)
+
 
 	def _attack(self, dest_x, dest_y):
 		""" Atakuje zadane pole """
-	
+
 		field = self._map[dest_x][dest_y]
 		if has_trees(field):
 			self._map[dest_x][dest_y] = erase_object(field)
@@ -1253,10 +1253,10 @@ class Game (object):
 			else:
 				if random.random() < self.probability_of_successful_attack_on_alien:
 					self._remove_game_object_at(dest_x, dest_y)
-	
+
 	def _add_game_object(self, game_object, x, y):
 		""" Może rzucić NotEmptyFieldException """
-		
+
 		if not is_empty(self._map[x][y]):
 			raise NotEmptyFieldException('Field (%d, %d) is not empty' % (x,y))
 		game_object.ID = self._objects_counter()
@@ -1267,47 +1267,47 @@ class Game (object):
 		self._map[x][y] = put_game_object(self._map[x][y], game_object.ID)
 
 	def _move_object_to(self, obj, dest):
-		""" * Nie zmienia obj.action! * 
+		""" * Nie zmienia obj.action! *
 		Sprawdza jedynie czy pole jest puste (może rzucić NotEmptyFieldException) """
-	
+
 		if not is_empty(self._map[dest[0]][dest[1]]):
 			raise NotEmptyFieldException()
-	
+
 		self._map[obj.x][obj.y] = erase_object(self._map[obj.x][obj.y])
 		obj.x, obj.y = dest[0], dest[1]
 		self._map[obj.x][obj.y] = put_game_object(self._map[obj.x][obj.y], obj.ID)
-		
+
 	def _move_object_to_direction(self, obj, direction):
-		""" Przemieszcza obiekt o jedno pole we wskazanym kierunku świata. 
+		""" Przemieszcza obiekt o jedno pole we wskazanym kierunku świata.
 		Sprawdza jedynie czy pole jest puste (może rzucić NotEmptyFieldException) """
-		
-		delta_x, delta_y = DIRECTION_TO_RAY[direction] 
+
+		delta_x, delta_y = DIRECTION_TO_RAY[direction]
 		next_x, next_y = delta_x+obj.x, delta_y+obj.y
-		self._move_object_to(obj, (next_x, next_y)) # may raise NotEmptyFieldException		
-		
+		self._move_object_to(obj, (next_x, next_y)) # may raise NotEmptyFieldException
+
 	def _store_minerals_from_obj_to_obj(self, obj, dest_obj):
 		""" Nie rzuca wyjątków, nie sprawdza nic! """
-	
+
 		dest_obj.minerals += obj.minerals
 		obj.minerals = 0
-		
+
 	def _store_minerals_from_deposit_to_obj(self, (source_x, source_y), dest_obj, how_much_minerals):
 		dest_obj.minerals += how_much_minerals
 		field = self._map[source_x][source_y]
 		self._map[source_x][source_y] = put_minerals(field, get_minerals(field)-how_much_minerals)
-		
+
 	def _remove_game_object_at(self, x, y):
 		""" Nie rzuca wyjątków, nie sprawdza nic! """
-	
+
 		field = self._map[x][y]
 		object_ID = get_game_object_ID(field)
 		obj = self._objects_by_ID[object_ID]
 		self._map[x][y] = erase_object(field)
-		del self._objects_by_ID[object_ID]		
+		del self._objects_by_ID[object_ID]
 
 		player = self._players_by_ID[obj.player_ID]
 		player.object_IDs.remove(object_ID)
 		if player.base_ID == object_ID:
-			player.base_ID = None		
+			player.base_ID = None
 
 

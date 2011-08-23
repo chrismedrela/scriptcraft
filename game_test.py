@@ -5,12 +5,7 @@ import unittest
 import game
 
 def basic_test():	
-	tprogram_code_for_base = """
-print '2 bl bl'
-print '3 no no'
-print '1 a a '
-print 'build 6'
-	"""
+	tprogram_code_for_base = """print "2 bl bl"\nprint '3 no no'\nprint '1 a a '\nprint 'build 6'\n"""
 	
 	tgame = game.Game(game_map=game.GameMap(size=16, start_positions=[(2,2),(14,2),(2,14)]), players=[])
 	tgame.add_player(game.Player(name='Bob'), game.Program(code=tprogram_code_for_base, language_ID=game.PYTHON_LANGUAGE_ID))
@@ -30,8 +25,8 @@ print 'build 6'
 			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.executing_command_errors.split('\n')))
 			print "\n".join(map(lambda x: ' '*4+x, v.program_execution.output.split('\n')))
 
-		#print '\n\n'
-		#print tgame._objects_by_ID[1].program_execution.errors_output
+		print '\n\n'
+		print tgame._objects_by_ID[1].program_execution.errors_output
 		print '\n\n\n\n'
 		print tgame._map
 		
