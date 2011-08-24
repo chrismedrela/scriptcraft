@@ -55,7 +55,7 @@ class TestSCParser(unittest.TestCase):
 	def test_build_command(self):
 		p = Parser("BUILD TANK", 2)
 		self.assertEqual(p.invalid_lines_numbers, [])
-		self.assertEqual(p.commands, [cmds.BuildCommand(units.TANK_TYPE_ID)])
+		self.assertEqual(p.commands, [cmds.BuildCommand("tank")])
 
 
 
@@ -63,16 +63,6 @@ class TestSCParser(unittest.TestCase):
 		p = Parser("MOVE e", 2)
 		self.assertEqual(p.invalid_lines_numbers, [])
 		self.assertEqual(p.commands, [cmds.MoveCommand(direction.E)])	
-		
-	def test_unit_type_by_ID(self):
-		p = Parser("BUILD 5", 2)
-		self.assertEqual(p.invalid_lines_numbers, [])
-		self.assertEqual(p.commands, [cmds.BuildCommand(units.MINER_TYPE_ID)])
-		
-	def test_unit_type_by_short_name(self):
-		p = Parser("BUILD B", 2)
-		self.assertEqual(p.invalid_lines_numbers, [])	
-		self.assertEqual(p.commands, [cmds.BuildCommand(units.BASE_TYPE_ID)])	
 		
 	def test_command_by_short_name(self):
 		p = Parser("M s", 2)
@@ -130,19 +120,28 @@ class TestSCParser(unittest.TestCase):
 		
 		
 		
-class TestEfficiencyParsingMessages(unittest.TestCase):
+class TestEfficiencyParsingLongMessages(unittest.TestCase):
 	def setUp(self):
 		self.input_data = ('5 ' + 'ab jh\t @6'*100 + '\n')*20
 
-	@ max_time(1)
+	@ max_time(1, repeat=3)
 	def test(self):
 		p = Parser(self.input_data, 2)
 		
+class TestEfficiencyParsingManyMessages(unittest.TestCase):
+	def setUp(self):
+		self.input_data = '5\n'*5000
+
+	@ max_time(50, repeat=3)
+	def test(self):
+		p = Parser(self.input_data, 2)
+				
+		
 class TestEfficiencyParsingCommands(unittest.TestCase):
 	def setUp(self):
-		self.input_data = ('  MOVE 6\t4\n')*1000
+		self.input_data = ('S\n')*5000
 
-	@ max_time(1)
+	@ max_time(150, repeat=3)
 	def test(self):
 		p = Parser(self.input_data, 2)
 		
@@ -151,7 +150,7 @@ class TestEfficiencyParsingInvalidInput(unittest.TestCase):
 		self.input_data = 'MOVE ' + '1 '*500 + '\n' \
 			+ ' s \n'*1000
 
-	@ max_time(1)
+	@ max_time(30, repeat=3)
 	def test(self):
 		p = Parser(self.input_data, 2)
 
@@ -159,7 +158,7 @@ class TestEfficiencyParsingBlankInput(unittest.TestCase):
 	def setUp(self):
 		self.input_data = '  \t \n'*2500
 
-	@ max_time(1)
+	@ max_time(10, repeat=3)
 	def test(self):
 		p = Parser(self.input_data, 2)
 		

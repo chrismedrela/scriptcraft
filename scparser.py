@@ -7,25 +7,11 @@ from message import Message
 import direction
 import cmds
 import units
-	
+
 
 # -----------------------------------------------------------------------------
-# globals 
+# some usefull functions
 # -----------------------------------------------------------------------------
-
-_DIRECTIONS_BY_NAME = {
-	'N' : direction.N,
-	'E' : direction.E,
-	'S' : direction.S,
-	'W' : direction.W
-}
-
-_UNIT_TYPE_NAME_TO_TYPE_ID = {
-	'TANK':units.TANK_TYPE_ID, 'T':units.TANK_TYPE_ID, '6':units.TANK_TYPE_ID,
-	'MINER':units.MINER_TYPE_ID, 'M':units.MINER_TYPE_ID, '5':units.MINER_TYPE_ID,
-	'BASE':units.BASE_TYPE_ID, 'B':units.BASE_TYPE_ID, '4':units.BASE_TYPE_ID,
-}
-
 
 def _parse_as_int(data):
 	""" W przypadku niepowodzenia zwraca None """
@@ -42,7 +28,7 @@ def _parse_as_direction(data):
 	identyfikator kierunku świata (direction.W itp.). """
 
 	try:
-		return _DIRECTIONS_BY_NAME[data.upper()]
+		return direction.BY_NAME[data.upper()]
 	except KeyError:
 		return None
 
@@ -54,23 +40,35 @@ def _parse_as_str(data, max_string_length=256):
 		return None
 	return data
 
-def _parse_as_object_type_name(data):
-	""" Zwraca identyfikator typu jednostki lub None w przypadku
-	niepowodzenia """
-
-	type_name = _parse_as_str(data, max_string_length=16)
-	type_ID = _UNIT_TYPE_NAME_TO_TYPE_ID.get(type_name, None)
-	return type_ID
+def _split_to_word_and_rest(line):
+	splited_line = line.split(None, 1)
+	command = splited_line[0]
+	rest = splited_line[1] if len(splited_line) >= 2 else ''
+	return command, rest
 
 
-commands = {} # commands { <name of command> : { <number of args> : ( <signature>, <function returning (object_ID, *Command)> ) }}
-commands['stop'] = commands['s'] = {
+
+# -----------------------------------------------------------------------------
+# globals 
+# -----------------------------------------------------------------------------
+# _COMMANDS = {
+#	<name of command> : {
+#		<number of args> : 
+#			(	<signature>,
+#				<function returning (cmds.*Command)>,
+#			) 
+#	}
+# }
+
+_COMMANDS = {}
+
+_COMMANDS['STOP'] = _COMMANDS['S'] = {
 	0 : (
 			(_parse_as_int,),
 			lambda : cmds.StopCommand(),
 		),
 }
-commands['move'] = commands['m'] = {
+_COMMANDS['MOVE'] = _COMMANDS['M'] = {
 	1 : (
 			(_parse_as_direction,),
 			lambda direction: cmds.MoveCommand(direction=direction),
@@ -80,28 +78,28 @@ commands['move'] = commands['m'] = {
 			lambda x, y: cmds.ComplexMoveCommand(dest_pos=(x,y)),
 		),
 }
-commands['gather'] = commands['g'] = {
+_COMMANDS['GATHER'] = _COMMANDS['G'] = {
 	2 : (
 			(_parse_as_int, _parse_as_int),
 			lambda x, y: cmds.ComplexGatherCommand(dest_pos=(x,y)),
 		),
 }
-commands['fire'] = commands['f'] = {
+_COMMANDS['FIRE'] = _COMMANDS['F'] = {
 	2 : (
 			(_parse_as_int, _parse_as_int),
 			lambda x, y: cmds.FireCommand(dest_pos=(x,y)),
 		),
 }
-commands['attack'] = commands['a'] = {
+_COMMANDS['ATTACK'] = _COMMANDS['A'] = {
 	2 : (
 			(_parse_as_int, _parse_as_int),
 			lambda x, y: cmds.ComplexAttackCommand(dest_pos=(x,y)),
 		),
 }
-commands['build'] = commands['b'] = {
+_COMMANDS['BUILD'] = _COMMANDS['B'] = {
 	1 : (
-			(_parse_as_object_type_name,),
-			lambda type_ID: cmds.BuildCommand(unit_type_ID=type_ID),
+			(_parse_as_str,),
+			lambda type_name: cmds.BuildCommand(unit_type_name=type_name.lower()),
 		),
 }	
 	
@@ -109,6 +107,21 @@ commands['build'] = commands['b'] = {
 
 
 class Parser (object):
+	"""
+	W konstruktorze podajemy:
+	 input_data -- dane do sparsowania (może być wiele wierszy)
+	 sender_ID -- będzie używane jako nadawca dla message.Message.
+	 
+	Dane są parsowane *w konstruktorze* - po utworzeniu parsera mamy już
+	sparsowane dane.
+	
+	Atrybuty dostępne po utworzeniu obiektu:
+	 commands : list<cmds.*Command>
+	 messages : list<message.Message>
+	 invalid_lines_numbers : list<int> -- wiersze są numerowane od jeden
+	
+	"""
+
 	def __init__(self, input_data, sender_ID):
 		self.sender_ID = sender_ID
 		self.messages = []
@@ -120,30 +133,26 @@ class Parser (object):
 	def	_parse_input_data(self, input_data):
 		for line_index, line in enumerate(input_data.split('\n')):
 			self._line_no = line_index+1
-			self._parse_line(line)
-			
-	def _parse_line(self, line):
-		line = line.strip()
-		if len(line) == 0:
-			return
-			
-		command, rest_of_line = self._split_to_word_and_rest(line)
-		command_as_int = _parse_as_int(command)
-		if command_as_int == None:
-			self._parse_command(command, rest_of_line)
-		else:
-			rest_of_line = line[len(command)+1:]
-			self._parse_message(command_as_int, rest_of_line)
-		
-	def _split_to_word_and_rest(self, line):
-		splited_line = line.split(None, 1)
-		command = splited_line[0]
-		rest = splited_line[1] if len(splited_line) >= 2 else ''
-		return command, rest
 
+			# empty line?
+			line = line.strip()
+			if len(line) == 0:
+				continue
+			
+			# command or message?
+			command, rest_of_line = _split_to_word_and_rest(line)
+			command_as_int = _parse_as_int(command)
+			if command_as_int == None: # command
+				self._parse_command(command, rest_of_line)
+			else: # message
+				message_text = line[len(command)+1:]
+				receiver_ID = command_as_int
+				m = Message(self.sender_ID, receiver_ID, message_text)
+				self.messages.append(m)
+			
 	def _parse_command(self, command_as_string, rest_of_line):
-		command_as_string = command_as_string.lower()
-		signatures_with_functions_by_number_of_args = commands.get(command_as_string, None)
+		command_as_string = command_as_string.upper()
+		signatures_with_functions_by_number_of_args = _COMMANDS.get(command_as_string, None)
 		if signatures_with_functions_by_number_of_args == None:
 			self._invalid_line()
 		else:
@@ -169,10 +178,6 @@ class Parser (object):
 			self.commands.append(command)	
 			
 	def _invalid_line(self):
-		self.invalid_lines_numbers.append(self._line_no)		
-	
-	def _parse_message(self, receiver_ID, rest_of_line):
-		m = Message(self.sender_ID, receiver_ID, rest_of_line)
-		self.messages.append(m)
+		self.invalid_lines_numbers.append(self._line_no)
 
 
