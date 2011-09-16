@@ -106,7 +106,7 @@ _COMMANDS['BUILD'] = _COMMANDS['B'] = {
 
 
 
-class Parser (object):
+class Parse (object):
 	"""
 	W konstruktorze podajemy:
 	 input_data -- dane do sparsowania (może być wiele wierszy)
