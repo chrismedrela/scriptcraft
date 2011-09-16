@@ -1,6 +1,6 @@
 t1      x       3       zmienić Parser => Parse
 t2      .       t7      napisać klasę typu namedtuple pozwalającą na dodawanie doców i metod (utils/immutable)
-t3      .       1       tools.py => utils.py
+t3      x       1       tools.py => utils.py
 t4      .       t6      utils/constant and utils/enumerator
 t5      .       4       klasa Field(namedtuple)
 t6      .       2       utils_test/constant and utils_test/enumerator
