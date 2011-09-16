@@ -1,0 +1,31 @@
+t1      .       3       zmienić Parser => Parse
+t2      .       t7      napisać klasę typu namedtuple pozwalającą na dodawanie doców i metod (utils/immutable)
+t3      .       1       tools.py => utils.py
+t4      .       t6      utils/constant and utils/enumerator
+t5      .       4       klasa Field(namedtuple)
+t6      .       2       utils_test/constant and utils_test/enumerator
+t7      .       2       utils_test/immutable
+t8      .       4       klasa GameConfiguration
+t9      .       4       klasa CompilationStatus
+t10     .       4       klasa RunningStatus
+t11     .       4       klasa ParsingStatus
+t12     .       4       klasa ExecutionStatus
+t13     .       4       klasa Message
+t14     .       4       klasy Commands
+t15     .       3       klasa ParseAndRunProgram
+t15.1   .       .         testy
+t15.2   .       .         zaplanowanie klasy
+p1      .               wykonywanie programów (CompileAndRunProgram, Language)
+p2      x               constanty
+p3      x               struktury immutable (ale mutable dla konstruktora)
+p4      .               rodzaje ExecutionError
+p5      x               Field
+p6      x               testy
+p7      x               rozmieszczenie klas w plikach
+p8      x               zapytać o sposób, w jaki są uruchamiane programy (see p1)
+p9      x               GameMap ma metody do modyfikowania pól, Field do odczytywania
+p10     x               sposób zaznaczenia, że atrybut posiada referencję lub None
+p11     .               pseudokod Game.execute.set_action
+p12     x               stałe a zmienne atrybuty instancji
+p13     x               nazwa oddająca zwrócenie nowego obiektu
+p14     x               konwencja nazewnictwa dla enumeratorów
