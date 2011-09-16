@@ -1,20 +1,30 @@
 t1      x       3       zmienić Parser => Parse
-t2      .       t7      napisać klasę typu namedtuple pozwalającą na dodawanie doców i metod (utils/immutable)
+t2      .       2       napisać klasę typu namedtuple pozwalającą na dodawanie doców i metod (utils/immutable)
 t3      x       1       tools.py => utils.py
-t4      x       t6      utils/constant and utils/enumerator
-t5      .       4       klasa Field(namedtuple)
+t4      x       2       utils/constant and utils/enumerator
+t5      .       -       klasa Field(namedtuple)
 t6      d       2       utils_test/constant and utils_test/enumerator
 t7      x       2       utils_test/immutable
-t8      .       4       klasa GameConfiguration
-t9      .       4       klasa CompilationStatus
-t10     .       4       klasa RunningStatus
-t11     .       4       klasa ParsingStatus
-t12     .       4       klasa ExecutionStatus
-t13     .       4       klasa Message
-t14     .       4       klasy Commands
+t8      .       -       klasa GameConfiguration
+t9      d       -       klasa CompilationStatus
+t10     d       -       klasa RunningStatus
+t11     .       -       klasa ParsingStatus
+t12     .       -       klasa ExecutionStatus
+t13     .       -       klasa Message
+t14     .       -       klasy *Commands
 t15     .       3       klasa CompileAndRunProgram
-t15.1   .       .         testy
-t15.2   .       .         zaplanowanie klasy
+t15.1   .       1         testy
+t15.2   .       4         zaplanowanie klasy
+t15.3   .       3         klasa CompilationStatus i RunningStatus
+t15.4   .       2         klasa Language
+t15.5   .       3         klasa Program 
+t16     d       -       klasa Field
+t17     .       -       klasa GameMap
+t18     .       -       klasy Unit i UnitType
+t19     .       -       klasa Player
+t20     .       -       klasa FindPathProblem
+t21     .       -       klasy *Action
+t22     .       -       ExecutionError i podklasy
 p1      .               wykonywanie programów (CompileAndRunProgram, Language)
 p2      x               constanty
 p3      x               struktury immutable (ale mutable dla konstruktora)
@@ -29,4 +39,5 @@ p11     .               pseudokod Game.execute.set_action
 p12     x               stałe a zmienne atrybuty instancji
 p13     x               nazwa oddająca zwrócenie nowego obiektu
 p14     x               konwencja nazewnictwa dla enumeratorów
-p15     .               Program - star Program - no Program
+p15     x               Program - star Program - no Program
+p16     .               nazwy folderów -> wyeksportowanie do stalych
