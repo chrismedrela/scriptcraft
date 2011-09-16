@@ -29,3 +29,4 @@ p11     .               pseudokod Game.execute.set_action
 p12     x               stałe a zmienne atrybuty instancji
 p13     x               nazwa oddająca zwrócenie nowego obiektu
 p14     x               konwencja nazewnictwa dla enumeratorów
+p15     .               Program - star Program - no Program
