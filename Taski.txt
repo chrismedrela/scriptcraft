@@ -4,7 +4,7 @@ t3      x       1       tools.py => utils.py
 t4      x       t6      utils/constant and utils/enumerator
 t5      .       4       klasa Field(namedtuple)
 t6      d       2       utils_test/constant and utils_test/enumerator
-t7      .       2       utils_test/immutable
+t7      x       2       utils_test/immutable
 t8      .       4       klasa GameConfiguration
 t9      .       4       klasa CompilationStatus
 t10     .       4       klasa RunningStatus

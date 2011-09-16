@@ -5,10 +5,41 @@ __all__ = [
 	'Enum',
 	'make_enum',
 	'max_time',
+	'Immutable',
+	'mutable_method',
 ]
 
 import time
 from enum import Enum, make_enum
+
+
+class Immutable(object):
+     _mutable = False
+     def __setattr__(self, name,value):
+        if self._mutable or name == '_mutable':
+             super(Immutable,self).__setattr__(name,value)
+        else:
+             raise TypeError("Immutable type. Can't modify")
+
+     def __delattr__(self,name):
+         if self._mutable:
+             super(Immutable,self).__delattr__(name)
+         else:
+             raise TypeError("Immutable type. Can't modify")
+
+
+def mutable_method(f):
+    def func(self,*args, **kwargs):
+        if isinstance(self,Immutable):
+            old_mutable = self._mutable
+            self._mutable = True
+            res = f(self,*args, **kwargs)
+            self._mutable = old_mutable
+        else:
+            res = f(self,*args, **kwargs)
+        return res
+    return func
+    
 
 class max_time(object):
 	""" Dekorator do testów wydajnościowych - oznaczony tym dekoratorem test
