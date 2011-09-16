@@ -8,15 +8,39 @@ from utils import *
 from compileAndRunProgram import CompileAndRunProgram
 
 
-"""
-class TestParse(unittest.TestCase):
-
-	def test_basic(self):
-		p = Parse("", 2)
-		self.assertEqual(p.messages, [])
-		self.assertEqual(p.commands, [])
-		self.assertEqual(p.invalid_lines_numbers, [])
+class TestCompileAndRunProgram(unittest.TestCase):
+	def test_cpp_program(self):
+		program_text = """
+			using namespace std;
+			
+			int main() {
+				return 0;
+			}
+		"""
+		program_language = Language(
+			#TODO
+		)
+		program = Program(program_language, program_text)
+		input = ""
 		
+		status = CompileAndRunProgram(program, input)
+		
+		excepted_compilation_status = CompilationStatus(
+			error_output = '',
+			output = '',
+		)
+		excepted_running_status = RunningStatus(
+			input = input,
+			output = '',
+			err_output = '',
+		)
+		self.assertEqual(status.compilation_done, True)
+		self.assertEqual(status.compilation_status, excepted_compilation_status)
+		self.assertEqual(status.running_done, True)
+		self.assertEqual(status.running_status, excepted_running_status)
+
+
+"""	
 class TestEfficiencyParsingCommands(unittest.TestCase):
 	def setUp(self):
 		self.input_data = ('S\n')*5000
