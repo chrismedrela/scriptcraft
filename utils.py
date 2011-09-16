@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-import time
+__all__ = [
+	'Enum',
+	'make_enum',
+	'max_time',
+]
 
+import time
+from enum import Enum, make_enum
 
 class max_time(object):
 	""" Dekorator do testów wydajnościowych - oznaczony tym dekoratorem test
