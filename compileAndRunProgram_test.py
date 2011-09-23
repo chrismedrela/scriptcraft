@@ -2,6 +2,7 @@
 #-*- coding:utf-8 -*-
 
 import unittest
+import os
 
 from utils import *
 
@@ -21,7 +22,13 @@ class TestCompileAndRunProgram(unittest.TestCase):
         program_language = Language(
             #TODO
         )
-        program = Program(program_language, program_text)
+        folder = "tmp_unittest"
+        try:
+            os.mkdir(folder)
+        except OSError as ex:
+            if not ex.errno == 19:
+                raise ex
+        program = Program(program_language, program_text, folder)
         input = "input text\nbla bla"
         
         status = CompileAndRunProgram(program, input)
@@ -40,16 +47,6 @@ class TestCompileAndRunProgram(unittest.TestCase):
         self.assertEqual(status.running_done, True)
         self.assertEqual(status.running_status, excepted_running_status)
 
-
-"""    
-class TestEfficiencyParsingCommands(unittest.TestCase):
-    def setUp(self):
-        self.input_data = ('S\n')*5000
-
-    @ max_time(150, repeat=3)
-    def test(self):
-        p = Parse(self.input_data, 2)
-"""
 
 if __name__ == '__main__':
     unittest.main()
