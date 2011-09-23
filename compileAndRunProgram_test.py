@@ -20,7 +20,12 @@ class TestCompileAndRunProgram(unittest.TestCase):
             }
         """
         program_language = Language(
-            #TODO
+            ID=1,
+            name="cpp",
+            source_extension=".cpp",
+            binary_extension=".exe",
+            compilation_command="gcc source.cpp -o binary.exe",
+            running_command="./binary.exe",
         )
         folder = "tmp_unittest"
         try:

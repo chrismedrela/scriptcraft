@@ -13,7 +13,7 @@ t12     .       -       klasa ExecutionStatus
 t13     .       -       klasa Message
 t14     .       -       klasy *Commands
 t15     .       3       klasa CompileAndRunProgram
-t15.1   .       1         testy
+t15.1   x       1         testy
 t15.2   .       4         zaplanowanie klasy
 t15.3   .       3         klasa CompilationStatus i RunningStatus
 t15.4   .       2         klasa Language
@@ -26,6 +26,7 @@ t19     .       -       klasa Player
 t20     .       -       klasa FindPathProblem
 t21     .       -       klasy *Action
 t22     .       -       ExecutionError i podklasy
+t23     .       -       wyeksportowanie nazw folderow do stalych do consts.py
 p1      .               wykonywanie programów (CompileAndRunProgram, Language)
 p2      x               constanty
 p3      x               struktury immutable (ale mutable dla konstruktora)
