@@ -3,40 +3,52 @@
 
 import unittest
 import os
+import shutil
 
 from utils import *
-
 from compileAndRunProgram import CompileAndRunProgram
-
+from Language import Language
+from Program import Program
+from CompilationStatus import CompilationStatus
+from RunningStatus import RunningStatus
 
 class TestCompileAndRunProgram(unittest.TestCase):
+    def setUp(self):
+        self.folder = "tmp_unittest"
+        try:
+            os.mkdir(self.folder)
+        except OSError as ex:
+            if ex.errno != 17: # folder already exists
+                raise ex
+        try:
+            os.mkdir(os.path.join(self.folder, 'cache'))            
+        except OSError as ex:
+            if ex.errno != 17: # folder already exists
+                raise ex        
+
     def test_cpp_program(self):
         program_text = """
+            #include <stdio.h>
+        
             using namespace std;
             
             int main() {
-                printf('tekst outputowy\nala');
+                printf("tekst outputowy\\nala");
                 return 0;
             }
         """
         program_language = Language(
             ID=1,
-            name="cpp",
+            name="g++",
             source_extension=".cpp",
             binary_extension=".exe",
-            compilation_command="gcc source.cpp -o binary.exe",
-            running_command="./binary.exe",
+            compilation_command="gcc src.cpp -o bin.exe -lstdc++",
+            running_command="./bin.exe",
         )
-        folder = "tmp_unittest"
-        try:
-            os.mkdir(folder)
-        except OSError as ex:
-            if not ex.errno == 19:
-                raise ex
         program = Program(program_language, program_text)
         input = "input text\nbla bla"
         
-        status = CompileAndRunProgram(program, input, folder)
+        status = CompileAndRunProgram(program, input, self.folder)
         
         excepted_compilation_status = CompilationStatus(
             error_output = '',
@@ -45,13 +57,13 @@ class TestCompileAndRunProgram(unittest.TestCase):
         excepted_running_status = RunningStatus(
             input = input,
             output = 'tekst outputowy\nala',
-            err_output = '',
+            error_output = '',
         )
-        self.assertEqual(status.compilation_done, True)
-        self.assertEqual(status.compilation_status, excepted_compilation_status)
-        self.assertEqual(status.running_done, True)
-        self.assertEqual(status.running_status, excepted_running_status)
+        self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
+        self.assertEqual(status.maybe_running_status, excepted_running_status)
 
+    def tearDown(self):
+        shutil.rmtree(self.folder)
 
 if __name__ == '__main__':
     unittest.main()

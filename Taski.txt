@@ -14,9 +14,9 @@ t13     .       -       klasa Message
 t14     .       -       klasy *Commands
 t15     .       3       klasa CompileAndRunProgram
 t15.1   x       1         testy
-t15.2   .       4         zaplanowanie klasy
+t15.2   x       4         zaplanowanie klasy
 t15.3   x       3         klasa CompilationStatus i RunningStatus
-t15.4   .       2         klasa Language
+t15.4   x       2         klasa Language
 t15.5   x       3         klasa Program 
 t15.6   .       -         errors
 t16     d       -       klasa Field
@@ -27,7 +27,8 @@ t20     .       -       klasa FindPathProblem
 t21     .       -       klasy *Action
 t22     .       -       ExecutionError i podklasy
 t23     .       -       wyeksportowanie nazw folderow do stalych do consts.py
-p1      .               wykonywanie programów (CompileAndRunProgram, Language)
+t24     .       -       logging
+p1      x               wykonywanie programów (CompileAndRunProgram, Language)
 p2      x               constanty
 p3      x               struktury immutable (ale mutable dla konstruktora)
 p4      .               rodzaje ExecutionError
@@ -45,3 +46,5 @@ p15     x               Program - star Program - no Program
 p16     .               nazwy folderów -> wyeksportowanie do stalych
 p17     x               przekazanie wejscia do wywolywanej komendy basha
 p18     .               immutable atrybuty instancji
+p19     .               import klas bez dwukrotnego wpisywania nazwy klasy
+p20     .               raportowanie errorów w CompileAndRunProgram

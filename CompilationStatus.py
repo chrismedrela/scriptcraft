@@ -4,4 +4,4 @@
 from collections import namedtuple
 
 class CompilationStatus(namedtuple("CompilationStatus", ('output', 'error_output'))):
-    pass
+    __slots__ = ()

@@ -4,4 +4,4 @@
 from collections import namedtuple
 
 class RunningStatus(namedtuple("RunningStatus", ('input', 'output', 'error_output'))):
-    pass
+    __slots__ = ()
