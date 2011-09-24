@@ -17,7 +17,7 @@ t15.1   x       1         testy
 t15.2   .       4         zaplanowanie klasy
 t15.3   .       3         klasa CompilationStatus i RunningStatus
 t15.4   .       2         klasa Language
-t15.5   .       3         klasa Program 
+t15.5   x       3         klasa Program 
 t15.6   .       -         errors
 t16     d       -       klasa Field
 t17     .       -       klasa GameMap
