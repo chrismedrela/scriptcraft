@@ -33,10 +33,10 @@ class TestCompileAndRunProgram(unittest.TestCase):
         except OSError as ex:
             if not ex.errno == 19:
                 raise ex
-        program = Program(program_language, program_text, folder)
+        program = Program(program_language, program_text)
         input = "input text\nbla bla"
         
-        status = CompileAndRunProgram(program, input)
+        status = CompileAndRunProgram(program, input, folder)
         
         excepted_compilation_status = CompilationStatus(
             error_output = '',

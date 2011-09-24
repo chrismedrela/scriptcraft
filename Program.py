@@ -3,5 +3,5 @@
 
 from collections import namedtuple
 
-class Program(namedtuple("Program", ('code', 'language'))):
+class Program(namedtuple("Program", ('language', 'code'))):
     pass
