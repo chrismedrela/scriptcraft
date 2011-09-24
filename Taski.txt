@@ -2,7 +2,7 @@ t1      x       3       zmienić Parser => Parse
 t2      x       2       napisać klasę typu namedtuple pozwalającą na dodawanie doców i metod (utils/immutable)
 t3      x       1       tools.py => utils.py
 t4      x       2       utils/constant and utils/enumerator
-t5      .       -       klasa Field(namedtuple)
+t5      x       3       klasa Field(namedtuple)
 t6      d       2       utils_test/constant and utils_test/enumerator
 t7      x       2       utils_test/immutable
 t8      .       -       klasa GameConfiguration
@@ -19,10 +19,10 @@ t15.3   x       3         klasa CompilationStatus i RunningStatus
 t15.4   x       2         klasa Language
 t15.5   x       3         klasa Program 
 t15.6   .       -         errors
-t16     d       -       klasa Field
-t17     .       -       klasa GameMap
-t18     .       -       klasy Unit i UnitType
-t19     .       -       klasa Player
+t16     d       3       klasa Field
+t17     .       3       klasa GameMap
+t18     .       3       klasy Unit i UnitType
+t19     .       3       klasa Player
 t20     .       -       klasa FindPathProblem
 t21     .       -       klasy *Action
 t22     .       -       ExecutionError i podklasy
@@ -48,3 +48,4 @@ p17     x               przekazanie wejscia do wywolywanej komendy basha
 p18     .               immutable atrybuty instancji
 p19     .               import klas bez dwukrotnego wpisywania nazwy klasy
 p20     .               raportowanie errorów w CompileAndRunProgram
+p21     .               chronione atrybuty namedtuple
