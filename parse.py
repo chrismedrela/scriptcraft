@@ -130,7 +130,7 @@ class Parse (object):
         
         self._parse_input_data(input_data)    
         
-    def    _parse_input_data(self, input_data):
+    def _parse_input_data(self, input_data):
         for line_index, line in enumerate(input_data.split('\n')):
             self._line_no = line_index+1
 
