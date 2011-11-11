@@ -8,9 +8,9 @@ t7      x       2       utils_test/immutable
 t8      .       -       klasa GameConfiguration
 t9      d       -       klasa CompilationStatus
 t10     d       -       klasa RunningStatus
-t11     .       -       klasa ParsingStatus
+t11     .       9       klasa ParsingStatus
 t12     .       -       klasa ExecutionStatus
-t13     .       -       klasa Message
+t13     x       -       klasa Message
 t14     .       -       klasy *Commands
 t15     .       3       klasa CompileAndRunProgram
 t15.1   x       1         testy
