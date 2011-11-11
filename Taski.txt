@@ -17,8 +17,9 @@ t15.1   x       1         testy
 t15.2   x       4         zaplanowanie klasy
 t15.3   x       3         klasa CompilationStatus i RunningStatus
 t15.4   x       2         klasa Language
-t15.5   x       3         klasa Program 
+t15.5   x       3         klasa Program
 t15.6   .       -         errors
+t15.7   x		-		  poprawienie testów
 t16     d       3       klasa Field
 t17     .       3       klasa GameMap
 t18     .       3       klasy Unit i UnitType

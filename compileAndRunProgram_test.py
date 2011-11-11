@@ -12,7 +12,7 @@ from Program import Program
 from CompilationStatus import CompilationStatus
 from RunningStatus import RunningStatus
 
-class TestCompileAndRunProgram(unittest.TestCase):
+class TestBasic(unittest.TestCase):
     def setUp(self):
         self.folder = "tmp_unittest"
         try:
@@ -21,49 +21,97 @@ class TestCompileAndRunProgram(unittest.TestCase):
             if ex.errno != 17: # folder already exists
                 raise ex
         try:
-            os.mkdir(os.path.join(self.folder, 'cache'))            
+            os.mkdir(os.path.join(self.folder, 'cache'))
         except OSError as ex:
             if ex.errno != 17: # folder already exists
-                raise ex        
+                raise ex
 
     def test_cpp_program(self):
-        program_text = """
-            #include <stdio.h>
-        
-            using namespace std;
-            
-            int main() {
-                printf("tekst outputowy\\nala");
-                return 0;
-            }
-        """
-        program_language = Language(
-            ID=1,
-            name="g++",
-            source_extension=".cpp",
-            binary_extension=".exe",
-            compilation_command="gcc src.cpp -o bin.exe -lstdc++",
-            running_command="./bin.exe",
-        )
-        program = Program(program_language, program_text)
+        program_code = self._build_valid_cpp_code()
+        program = self._build_cpp_program(program_code)
         input = "input text\nbla bla"
-        
+
         status = CompileAndRunProgram(program, input, self.folder)
+
+        excepted_compilation_status = self._build_successful_compilation_status()
+        excepted_running_status = self._build_successful_running_status()
         
+        self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
+        self.assertEqual(status.maybe_running_status, excepted_running_status)
+
+    def test_environment_folder_already_exists(self):
+        try:
+            os.mkdir(os.path.join(self.folder, 'env'))
+        except OSError as ex:
+            if ex.errno != 17: # folder already exists
+                raise ex
+
+        self.test_cpp_program()
+
+    def test_invalid_program(self):
+        program_code = ""
+        program = self._build_cpp_program(program_code)
+        input = ""
+
+        status = CompileAndRunProgram(program, input, self.folder)
+
         excepted_compilation_status = CompilationStatus(
-            error_output = '',
+            error_output = "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crt1.o: In function `_start':\n(.text+0x20): undefined reference to `main'\ncollect2: ld returned 1 exit status\n",
             output = '',
         )
-        excepted_running_status = RunningStatus(
-            input = input,
-            output = 'tekst outputowy\nala',
-            error_output = '',
-        )
+        excepted_running_status = None
+        
         self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
         self.assertEqual(status.maybe_running_status, excepted_running_status)
 
     def tearDown(self):
         shutil.rmtree(self.folder)
+
+    def test_compilation_not_necessary(self):
+        program_code = self._build_valid_cpp_code()
+        program = self._build_cpp_program(program_code)
+        input = "input text\nbla bla"
+
+        status = CompileAndRunProgram(program, input, self.folder)
+        status = CompileAndRunProgram(program, input, self.folder)
+
+        excepted_compilation_status = self._build_successful_compilation_status()
+        excepted_running_status = self._build_successful_running_status()
+        
+        self.assertEqual(status.maybe_compilation_status, None)
+        self.assertEqual(status.maybe_running_status, excepted_running_status)
+
+    def _build_cpp_program(self, code):
+        return Program(self._build_cpp_language(), code)
+
+    def _build_cpp_language(self):
+        program_language = Language(ID=1,
+            name="g++",
+            source_extension=".cpp",
+            binary_extension=".exe",
+            compilation_command="gcc src.cpp -o bin.exe -lstdc++",
+            running_command="./bin.exe"
+        )
+        return program_language
+
+    def _build_valid_cpp_code(self):
+        return """
+            #include <stdio.h>
+
+            using namespace std;
+
+            int main() {
+                printf("tekst outputowy\\nala");
+                return 0;
+            }
+        """
+
+    def _build_successful_compilation_status(self):
+        return CompilationStatus(error_output='', output='')
+
+    def _build_successful_running_status(self):
+        return RunningStatus(input="input text\nbla bla", output='tekst outputowy\nala', error_output='')
+
 
 if __name__ == '__main__':
     unittest.main()
