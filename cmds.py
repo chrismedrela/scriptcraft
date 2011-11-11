@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 
 """
-Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
+Classes *Command represent commands of units. Following command are available:
  StopCommand
  MoveCommand
  ComplexMoveCommand
@@ -11,20 +11,30 @@ Klasy *Command reprezentują polecenia wydane jednostkom. Są to:
  ComplexAttackCommand
  BuildCommand
 
-Atrybuty tych klas muszą mieć odpowiedni typ, ale nie muszą być sensowne
-(może być np. destination=(-2,-3); direction musi przyjąć jedną z wartości
-direction.*; unit_type_name to dowolny string).
-
+Attributes of instances of these classes must be accurate type, but
+haven't be sensible (for example every string is valid value for unit_type_name).
 """
 
 from collections import namedtuple
 
+class StopCommand(namedtuple('StopCommand', ())):
+    __slots__ = ()
 
-StopCommand = namedtuple('StopCommand', [])
-MoveCommand = namedtuple('MoveCommand', ['direction'])
-ComplexMoveCommand = namedtuple('ComplexMoveCommand', ['dest_pos'])
-ComplexGatherCommand = namedtuple('ComplexGatherCommand', ['dest_pos'])
-FireCommand = namedtuple('FireCommand', ['dest_pos'])
-ComplexAttackCommand = namedtuple('ComplexAttackCommand', ['dest_pos'])
-BuildCommand = namedtuple('BuildCommand', ['unit_type_name'])
+class MoveCommand(namedtuple('MoveCommand', ('direction',))):
+    __slots__ = ()
+
+class ComplexMoveCommand(namedtuple('ComplexMoveCommand', ('dest_pos',))):
+    __slots__ = ()
+
+class ComplexGatherCommand(namedtuple('ComplexGatherCommand', ('dest_pos',))):
+    __slots__ = ()
+
+class FireCommand(namedtuple('FireCommand', ('dest_pos',))):
+    __slots__ = ()
+
+class ComplexAttackCommand(namedtuple('ComplexAttackCommand', ('dest_pos',))):
+    __slots__ = ()
+
+class BuildCommand(namedtuple('BuildCommand', ('unit_type_name',))):
+    __slots__ = ()
 

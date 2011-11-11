@@ -11,7 +11,7 @@ t10     d       -       klasa RunningStatus
 t11     .       9       klasa ParsingStatus
 t12     .       -       klasa ExecutionStatus
 t13     x       -       klasa Message
-t14     .       -       klasy *Commands
+t14     x       -       klasy *Commands
 t15     .       3       klasa CompileAndRunProgram
 t15.1   x       1         testy
 t15.2   x       4         zaplanowanie klasy
