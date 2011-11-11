@@ -35,7 +35,7 @@ class TestBasic(unittest.TestCase):
 
         excepted_compilation_status = self._build_successful_compilation_status()
         excepted_running_status = self._build_successful_running_status()
-        
+
         self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
         self.assertEqual(status.maybe_running_status, excepted_running_status)
 
@@ -60,7 +60,7 @@ class TestBasic(unittest.TestCase):
             output = '',
         )
         excepted_running_status = None
-        
+
         self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
         self.assertEqual(status.maybe_running_status, excepted_running_status)
 
@@ -77,7 +77,7 @@ class TestBasic(unittest.TestCase):
 
         excepted_compilation_status = self._build_successful_compilation_status()
         excepted_running_status = self._build_successful_running_status()
-        
+
         self.assertEqual(status.maybe_compilation_status, None)
         self.assertEqual(status.maybe_running_status, excepted_running_status)
 
