@@ -21,7 +21,7 @@ t15.5   x       3         klasa Program
 t15.6   x       -         errors
 t15.7   x		-		  poprawienie testów
 t16     d       3       klasa Field
-t17     .       3       klasa GameMap
+t17     x       3       klasa GameMap
 t18     .       3       klasy Unit i UnitType
 t19     .       3       klasa Player
 t20     .       -       klasa FindPathProblem
@@ -29,6 +29,7 @@ t21     .       -       klasy *Action
 t22     .       -       ExecutionError i podklasy
 t23     .       -       wyeksportowanie nazw folderow do stalych do consts.py
 t24     .       -       logging
+t25     .       -       speeding GameMap (deepcopy and __init__)
 p1      x               wykonywanie programów (CompileAndRunProgram, Language)
 p2      x               constanty
 p3      x               struktury immutable (ale mutable dla konstruktora)
