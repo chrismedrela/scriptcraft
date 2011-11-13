@@ -30,7 +30,7 @@ t22     .       -       ExecutionError i podklasy
 t23     .       -       wyeksportowanie nazw folderow do stalych do consts.py
 t24     .       -       logging
 t25     .       -       speeding GameMap (deepcopy and __init__)
-t26     .       3       klasy *Action
+t26     x       3       klasy *Action
 p1      x               wykonywanie programów (CompileAndRunProgram, Language)
 p2      x               constanty
 p3      x               struktury immutable (ale mutable dla konstruktora)
@@ -52,3 +52,4 @@ p18     .               immutable atrybuty instancji
 p19     .               import klas bez dwukrotnego wpisywania nazwy klasy
 p20     .               raportowanie errorów w CompileAndRunProgram
 p21     .               chronione atrybuty namedtuple
+p22     .               lepsza nazwa dla atrybutu MoveAction.source
