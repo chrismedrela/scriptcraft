@@ -23,16 +23,16 @@ class StopCommand(namedtuple('StopCommand', ())):
 class MoveCommand(namedtuple('MoveCommand', ('direction',))):
     __slots__ = ()
 
-class ComplexMoveCommand(namedtuple('ComplexMoveCommand', ('dest_pos',))):
+class ComplexMoveCommand(namedtuple('ComplexMoveCommand', ('destination',))):
     __slots__ = ()
 
-class ComplexGatherCommand(namedtuple('ComplexGatherCommand', ('dest_pos',))):
+class ComplexGatherCommand(namedtuple('ComplexGatherCommand', ('destination',))):
     __slots__ = ()
 
-class FireCommand(namedtuple('FireCommand', ('dest_pos',))):
+class FireCommand(namedtuple('FireCommand', ('destination',))):
     __slots__ = ()
 
-class ComplexAttackCommand(namedtuple('ComplexAttackCommand', ('dest_pos',))):
+class ComplexAttackCommand(namedtuple('ComplexAttackCommand', ('destination',))):
     __slots__ = ()
 
 class BuildCommand(namedtuple('BuildCommand', ('unit_type_name',))):
