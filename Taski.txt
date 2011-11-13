@@ -32,6 +32,7 @@ t24     .       -       logging
 t25     .       -       speeding GameMap (deepcopy and __init__)
 t26     x       3       klasy *Action
 t27     .       -       add STAR_PROGRAM consts
+t28     .       -       UnitType.cost_of_build --split--> can_be_built & cost_of_build
 p1      x               wykonywanie programów (CompileAndRunProgram, Language)
 p2      x               constanty
 p3      x               struktury immutable (ale mutable dla konstruktora)
