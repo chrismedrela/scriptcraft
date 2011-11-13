@@ -16,6 +16,7 @@ class TestPlayer(unittest.TestCase):
 
         player.add_unit(unit)
         self.assertEqual(player.units, [unit])
+        self.assertEqual(unit.player, player)
 
         player.remove_unit(unit)
         self.assertEqual(player.units, [])
@@ -48,7 +49,7 @@ class TestPlayer(unittest.TestCase):
                              movable=True,
                              behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
                              names=['tank', 't'])
-        unit = Unit(unit_type, position=(2, 3))
+        unit = Unit(unit_type, position=(2, 3), ID=7)
         return unit
 
 if __name__ == '__main__':

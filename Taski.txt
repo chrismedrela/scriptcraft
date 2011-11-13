@@ -23,7 +23,7 @@ t15.7   x		-		  poprawienie testów
 t16     d       3       klasa Field
 t17     x       3       klasa GameMap
 t18     x       3       klasy Unit i UnitType
-t19     .       3       klasa Player
+t19     x       3       klasa Player
 t20     .       -       klasa FindPathProblem
 t21     d       -       klasy *Action
 t22     .       -       ExecutionError i podklasy
@@ -53,3 +53,5 @@ p19     .               import klas bez dwukrotnego wpisywania nazwy klasy
 p20     .               raportowanie errorów w CompileAndRunProgram
 p21     .               chronione atrybuty namedtuple
 p22     .               lepsza nazwa dla atrybutu MoveAction.source
+p23     .               Unit.execution_status może być None
+p24     .               Unit.player może być None
