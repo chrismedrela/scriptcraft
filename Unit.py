@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 
 class Unit(object):
-    def __init__(self, type):
+    def __init__(self, type, position):
 
         self.program = None
         self.maybe_last_compilation_status = None
