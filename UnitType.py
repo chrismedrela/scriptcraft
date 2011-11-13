@@ -21,7 +21,7 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     """
     Attributes:
     attack_range -- value 0 means unit cannot attack
-    vision_range
+    vision_range -- 0 is valid value
     store_size -- value 0 means unit cannot store minerals
     cost_of_build -- value -1 means unit cannot be built
         and 0 is valid value
