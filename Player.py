@@ -8,12 +8,13 @@ class PlayerAlreadyHasBase(Exception):
 
 class Player(object):
 
-    def __init__(self, name, color, ID):
+    def __init__(self, name, color, ID, start_position):
         self.name = name
         self.color = color
         self.ID = ID
         self.units = []
         self.maybe_base = None
+        self.start_position = start_position
 
     def add_unit(self, unit):
         unit.player = self
