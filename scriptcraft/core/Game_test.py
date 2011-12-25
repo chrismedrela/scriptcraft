@@ -18,8 +18,8 @@ from scriptcraft.core.UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
 
 class TestGame(unittest.TestCase):
 
-#     Testy TODO
-#     ------
+#     Testy TODO:
+#
 #     + _generate_input_for
 #     + new_player_with_startpoint
 #     + deepcopy
