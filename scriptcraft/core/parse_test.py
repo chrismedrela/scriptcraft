@@ -3,13 +3,10 @@
 
 import unittest
 
-from utils import *
-
-from parse import Parse
-from message import Message
-import cmds
-import direction
-import units
+from scriptcraft.core import cmds, direction
+from scriptcraft.core.message import Message
+from scriptcraft.core.parse import Parse
+from scriptcraft.utils import *
 
 
 class TestParse(unittest.TestCase):

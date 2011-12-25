@@ -3,7 +3,7 @@
 
 import copy
 
-from Field import Field
+from scriptcraft.core.Field import Field
 
 
 
@@ -72,6 +72,8 @@ class GameMap(list):
         x, y = position
         return x==0 or x==self.size[0]-1 or y==0 or y==self.size[1]-1
 
+    def get_field(self, position):
+        return self[position[0]][position[1]]
 
     def place_trees_at(self, position):
         function = lambda field: field.PlacedTrees()

@@ -3,15 +3,10 @@
 
 from collections import namedtuple
 
-from message import Message
-import direction
-import cmds
-import units
+from scriptcraft.core import direction, cmds
+from scriptcraft.core.message import Message
 
-
-# -----------------------------------------------------------------------------
-# some usefull functions
-# -----------------------------------------------------------------------------
+#-------------------------------------------------------- some usefull functions
 
 def _parse_as_int(data):
     """ W przypadku niepowodzenia zwraca None """
@@ -47,16 +42,13 @@ def _split_to_word_and_rest(line):
     return command, rest
 
 
-
-# -----------------------------------------------------------------------------
-# globals 
-# -----------------------------------------------------------------------------
+#----------------------------------------------------------------------- globals
 # _COMMANDS = {
 #    <name of command> : {
-#        <number of args> : 
+#        <number of args> :
 #            (    <signature>,
 #                <function returning (cmds.*Command)>,
-#            ) 
+#            )
 #    }
 # }
 
@@ -75,25 +67,25 @@ _COMMANDS['MOVE'] = _COMMANDS['M'] = {
         ),
     2 : (
             (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.ComplexMoveCommand(dest_pos=(x,y)),
+            lambda x, y: cmds.ComplexMoveCommand(destination=(x,y)),
         ),
 }
 _COMMANDS['GATHER'] = _COMMANDS['G'] = {
     2 : (
             (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.ComplexGatherCommand(dest_pos=(x,y)),
+            lambda x, y: cmds.ComplexGatherCommand(destination=(x,y)),
         ),
 }
 _COMMANDS['FIRE'] = _COMMANDS['F'] = {
     2 : (
             (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.FireCommand(dest_pos=(x,y)),
+            lambda x, y: cmds.FireCommand(destination=(x,y)),
         ),
 }
 _COMMANDS['ATTACK'] = _COMMANDS['A'] = {
     2 : (
             (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.ComplexAttackCommand(dest_pos=(x,y)),
+            lambda x, y: cmds.ComplexAttackCommand(destination=(x,y)),
         ),
 }
 _COMMANDS['BUILD'] = _COMMANDS['B'] = {
@@ -101,8 +93,8 @@ _COMMANDS['BUILD'] = _COMMANDS['B'] = {
             (_parse_as_str,),
             lambda type_name: cmds.BuildCommand(unit_type_name=type_name.lower()),
         ),
-}    
-    
+}
+
 
 
 
@@ -111,15 +103,15 @@ class Parse (object):
     W konstruktorze podajemy:
      input_data -- dane do sparsowania (może być wiele wierszy)
      sender_ID -- będzie używane jako nadawca dla message.Message.
-     
+
     Dane są parsowane *w konstruktorze* - po utworzeniu parsera mamy już
     sparsowane dane.
-    
+
     Atrybuty dostępne po utworzeniu obiektu:
      commands : list(cmds.*Command)
      messages : list(message.Message)
      invalid_lines_numbers : list(int) -- wiersze są numerowane od jeden
-    
+
     """
 
     def __init__(self, input_data, sender_ID):
@@ -127,9 +119,9 @@ class Parse (object):
         self.messages = []
         self.commands = []
         self.invalid_lines_numbers = []
-        
-        self._parse_input_data(input_data)    
-        
+
+        self._parse_input_data(input_data)
+
     def _parse_input_data(self, input_data):
         for line_index, line in enumerate(input_data.split('\n')):
             self._line_no = line_index+1
@@ -138,7 +130,7 @@ class Parse (object):
             line = line.strip()
             if len(line) == 0:
                 continue
-            
+
             # command or message?
             command, rest_of_line = _split_to_word_and_rest(line)
             command_as_int = _parse_as_int(command)
@@ -149,7 +141,7 @@ class Parse (object):
                 receiver_ID = command_as_int
                 m = Message(self.sender_ID, receiver_ID, message_text)
                 self.messages.append(m)
-            
+
     def _parse_command(self, command_as_string, rest_of_line):
         command_as_string = command_as_string.upper()
         signatures_with_functions_by_number_of_args = _COMMANDS.get(command_as_string, None)
@@ -157,7 +149,7 @@ class Parse (object):
             self._invalid_line()
         else:
             args_of_command = rest_of_line.split()
-        
+
             # check number of args
             signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
             if signature_with_function == None:
@@ -175,8 +167,8 @@ class Parse (object):
                 args.append(result)
 
             command = method(*args)
-            self.commands.append(command)    
-            
+            self.commands.append(command)
+
     def _invalid_line(self):
         self.invalid_lines_numbers.append(self._line_no)
 

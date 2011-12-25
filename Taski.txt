@@ -56,4 +56,4 @@ p20     .               raportowanie errorów w CompileAndRunProgram
 p21     .               chronione atrybuty namedtuple
 p22     .               lepsza nazwa dla atrybutu MoveAction.source
 p23     .               Unit.execution_status może być None
-p24     .               Unit.player może być None
+p24     x               Unit.player może być None

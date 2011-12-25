@@ -4,9 +4,8 @@
 import unittest
 import copy
 
-from utils import *
-
-from GameMap import GameMap, NoFreeStartPosition, CannotPlaceOnOccupedField
+from scriptcraft.utils import *
+from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition, CannotPlaceOnOccupedField
 
 
 class TestGameMap(unittest.TestCase):
@@ -46,6 +45,8 @@ class TestGameMap(unittest.TestCase):
         self.assertEqual(m[5][4].get_unit_ID(), 21)
         self.assertEqual(m[6][5].has_trees(), True)
         self.assertEqual(m[7][6].is_empty(), True)
+
+        self.assertEqual(m.get_field((7, 6)), m[7][6])
 
     @ max_time(150, repeat=3)
     def test_deepcopy_efficiency_and_correctness(self):

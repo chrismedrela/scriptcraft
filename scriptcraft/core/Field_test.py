@@ -3,9 +3,9 @@
 
 import unittest
 
-from utils import *
+from scriptcraft.utils import *
 
-from Field import Field
+from scriptcraft.core.Field import Field
 
 class TestField(unittest.TestCase):
     def test_trees(self):

@@ -5,12 +5,12 @@ import unittest
 import os
 import shutil
 
-from utils import *
-from compileAndRunProgram import CompileAndRunProgram
-from Language import Language
-from Program import Program
-from CompilationStatus import CompilationStatus
-from RunningStatus import RunningStatus
+from scriptcraft.utils import *
+from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
+from scriptcraft.core.Language import Language
+from scriptcraft.core.Program import Program
+from scriptcraft.core.CompilationStatus import CompilationStatus
+from scriptcraft.core.RunningStatus import RunningStatus
 
 class TestBasic(unittest.TestCase):
     def setUp(self):

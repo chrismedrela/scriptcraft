@@ -3,16 +3,16 @@
 
 import unittest
 
-from Player import Player, PlayerAlreadyHasBase
-from Unit import Unit
-from UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
+from scriptcraft.core.Player import Player, PlayerAlreadyHasBase
+from scriptcraft.core.Unit import Unit
+from scriptcraft.core.UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
 
 
 class TestPlayer(unittest.TestCase):
 
     def test_add_ordinary_unit_and_remove_it(self):
         player = self._build_simple_player()
-        unit = self._build_simple_unit()
+        unit = self._build_simple_unit(player)
 
         player.add_unit(unit)
         self.assertEqual(player.units, [unit])
@@ -23,7 +23,7 @@ class TestPlayer(unittest.TestCase):
 
     def test_add_unit_as_base_and_remove_it(self):
         player = self._build_simple_player()
-        unit = self._build_simple_unit()
+        unit = self._build_simple_unit(player)
 
         player.add_unit_as_base(unit)
         self.assertEqual(player.maybe_base, unit)
@@ -37,10 +37,11 @@ class TestPlayer(unittest.TestCase):
     def _build_simple_player(self):
         color = (255, 0, 0)
         ID = 7
-        result = Player("name", color, ID)
+        start_position = (3, 4)
+        result = Player("name", color, ID, start_position)
         return result
 
-    def _build_simple_unit(self):
+    def _build_simple_unit(self, player):
         unit_type = UnitType(attack_range=5,
                              vision_range=10,
                              store_size=0,
@@ -49,7 +50,7 @@ class TestPlayer(unittest.TestCase):
                              movable=True,
                              behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
                              names=['tank', 't'])
-        unit = Unit(unit_type, position=(2, 3), ID=7)
+        unit = Unit(player=player, type=unit_type, position=(2, 3), ID=7)
         return unit
 
 if __name__ == '__main__':

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from cmds import StopCommand
-from actions import StopAction
+from scriptcraft.core.cmds import StopCommand
+from scriptcraft.core.actions import StopAction
 
 class Unit(object):
-    def __init__(self, type, position, ID):
+    def __init__(self, player, type, position, ID):
 
         self.program = None
         self.maybe_last_compilation_status = None
@@ -14,7 +14,7 @@ class Unit(object):
         self.command = StopCommand()
         self.action = StopAction()
         self.position = position
-        self.player = None
+        self.player = player
         self.ID = ID
         self.type = type
         self.minerals = 0

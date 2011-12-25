@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 
-from utils import *
+from scriptcraft.utils import *
 
 
 
@@ -29,8 +29,12 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     can_build
     movable
     behaviour_when_attacked -- enum BEHAVIOUR_WHEN_ATTACKED
-    names -- list or tuple
+    names -- non-empty list or tuple
 
     """
 
     __slots__ = ()
+
+    @ property
+    def main_name(self):
+        return self.names[0]
