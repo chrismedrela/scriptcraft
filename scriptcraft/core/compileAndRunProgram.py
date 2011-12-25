@@ -47,7 +47,7 @@ class CompileAndRunProgram(object):
         except OSError as ex:
             FOLDER_ALREADY_EXISTS = 17
             if ex.errno != FOLDER_ALREADY_EXISTS:
-                raise ex
+                raise
 
     def _create_source_file(self):
         source_file_path = os.path.join(self.folder, 'env', self.program.language.source_file_name)
