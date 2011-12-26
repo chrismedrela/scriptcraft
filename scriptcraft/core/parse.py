@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from collections import namedtuple
 
 from scriptcraft.core import direction, cmds
-from scriptcraft.core.message import Message
+from scriptcraft.core.Message import Message
+
+
 
 #-------------------------------------------------------- some usefull functions
 
@@ -109,14 +110,13 @@ class Parse (object):
 
     Data are parsed in __init__. After it some attributes are created:
      commands : list(cmds.*Command)
-     messages : list(message.Message)
+     message_stubs : list(tuple(receiver_ID, text_of_message))
      invalid_lines_numbers : list(int) -- the first line has no 1 (not 0!)
 
     """
 
-    def __init__(self, input_data, sender_ID):
-        self.sender_ID = sender_ID
-        self.messages = []
+    def __init__(self, input_data):
+        self.message_stubs = []
         self.commands = []
         self.invalid_lines_numbers = []
 
@@ -139,8 +139,8 @@ class Parse (object):
             else: # message
                 message_text = line[len(command)+1:]
                 receiver_ID = command_as_int
-                m = Message(self.sender_ID, receiver_ID, message_text)
-                self.messages.append(m)
+                message_stub = (receiver_ID, message_text)
+                self.message_stubs.append(message_stub)
 
     def _parse_command(self, command_as_string, rest_of_line):
         command_as_string = command_as_string.upper()
@@ -159,7 +159,7 @@ class Parse (object):
 
             # convert args
             args = []
-            for i, (function, arg) in enumerate(zip(signature, args_of_command)):
+            for function, arg in zip(signature, args_of_command):
                 result = function(arg)
                 if result == None:
                     self._invalid_line()
