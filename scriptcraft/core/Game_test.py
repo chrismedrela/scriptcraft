@@ -6,7 +6,8 @@ import unittest
 
 from scriptcraft.utils import *
 from scriptcraft.core import actions, cmds
-from scriptcraft.core.Game import Game
+from scriptcraft.core.Game import (Game, InvalidReceiver, PositionOutOfMap,
+    CannotStoreMinerals, FieldIsOccupied)
 from scriptcraft.core.GameConfiguration import GameConfiguration
 from scriptcraft.core.GameMap import GameMap
 from scriptcraft.core.Language import Language
@@ -220,7 +221,7 @@ class TestFire(BaseGameTestCase):
 
     def test_cannot_fire_out_of_map(self):
         illegal_operation = self.game.fire_at((-1, -1))
-        self.assertRaises(Exception, illegal_operation)
+        self.assertRaises(PositionOutOfMap, illegal_operation)
 
 
 
@@ -252,18 +253,18 @@ class TestStoreMinerals(BaseGameTestCase):
     def test_store_minerals_when_destination_is_full(self):
         self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
         illegal_operation = lambda: self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
-        self.assertRaises(Exception, illegal_operation)
+        self.assertRaises(CannotStoreMinerals, illegal_operation)
 
 
     def test_store_minerals_when_mineral_deposit_source_is_empty(self):
         self.game.game_map.place_minerals_at(self.minerals_position, 0)
         illegal_operation = lambda: self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
-        self.assertRaises(Exception, illegal_operation)
+        self.assertRaises(CannotStoreMinerals, illegal_operation)
 
 
     def test_store_minerals_when_miner_source_is_empty(self):
         illegal_operation = lambda: self.game.store_minerals_from_unit_to_unit(self.miner, self.base)
-        self.assertRaises(Exception, illegal_operation)
+        self.assertRaises(CannotStoreMinerals, illegal_operation)
 
 
 
@@ -283,7 +284,7 @@ class TestMoveUnit(BaseGameTestCase):
         new_position_for_miner = self.base.position
 
         illegal_operation = lambda: self.game.move_unit_at(self.miner, new_position_for_miner)
-        self.assertRaises(Exception, illegal_operation)
+        self.assertRaises(FieldIsOccupied, illegal_operation)
 
 
 
@@ -440,7 +441,7 @@ class TestMessageSystem(BaseGameTestCase):
         message = Message(sender_ID=self.base.ID, receiver_ID=1234567, text='text of message')
         illegal_operation = self.game._send_message(message)
 
-        self.assertRaises(Exception, illegal_operation)
+        self.assertRaises(InvalidReceiver, illegal_operation)
 
 
     def test_clear_mailboxes(self):
