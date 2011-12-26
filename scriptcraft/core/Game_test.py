@@ -121,8 +121,10 @@ class TestBasic():
 
         self.assertEqual(len(Alice.units), 4 + 1) # 4 miners and 1 base
         self.assertEqual(base.position, self.start_positions[1])
-        field_with_miner = self.game.game_map[self.start_position[1][0]-1][self.start_position[1][1]]
-        self.assertTrue(field_with_miner.has_unit()) # here is miner
+        for miner in miners:
+            field_with_miner = self.game.game_map.get_field(miner.position)
+            self.assertTrue(field_with_miner.has_unit())
+            self.assertTrue(distance(miner, base) == 1)
 
 
     def test_new_unit(self):
