@@ -18,7 +18,7 @@ from collections import namedtuple
 class StopAction(namedtuple('StopAction', ())):
     __slots__ = ()
 
-class MoveAction(namedtuple('MoveAction', ('source',))):
+class MoveAction(namedtuple('MoveAction', ('source', 'destination'))):
     __slots__ = ()
 
 class GatherAction(namedtuple('GatherAction', ('destination',))):
