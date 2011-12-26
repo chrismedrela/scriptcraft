@@ -5,11 +5,15 @@ __all__ = [
     'Enum',
     'make_enum',
     'max_time',
+    'distance',
 ]
 
 import time
 from enum import Enum, make_enum
 
+def distance(p1, p2):
+    """ Return distance between p1=(x1,y1) and p2=(x2,y2). Use town metric. """
+    return abs(p1[0]-p2[0]) + abs(p1[1]-p2[1])
 
 class max_time(object):
     """ Dekorator do testów wydajnościowych - oznaczony tym dekoratorem test
