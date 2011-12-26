@@ -418,11 +418,14 @@ class TestGenerateActions(BaseGameTestCase):
 class TestMessageSystem(BaseGameTestCase):
 
     def test_send_message(self):
-        message = Message(sender_ID=self.base.ID, receiver_ID=self.miner.ID, text='text of message')
+        """ Sending messages to alien should be legal. """
+
+        _, Alice_base, _ = self.game.new_player_with_base('Alice', (0, 255, 0))
+        message = Message(sender_ID=self.base.ID, receiver_ID=Alice_base.ID, text='text of message')
         self.game._send_message(message)
 
         self.assertEqual(self.base.output_messages, [message])
-        self.assertEqual(self.miner.input_messages, [message])
+        self.assertEqual(self.Alice_base.input_messages, [message])
 
 
     def test_send_system_message(self):
