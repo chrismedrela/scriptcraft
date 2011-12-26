@@ -72,7 +72,7 @@ class BaseGameTestCase(unittest.TestCase):
 
 
     def _create_player_Bob(self):
-        self.player_Bob = self.game.new_player_with_startpoint('Bob', (255, 0, 0))
+        self.player_Bob = self.game.new_player_with_base('Bob', (255, 0, 0))
         self.base = self.player_Bob.maybe_base
         self.miners = filter(lambda unit:unit.type == self.miner_type, self.player_Bob.units)
         self.miner = self.miners[0]
