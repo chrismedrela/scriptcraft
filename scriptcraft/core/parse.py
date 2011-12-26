@@ -9,7 +9,7 @@ from scriptcraft.core.message import Message
 #-------------------------------------------------------- some usefull functions
 
 def _parse_as_int(data):
-    """ W przypadku niepowodzenia zwraca None """
+    """ Return int or None if data is invalid. """
 
     if len(data)>8:
         return None
@@ -18,28 +18,31 @@ def _parse_as_int(data):
     except ValueError:
         return None
 
+
 def _parse_as_direction(data):
-    """ W przypadku niepowodzenia zwraca None w przeciwnym razie zwraca
-    identyfikator kierunku świata (direction.W itp.). """
+    """ Return direction.* or None if data is invalid. """
 
     try:
         return direction.BY_NAME[data.upper()]
     except KeyError:
         return None
 
+
 def _parse_as_str(data, max_string_length=256):
-    """ W przypadku, gdy długość stringa przekracza max_string_length,
-    zwraca None """
+    """ Return data or None if data has more characters than max_string_length
+    argument (default 256). """
 
     if len(data) > max_string_length:
         return None
     return data
+
 
 def _split_to_word_and_rest(line):
     splited_line = line.split(None, 1)
     command = splited_line[0]
     rest = splited_line[1] if len(splited_line) >= 2 else ''
     return command, rest
+
 
 
 #----------------------------------------------------------------------- globals
@@ -100,17 +103,14 @@ _COMMANDS['BUILD'] = _COMMANDS['B'] = {
 
 class Parse (object):
     """
-    W konstruktorze podajemy:
-     input_data -- dane do sparsowania (może być wiele wierszy)
-     sender_ID -- będzie używane jako nadawca dla message.Message.
+    Arguments of __init__:
+     input_data -- data that should be parsed (many lines allowed)
+     sender_ID -- used for sender attribute in message.Message
 
-    Dane są parsowane *w konstruktorze* - po utworzeniu parsera mamy już
-    sparsowane dane.
-
-    Atrybuty dostępne po utworzeniu obiektu:
+    Data are parsed in __init__. After it some attributes are created:
      commands : list(cmds.*Command)
      messages : list(message.Message)
-     invalid_lines_numbers : list(int) -- wiersze są numerowane od jeden
+     invalid_lines_numbers : list(int) -- the first line has no 1 (not 0!)
 
     """
 
