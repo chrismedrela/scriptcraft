@@ -349,7 +349,8 @@ class TestGenerateActions(BaseGameTestCase):
         self.miner.set_minerals(self.miner.type.store_size)
 
         command = cmds.ComplexGatherCommand(destination=self.minerals_position)
-        excepted_action = actions.MoveAction(source=self.miner.position, destination)
+        excepted_action = actions.MoveAction(source=self.miner.position,
+                                             destination=destination)
         self._test_generate_action(command, excepted_action, unit=self.miner)
 
 
