@@ -30,42 +30,51 @@ class BaseGameTestCase(unittest.TestCase):
 
 
     def _create_unit_types(self):
-        self.miner_type = UnitType(attack_range=0, vision_range=7,
-            store_size=1,
-            cost_of_build=3,
-            can_build=False,
-            movable=True,
-            behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
-            names=('5', 'miner', 'm'))
+        self.miner_type = UnitType(attack_range=0,
+                                   vision_range=7,
+                                   store_size=1,
+                                   cost_of_build=3,
+                                   can_build=False,
+                                   movable=True,
+                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                                   names=('5', 'miner', 'm'))
+
         self.base_type = UnitType(attack_range=0,
-            vision_range=2,
-            store_size= -1,
-            cost_of_build= -1,
-            can_build=True,
-            movable=False,
-            behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
-            names=('4', 'base', 'b'))
+                                  vision_range=2,
+                                  store_size= -1,
+                                  cost_of_build= -1,
+                                  can_build=True,
+                                  movable=False,
+                                  behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
+                                  names=('4', 'base', 'b'))
+
         self.tank_type = UnitType(attack_range=5, vision_range=7,
-            store_size=0,
-            cost_of_build=10,
-            can_build=False,
-            movable=True,
-            behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
-            names=('6', 'tank', 't'))
+                                  store_size=0,
+                                  cost_of_build=10,
+                                  can_build=False,
+                                  movable=True,
+                                  behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                                  names=('6', 'tank', 't'))
+
         self.unit_types = [self.miner_type, self.base_type, self.tank_type]
 
 
     def _create_map_and_game(self):
-        self.simple_language = Language(ID='sl', name='simplelang',
-                                        source_extension='sl', binary_extension='slbin',
+        self.simple_language = Language(ID='sl',
+                                        name='simplelang',
+                                        source_extension='sl',
+                                        binary_extension='slbin',
                                         compilation_command='simplelang compile %s',
                                         running_command='simplelang run %s')
         languages_by_names = {'simplelang':self.simple_language}
-        game_configuration = GameConfiguration(units_types=self.unit_types, main_base_type=self.base_type,
-            main_miner_type=self.miner_type,
-            minerals_for_main_unit_at_start=1,
-            probability_of_mineral_deposit_growing=0.1,
-            languages_by_names=languages_by_names)
+
+        game_configuration = GameConfiguration(units_types=self.unit_types,
+                                               main_base_type=self.base_type,
+                                               main_miner_type=self.miner_type,
+                                               minerals_for_main_unit_at_start=1,
+                                               probability_of_mineral_deposit_growing=0.1,
+                                               languages_by_names=languages_by_names)
+
         self.start_positions = [(16, 16), (48, 48), (16, 48), (48, 16)]
         self.map_size = 64, 64
         game_map = GameMap(self.map_size, self.start_positions)
@@ -75,7 +84,8 @@ class BaseGameTestCase(unittest.TestCase):
     def _create_player_Bob(self):
         self.player_Bob = self.game.new_player_with_base('Bob', (255, 0, 0))
         self.base = self.player_Bob.maybe_base
-        self.miners = filter(lambda unit:unit.type == self.miner_type, self.player_Bob.units)
+        self.miners = filter(lambda unit: unit.type == self.miner_type,
+                             self.player_Bob.units)
         self.miner = self.miners[0]
         self.tank = self.game.new_unit(self.player_Bob, (0,63), self.tank_type)
 
@@ -166,7 +176,9 @@ class TestUtils(BaseGameTestCase):
 
 
     def test_generate_input(self):
-        message = Message(sender_ID=1234, receiver_ID=self.base.ID, text='\t\ttext of message\t')
+        message = Message(sender_ID=1234,
+                          receiver_ID=self.base.ID,
+                          text='\t\ttext of message\t')
         self.game._send_message(message)
         number_of_messages = 1
 
@@ -238,7 +250,8 @@ class TestStoreMinerals(BaseGameTestCase):
         self.game.store_minerals_from_deposit_to_unit(self.minerals_position, miner)
 
         self.assertEqual(miner.minerals, 1)
-        self.assertEqual(self.game.game_map.get_field(self.minerals_position).get_minerals(), minerals_in_deposit - 1)
+        self.assertEqual(self.game.game_map.get_field(self.minerals_position).get_minerals(),
+                         minerals_in_deposit - 1)
 
 
     def _test_store_minerals_from_miner_to_base(self, miner):
@@ -336,8 +349,7 @@ class TestGenerateActions(BaseGameTestCase):
         self.miner.set_minerals(self.miner.type.store_size)
 
         command = cmds.ComplexGatherCommand(destination=self.minerals_position)
-        excepted_action = actions.MoveAction(source=self.miner.position,
-                                             destination=destination)
+        excepted_action = actions.MoveAction(source=self.miner.position, destination)
         self._test_generate_action(command, excepted_action, unit=self.miner)
 
 
@@ -399,7 +411,7 @@ class TestGenerateActions(BaseGameTestCase):
         self.game.remove_unit_at(destination)
 
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        excepted_action = actions.BuildAction(unit_type=self.miner_type, destination=destination),
+        excepted_action = actions.BuildAction(unit_type=self.miner_type, destination),
         self._test_generate_action(command, excepted_action, unit=self.base)
 
 
@@ -422,7 +434,9 @@ class TestMessageSystem(BaseGameTestCase):
         """ Sending messages to alien should be legal. """
 
         _, Alice_base, _ = self.game.new_player_with_base('Alice', (0, 255, 0))
-        message = Message(sender_ID=self.base.ID, receiver_ID=Alice_base.ID, text='text of message')
+        message = Message(sender_ID=self.base.ID,
+                          receiver_ID=Alice_base.ID,
+                          text='text of message')
         self.game._send_message(message)
 
         self.assertEqual(self.base.output_messages, [message])
@@ -430,7 +444,9 @@ class TestMessageSystem(BaseGameTestCase):
 
 
     def test_send_system_message(self):
-        message = Message(sender_ID=self.base.ID, receiver_ID=0, text='text of message')
+        message = Message(sender_ID=self.base.ID,
+                          receiver_ID=0,
+                          text='text of message')
         self.game._send_message(message)
 
         self.assertEqual(self.base.output_messages, [message])
@@ -438,16 +454,23 @@ class TestMessageSystem(BaseGameTestCase):
 
 
     def test_send_message_with_invalid_receiver(self):
-        message = Message(sender_ID=self.base.ID, receiver_ID=1234567, text='text of message')
+        message = Message(sender_ID=self.base.ID,
+                          receiver_ID=1234567,
+                          text='text of message')
         illegal_operation = self.game._send_message(message)
 
         self.assertRaises(InvalidReceiver, illegal_operation)
 
 
     def test_clear_mailboxes(self):
-        message = Message(sender_ID=self.base.ID, receiver_ID=self.miner.ID, text='text of message')
+        message = Message(sender_ID=self.base.ID,
+                          receiver_ID=self.miner.ID,
+                          text='text of message')
         self.game._send_message(message)
-        message = Message(sender_ID=self.base.ID, receiver_ID=0, text='text of message')
+
+        message = Message(sender_ID=self.base.ID,
+                          receiver_ID=0,
+                          text='text of message')
         self.game._send_message(message)
 
         self.game._clear_mailboxes()
@@ -479,7 +502,8 @@ class TestAnsweringSystemQuestions(BaseGameTestCase):
 
 
     def _test_correctness_of_answer_to_system_question(self, question, answer):
-        system_message = Message(sender_ID=self.player_Bob.ID, receiver_ID=0,
+        system_message = Message(sender_ID=self.player_Bob.ID,
+                                 receiver_ID=0,
                                  text=question)
 
         answer = self.game._generate_answer_to_system_message(system_message)
