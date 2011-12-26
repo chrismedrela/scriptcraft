@@ -380,7 +380,8 @@ class TestGenerateActions(BaseGameTestCase):
         direction = (1, 63)
 
         command = cmds.ComplexAttackCommand(destination=destination)
-        excepted_action=actions.MoveAction(destination=direction)
+        excepted_action=actions.MoveAction(source=self.tank.position,
+                                           destination=direction)
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
