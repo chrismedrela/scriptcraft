@@ -4,12 +4,12 @@
 import unittest
 
 from scriptcraft.core import cmds, direction
-from scriptcraft.core.message import Message
+from scriptcraft.core.Message import Message
 from scriptcraft.core.parse import Parse
 from scriptcraft.utils import *
 
 
-class TestParse(unittest.TestCase):
+class TestBasicParsing(unittest.TestCase):
 
     def test_basic(self):
         p = Parse("", 2)
@@ -18,151 +18,187 @@ class TestParse(unittest.TestCase):
         self.assertEqual(p.invalid_lines_numbers, [])
 
 
-
     def test_stop_command(self):
-        p = Parse("STOP", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.StopCommand()])
+        self.p = Parse("STOP", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.StopCommand())
+
 
     def test_move_command(self):
-        p = Parse("MOVE N", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.MoveCommand(direction.N)])
+        self.p = Parse("MOVE N", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.N))
+
 
     def test_complex_move_command(self):
-        p = Parse("MOVE 2 3", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.ComplexMoveCommand((2,3))])
+        self.p = Parse("MOVE 2 3", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexMoveCommand((2,3)))
+
 
     def test_complex_gather_command(self):
-        p = Parse("GATHER 4 13", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.ComplexGatherCommand((4,13))])
+        self.p = Parse("GATHER 4 13", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexGatherCommand((4,13)))
+
 
     def test_complex_attack_command(self):
-        p = Parse("ATTACK 9 2", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.ComplexAttackCommand((9,2))])
+        self.p = Parse("ATTACK 9 2", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexAttackCommand((9,2)))
+
 
     def test_fire_command(self):
-        p = Parse("FIRE 5 6", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.FireCommand((5,6))])
+        self.p = Parse("FIRE 5 6", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.FireCommand((5,6)))
+
 
     def test_build_command(self):
-        p = Parse("BUILD TANK", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.BuildCommand("tank")])
+        self.p = Parse("BUILD TANK", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.BuildCommand("tank"))
 
 
+    def _test_no_invalid_lines_and_command_equal_to(self, command):
+        self.assertEqual(self.p.invalid_lines_numbers, [])
+        self.assertEqual(self.p.commands, [command])
+
+
+
+class TestDetailsOfParsing(unittest.TestCase):
 
     def test_lower_direction(self):
-        p = Parse("MOVE e", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.MoveCommand(direction.E)])
+        self.p = Parse("MOVE e", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
+
 
     def test_command_by_short_name(self):
-        p = Parse("M s", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.MoveCommand(direction.S)])
+        self.p = Parse("M s", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.S))
+
 
     def test_empty_lines(self):
         p = Parse("MOVE e\n\nMOVE n", 2)
         self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [
-            cmds.MoveCommand(direction.E),
-            cmds.MoveCommand(direction.N),
-        ])
+        self.assertEqual(p.commands, [cmds.MoveCommand(direction.E),
+                                      cmds.MoveCommand(direction.N)])
+
 
     def test_lower_command(self):
-        p = Parse("move E", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.MoveCommand(direction.E)])
+        self.p = Parse("move E", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
+
 
     def test_whitespaces(self):
-        p = Parse("\t\n\r  \tMOVE e\t\n", 2)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.commands, [cmds.MoveCommand(direction.E)])
-
-
-
-    def test_messages(self):
-        p = Parse("5 wiadomosc do wyslania", 123)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.messages, [Message(123, 5, 'wiadomosc do wyslania')])
-
-    def test_message_coding(self):
-        p = Parse("0 zażółć gęślą jaźń", 123)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.messages, [Message(123, 0, 'zażółć gęślą jaźń')])
-
-    def test_message_whitespaces(self):
-        p = Parse("12\t b\rw", 123)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.messages, [Message(123, 12, ' b\rw')])
-
-    def test_empty_message(self):
-        p = Parse("12", 123)
-        self.assertEqual(p.invalid_lines_numbers, [])
-        self.assertEqual(p.messages, [Message(123, 12, '')])
-
-
+        self.p = Parse("\t\n\r  \tMOVE e\t\n", 2)
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
 
 
     def test_parse_invalid_command(self):
-        p = Parse("\n MO 3 \nM 3\n", 2)
-        self.assertEqual(p.invalid_lines_numbers, [2, 3])
-        self.assertEqual(p.commands, [])
+        self.p = Parse("\n MO 3 \nM 3\n", 2)
+        self._test_invalid_lines_and_no_command([2, 3])
+
 
     def test_parse_too_long_int_and_str(self):
-        p = Parse("MOVE 30000000000 300000000000\nBUILD "+"T"*10000, 3)
-        self.assertEqual(p.invalid_lines_numbers, [1, 2])
-        self.assertEqual(p.commands, [])
+        self.p = Parse("MOVE 30000000000 300000000000\nBUILD "+"T"*10000, 3)
+        self._test_invalid_lines_and_no_command([1, 2])
 
+
+    def _test_invalid_lines_and_no_command(self, invalid_lines):
+        self.assertEqual(self.p.invalid_lines_numbers, invalid_lines)
+        self.assertEqual(self.p.commands, [])
+
+
+    def _test_no_invalid_lines_and_command_equal_to(self, command):
+        self.assertEqual(self.p.invalid_lines_numbers, [])
+        self.assertEqual(self.p.commands, [command])
+
+
+
+class TestMessages(unittest.TestCase):
+
+    def test_messages(self):
+        self._test_message(u"5 message text",
+                           Message(123, 5, 'message text'))
+
+
+    def test_message_coding(self):
+        self._test_message(u"0 zażółć gęślą jaźń",
+                           Message(123, 0, u'zażółć gęślą jaźń'))
+
+
+    def test_message_whitespaces(self):
+        self._test_message(u"12\t b\rw",
+                           Message(123, 12, ' b\rw'))
+
+
+    def test_empty_message(self):
+        self._test_message(u"12",
+                           Message(123, 12, ''))
+
+
+    def _test_message(self, text, message, sender=123):
+        p = Parse(text, sender)
+        self.assertEqual(p.invalid_lines_numbers, [])
+        self.assertEqual(p.messages, [message])
 
 
 
 class TestEfficiencyParsingLongMessages(unittest.TestCase):
+
     def setUp(self):
         self.input_data = ('5 ' + 'ab jh\t @6'*100 + '\n')*20
 
-    @ max_time(1, repeat=3)
+
+    @ max_time(1)
     def test(self):
-        p = Parse(self.input_data, 2)
+        Parse(self.input_data, 2)
+
+
 
 class TestEfficiencyParsingManyMessages(unittest.TestCase):
+
     def setUp(self):
         self.input_data = '5\n'*5000
 
-    @ max_time(75, repeat=3)
+
+    @ max_time(75)
     def test(self):
-        p = Parse(self.input_data, 2)
+        Parse(self.input_data, 2)
+
 
 
 class TestEfficiencyParsingCommands(unittest.TestCase):
+
     def setUp(self):
         self.input_data = ('S\n')*5000
 
-    @ max_time(150, repeat=3)
+
+    @ max_time(150)
     def test(self):
-        p = Parse(self.input_data, 2)
+        Parse(self.input_data, 2)
+
+
 
 class TestEfficiencyParsingInvalidInput(unittest.TestCase):
+
     def setUp(self):
         self.input_data = 'MOVE ' + '1 '*500 + '\n' \
             + ' s \n'*1000
 
-    @ max_time(30, repeat=3)
+
+    @ max_time(30)
     def test(self):
-        p = Parse(self.input_data, 2)
+        Parse(self.input_data, 2)
+
+
 
 class TestEfficiencyParsingBlankInput(unittest.TestCase):
+
     def setUp(self):
         self.input_data = '  \t \n'*2500
 
-    @ max_time(10, repeat=3)
+
+    @ max_time(10)
     def test(self):
-        p = Parse(self.input_data, 2)
+        Parse(self.input_data, 2)
+
+
+
 
 
 if __name__ == '__main__':
