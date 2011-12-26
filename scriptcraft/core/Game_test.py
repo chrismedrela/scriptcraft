@@ -318,17 +318,10 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=self.miner.type.store_size,
                                                                          direction='base')
 
+
     def test_generate_action_for_empty_miner_with_complex_gather_command(self):
         self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=0,
                                                                          direction='mineral_deposit')
-
-    def test_generate_action_for_empty_miner_with_complex_gather_command_when_mineral_deposit_is_empty(self):
-        self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
-        self.game.game_map.place_minerals_at(self.mineral_position, how_many=0)
-
-        command = cmds.ComplexGatherCommand(self.mineral_position)
-        excepted_action = actions.StopAction()
-        self._test_generate_action(command, excepted_action, unit=self.miner)
 
 
     def _test_generate_action_for_miner_with_complex_gather_command(self, minerals_in_miner, direction):
@@ -348,29 +341,35 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.miner)
 
 
+    def test_generate_action_for_empty_miner_with_complex_gather_command_when_mineral_deposit_is_empty(self):
+        self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
+        self.game.game_map.place_minerals_at(self.mineral_position, how_many=0)
+
+        command = cmds.ComplexGatherCommand(self.mineral_position)
+        excepted_action = actions.StopAction()
+        self._test_generate_action(command, excepted_action, unit=self.miner)
+
+
     def test_generate_action_for_tank_with_complex_attack_command_when_alien_in_destination(self):
-        Alice = self.game.new_player('Alice', (0,255,0))
-        position = (3, 63)
-        alien_unit = self.game.new_unit(Alice, position, self.miner_type)
-
-        assert distance(self.tank.position, alien_unit.position) <= self.tank.type.attack_range
-
-        command = cmds.ComplexAttackCommand(destination=position)
-        excepted_action = actions.FireAction(destination=position)
-        self._test_generate_action(command, excepted_action, unit=self.tank)
+        destination_of_attack = position_of_alien = (3, 63)
+        self._test_generate_action_for_tank_with_complex_attack_command(self, position_of_alien, destination_of_attack)
 
 
     def test_generate_action_for_tank_with_complex_attack_command_when_an_alien_in_range(self):
-        Alice = self.game.new_player('Alice', (0,255,0))
-        position = (3, 63)
-        alien_unit = self.game.new_unit(Alice, position, self.miner_type)
+        position_of_alien = (3, 63)
         destination = (10, 63)
+        self._test_generate_action_for_tank_with_complex_attack_command(self, position_of_alien, destination)
 
+
+    def _test_generate_action_for_tank_with_complex_attack_command(self, position, destination):
+        Alice = self.game.new_player('Alice', (0,255,0))
+        alien_unit = self.game.new_unit(Alice, position, self.miner_type)
+
+        assert self.tank.position == (0,63)
         assert distance(self.tank.position, alien_unit.position) <= self.tank.type.attack_range
-        assert distance(self.tank.position, destination) > self.tank.type.attack_range
 
-        command = cmds.ComplexAttackCommand(destination=destination)
-        excepted_action = actions.FireAction(destination=position)
+        command = cmds.ComplexAttackCommand(destination)
+        excepted_action = actions.FireAction(position)
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
@@ -379,7 +378,7 @@ class TestGenerateActions(BaseGameTestCase):
         destination = (2, 63)
         direction = (1, 63)
 
-        command = cmds.ComplexAttackCommand(destination=destination)
+        command = cmds.ComplexAttackCommand(destination)
         excepted_action=actions.MoveAction(source=self.tank.position,
                                            destination=direction)
         self._test_generate_action(command, excepted_action, unit=self.tank)
@@ -389,7 +388,7 @@ class TestGenerateActions(BaseGameTestCase):
         assert self.tank.position == (0, 63)
         destination = self.tank.position
 
-        command = cmds.ComplexAttackCommand(destination=destination)
+        command = cmds.ComplexAttackCommand(destination)
         excepted_action = actions.StopAction()
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
