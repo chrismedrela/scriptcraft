@@ -42,7 +42,7 @@ class BaseGameTestCase(unittest.TestCase):
         self.base_type = UnitType(attack_range=0,
                                   vision_range=2,
                                   store_size= -1,
-                                  cost_of_build= -1,
+                                  can_be_built=False,
                                   can_build=True,
                                   movable=False,
                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
