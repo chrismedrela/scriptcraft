@@ -414,7 +414,7 @@ class TestGenerateActions(BaseGameTestCase):
         self.game.remove_unit_at(destination)
 
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        excepted_action = actions.BuildAction(unit_type=self.miner_type, destination),
+        excepted_action = actions.BuildAction(self.miner_type, destination),
         self._test_generate_action(command, excepted_action, unit=self.base)
 
 
