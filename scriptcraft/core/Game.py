@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+from scriptcraft.core import direction
 from scriptcraft.core.Player import Player
+
 
 
 class Game(object):
@@ -32,6 +34,22 @@ class Game(object):
     def _get_new_ID(self):
         self._units_and_players_counter += 1
         return self._units_and_players_counter
+
+
+    def new_player_with_base(self, name, color):
+        """ May raise NoFreeStartPosition """
+
+        player = self.new_player(name, color)
+
+        base = self.new_unit(player, player.start_position, self.configuration.main_base_type)
+
+        miners = []
+        for dx, dy in direction.FROM_RAY:
+            position = player.start_position[0] + dx, player.start_position[1] + dy
+            miner = self.new_unit(player, position, self.configuration.main_miner_type)
+            miners.append(miner)
+
+        return player, base, miners
 
 
 #     tic(env/folder):

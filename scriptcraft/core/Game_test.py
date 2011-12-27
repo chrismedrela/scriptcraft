@@ -118,7 +118,6 @@ class TestBasic():
         self.assertTrue(Alice.start_position == self.start_positions[1]) # 1st position belongs to Bob
 
 
-    @ skip
     def test_new_player_with_base(self):
         color = (0, 255, 0)
         Alice, base, miners = self.game.new_player_with_base('Alice', color)
