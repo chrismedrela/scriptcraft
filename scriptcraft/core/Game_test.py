@@ -141,7 +141,6 @@ class TestBasic():
         self.assertTrue(self.base not in self.player.units)
 
 
-    @ skip
     def test_set_program(self):
         program = Program(language=self.simple_language, code='// simple code')
         self.game.set_program(self.base, program)

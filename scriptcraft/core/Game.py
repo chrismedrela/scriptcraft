@@ -81,6 +81,14 @@ class Game(object):
         unit.position = new_position
 
 
+    def set_program(self, unit, program):
+        unit.program = program
+
+
+
+
+
+
 #     tic(env/folder):
 #        _tic_for_world():
 #            increase minerals deposit
