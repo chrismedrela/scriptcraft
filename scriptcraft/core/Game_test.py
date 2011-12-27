@@ -6,10 +6,9 @@ import unittest
 
 from scriptcraft.utils import *
 from scriptcraft.core import actions, cmds
-from scriptcraft.core.Game import (Game, InvalidReceiver, PositionOutOfMap,
-    CannotStoreMinerals, FieldIsOccupied)
+from scriptcraft.core.Game import Game, InvalidReceiver, CannotStoreMinerals
 from scriptcraft.core.GameConfiguration import GameConfiguration
-from scriptcraft.core.GameMap import GameMap
+from scriptcraft.core.GameMap import GameMap, PositionOutOfMap, FieldIsOccupied
 from scriptcraft.core.Language import Language
 from scriptcraft.core.Message import Message
 from scriptcraft.core.Program import Program
@@ -82,9 +81,9 @@ class BaseGameTestCase(unittest.TestCase):
 
 
     def _create_player_Bob(self):
-        self.player_Bob, self.base, self.miners = self.game.new_player_with_base('Bob', (255, 0, 0))
+        self.player, self.base, self.miners = self.game.new_player_with_base('Bob', (255, 0, 0))
         self.miner = self.miners[0]
-        self.tank = self.game.new_unit(self.player_Bob, (0,63), self.tank_type)
+        self.tank = self.game.new_unit(self.player, (0,63), self.tank_type)
 
 
     def _modify_world(self):
@@ -102,8 +101,7 @@ class BaseGameTestCase(unittest.TestCase):
 
 
 
-class TestBasic():
-
+class TestBasic(BaseGameTestCase):
 
     def test_new_player(self):
         color = (255, 0, 0)
@@ -122,11 +120,11 @@ class TestBasic():
         for miner in miners:
             field_with_miner = self.game.game_map.get_field(miner.position)
             self.assertTrue(field_with_miner.has_unit())
-            self.assertTrue(distance(miner, base) == 1)
+            self.assertTrue(distance(miner.position, base.position) == 1)
 
 
     def test_new_unit(self):
-        miner = self.game.new_unit(self.player_Bob, self.free_positions[0], self.miner_type)
+        miner = self.game.new_unit(self.player, self.free_positions[0], self.miner_type)
 
         self.assertTrue(miner in self.game.units_by_IDs.itervalues())
         self.assertTrue(miner in self.player.units)
@@ -137,7 +135,7 @@ class TestBasic():
         self.game.remove_unit(self.base)
 
         self.assertTrue(self.base.ID not in self.game.units_by_IDs)
-        self.assertTrue(self.player.base == None)
+        self.assertTrue(self.player.maybe_base == None)
         self.assertTrue(self.base not in self.player.units)
 
 
@@ -165,7 +163,7 @@ class TestUtils(BaseGameTestCase):
     @ skip
     def test_searching_nearest_unit(self):
         Alice = self.game.new_player('Alice', (255, 0, 0))
-        Bob_unit = self.game.new_unit(self.player_Bob, (61, 0), self.miner_type)
+        Bob_unit = self.game.new_unit(self.player, (61, 0), self.miner_type)
         Alice_unit = self.game.new_unit(Alice, (62, 0), self.miner_type)
 
         position = (65, 0) # out of map
@@ -207,19 +205,16 @@ class TestUtils(BaseGameTestCase):
 
 class TestFire(BaseGameTestCase):
 
-    @ skip
     def test_fire_trees(self):
         self.game.fire_at(self.trees_position)
-        self.game.assertTrue(self.game.game_map.get_field(self.trees_position).is_empty())
+        self.assertTrue(self.game.game_map.get_field(self.trees_position).is_empty())
 
 
-    @ skip
     def test_fire_miner(self):
         self.game.fire_at(self.miner.position)
         self.assertTrue(self.miner not in self.game.units_by_IDs.itervalues())
 
 
-    @ skip
     def test_fire_base(self):
         self._test_fire_base_with_minerals()
         self._test_fire_base_without_minerals()
@@ -228,7 +223,7 @@ class TestFire(BaseGameTestCase):
     def _test_fire_base_with_minerals(self):
         assert self.base.minerals == 1
         self.game.fire_at(self.base.position)
-        self.game.assertEqual(self.base.minerals, 0)
+        self.assertEqual(self.base.minerals, 0)
 
 
     def _test_fire_base_without_minerals(self):
@@ -237,9 +232,8 @@ class TestFire(BaseGameTestCase):
         self.assertTrue(self.base not in self.game.units_by_IDs.itervalues())
 
 
-    @ skip
     def test_cannot_fire_out_of_map(self):
-        illegal_operation = self.game.fire_at((-1, -1))
+        illegal_operation = lambda: self.game.fire_at((-1, -1))
         self.assertRaises(PositionOutOfMap, illegal_operation)
 
 
@@ -533,12 +527,12 @@ class TestAnsweringSystemQuestions(BaseGameTestCase):
 
 
     def _test_correctness_of_answer_to_system_question(self, question, answer):
-        system_message = Message(sender_ID=self.player_Bob.ID,
+        system_message = Message(sender_ID=self.player.ID,
                                  receiver_ID=0,
                                  text=question)
 
         answer = self.game._generate_answer_to_system_message(system_message)
-        excepted_answer = Message(sender_ID=0, receiver_ID=self.player_Bob.ID, text=answer)
+        excepted_answer = Message(sender_ID=0, receiver_ID=self.player.ID, text=answer)
         self.assertEqual(excepted_answer, answer)
 
 

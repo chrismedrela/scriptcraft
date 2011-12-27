@@ -2,8 +2,10 @@
 #-*- coding:utf-8 -*-
 
 from scriptcraft.core import direction
+from scriptcraft.core.GameMap import FieldIsOccupied
 from scriptcraft.core.Player import Player
 from scriptcraft.core.Unit import Unit
+from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
 
 
 
@@ -43,6 +45,7 @@ class Game(object):
         player = self.new_player(name, color)
 
         base = self.new_unit(player, player.start_position, self.configuration.main_base_type)
+        base.minerals = self.configuration.minerals_for_main_unit_at_start
 
         miners = []
         for dx, dy in direction.FROM_RAY:
@@ -58,7 +61,8 @@ class Game(object):
             raise FieldIsOccupied()
 
         ID = self._get_new_ID()
-        unit = Unit(player, type, position, ID)
+        unit = Unit(player, unit_type, position, ID)
+        player.add_unit(unit)
 
         self.game_map.place_unit_at(position, ID)
         self.units_by_IDs[unit.ID] = unit
@@ -83,6 +87,40 @@ class Game(object):
 
     def set_program(self, unit, program):
         unit.program = program
+
+
+    def fire_at(self, position):
+        field = self.game_map.get_field(position)
+
+        if field.has_trees():
+            self.game_map.erase_at(position)
+
+        elif field.has_unit():
+            self._fire_at_unit(field)
+
+        else:
+            pass
+
+
+    def _fire_at_unit(self, field):
+        def destroy():
+            self.remove_unit(unit)
+
+        def get_mineral_or_destroy():
+            if unit.minerals == 0:
+                self.remove_unit(unit)
+
+            else:
+                unit.minerals -= 1
+
+        unit_ID = field.get_unit_ID()
+        unit = self.units_by_IDs[unit_ID]
+        switch = {BEHAVIOUR_WHEN_ATTACKED.DESTROY : destroy,
+                  BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY : get_mineral_or_destroy}
+
+        case = switch[unit.type.behaviour_when_attacked]
+        case()
+
 
 
 
@@ -171,11 +209,5 @@ class Game(object):
 class InvalidReceiver(Exception):
     pass
 
-class PositionOutOfMap(Exception):
-    pass
-
 class CannotStoreMinerals(Exception):
-    pass
-
-class FieldIsOccupied(Exception):
     pass

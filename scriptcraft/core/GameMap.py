@@ -10,8 +10,12 @@ from scriptcraft.core.Field import Field
 class NoFreeStartPosition(Exception):
     pass
 
-class CannotPlaceOnOccupedField(Exception):
+class FieldIsOccupied(Exception):
     pass
+
+class PositionOutOfMap(Exception):
+    pass
+
 
 
 class GameMap(list):
@@ -73,6 +77,10 @@ class GameMap(list):
         return x==0 or x==self.size[0]-1 or y==0 or y==self.size[1]-1
 
     def get_field(self, position):
+        x, y = position
+        if x<0 or y<0 or x>=self.size[0] or y>=self.size[1]:
+            raise PositionOutOfMap()
+
         return self[position[0]][position[1]]
 
     def place_trees_at(self, position):
@@ -93,7 +101,7 @@ class GameMap(list):
 
     def _change_field_with_function_if_empty(self, position, function):
         if not self[position[0]][position[1]].is_empty():
-            raise CannotPlaceOnOccupedField()
+            raise FieldIsOccupied()
         self._change_field_with_function(position, function)
 
     def _change_field_with_function(self, position, function):

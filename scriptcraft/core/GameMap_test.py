@@ -5,7 +5,7 @@ import unittest
 import copy
 
 from scriptcraft.utils import *
-from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition, CannotPlaceOnOccupedField
+from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition, FieldIsOccupied
 
 
 class TestGameMap(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestGameMap(unittest.TestCase):
         m = GameMap((16, 16), ())
         m.place_unit_at((8, 9), 4)
         illegal_operation = lambda: m.place_minerals_at((8, 9), 8)
-        self.assertRaises(CannotPlaceOnOccupedField, illegal_operation)
+        self.assertRaises(FieldIsOccupied, illegal_operation)
 
     def test_getting_fields(self):
         m = GameMap((16, 16), ())
