@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from scriptcraft.core import direction
+from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
 from scriptcraft.core.GameMap import FieldIsOccupied
 from scriptcraft.core.Message import Message
@@ -311,6 +311,61 @@ class Game(object):
 
         return the_nearest
 
+
+    def _generate_action_for(self, unit):
+        command_type = type(unit.command)
+
+        switch = {cmds.StopCommand : self._generate_action_for_unit_with_stop_command,
+                  cmds.ComplexMoveCommand : self._generate_action_for_unit_with_complex_move_command,
+                  cmds.MoveCommand : self._generate_action_for_unit_with_move_command,
+                  cmds.ComplexGatherCommand : self._generate_action_for_unit_with_complex_gather_command,
+                  cmds.FireCommand : self._generate_action_for_unit_with_fire_command,
+                  cmds.ComplexAttackCommand : self._generate_action_for_unit_with_complex_attack_command,
+                  cmds.BuildCommand : self._generate_action_for_unit_with_build_command}
+        case = switch[command_type]
+
+        return case(unit)
+
+
+    def _generate_action_for_unit_with_stop_command(self, unit):
+        return actions.StopAction()
+
+
+    def _generate_action_for_unit_with_complex_move_command(self, unit):
+        pass
+
+
+    def _generate_action_for_unit_with_move_command(self, unit):
+        command = unit.command
+        ray = direction.TO_RAY[command.direction]
+        destination = (ray[0] + unit.position[0],
+                       ray[1] + unit.position[1])
+        unit_type = unit.type
+
+        if not unit_type.movable:
+            return actions.StopAction()
+
+        if not self.game_map.get_field(destination).is_empty():
+            return actions.StopAction()
+
+        return actions.MoveAction(source=unit.position,
+                                  destination=destination)
+
+
+    def _generate_action_for_unit_with_complex_gather_command(self, unit):
+        pass
+
+
+    def _generate_action_for_unit_with_fire_command(self, unit):
+        pass
+
+
+    def _generate_action_for_unit_with_complex_attack_command(self, unit):
+        pass
+
+
+    def _generate_action_for_unit_with_build_command(self, unit):
+        pass
 
 
 #     tic(env/folder):

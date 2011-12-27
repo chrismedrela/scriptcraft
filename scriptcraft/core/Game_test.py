@@ -5,7 +5,7 @@ import copy
 import unittest
 
 from scriptcraft.utils import *
-from scriptcraft.core import actions, cmds
+from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core.Game import Game, InvalidReceiver, CannotStoreMinerals
 from scriptcraft.core.GameConfiguration import GameConfiguration
 from scriptcraft.core.GameMap import GameMap, PositionOutOfMap, FieldIsOccupied
@@ -317,6 +317,14 @@ class TestMoveUnit(BaseGameTestCase):
 
 
 class TestGenerateActions(BaseGameTestCase):
+
+    def test_generate_action_for_miner_with_move_command(self):
+        old_position = self.tank.position
+        new_position = old_position[0], old_position[1] - 1
+        command = cmds.MoveCommand(direction=direction.N)
+        excepted_action = actions.MoveAction(source=old_position,
+                                             destination=new_position)
+        self._test_generate_action(command, excepted_action, unit=self.tank)
 
     @ skip
     def test_generate_action_for_immovable_base_with_complex_move_command(self):
