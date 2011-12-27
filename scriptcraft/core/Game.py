@@ -69,6 +69,12 @@ class Game(object):
         return unit
 
 
+    def remove_unit(self, unit):
+        unit.player.remove_unit(unit)
+        del self.units_by_IDs[unit.ID]
+        self.game_map.erase_at(unit.position)
+
+
 #     tic(env/folder):
 #        _tic_for_world():
 #            increase minerals deposit

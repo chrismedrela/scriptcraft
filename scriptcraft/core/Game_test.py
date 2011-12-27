@@ -133,7 +133,6 @@ class TestBasic():
         self.assertEqual(miner.player, self.player)
 
 
-    @ skip
     def test_remove_unit(self):
         self.game.remove_unit(self.base)
 
