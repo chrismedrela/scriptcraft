@@ -54,7 +54,7 @@ class Game(object):
 
 
     def new_unit(self, player, position, unit_type):
-        if not self.game_map.is_valid_position():
+        if not self.game_map.is_valid_position(position):
             raise PositionOutOfMap()
 
         if not self.game_map.get_field(position).is_empty():

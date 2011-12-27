@@ -81,17 +81,12 @@ class BaseGameTestCase(unittest.TestCase):
         self.game = Game(game_map, game_configuration)
 
 
-    @ skip
     def _create_player_Bob(self):
-        self.player_Bob = self.game.new_player_with_base('Bob', (255, 0, 0))
-        self.base = self.player_Bob.maybe_base
-        self.miners = filter(lambda unit: unit.type == self.miner_type,
-                             self.player_Bob.units)
+        self.player_Bob, self.base, self.miners = self.game.new_player_with_base('Bob', (255, 0, 0))
         self.miner = self.miners[0]
         self.tank = self.game.new_unit(self.player_Bob, (0,63), self.tank_type)
 
 
-    @ skip
     def _modify_world(self):
         self.trees_position = (14, 16)
         self.game.game_map.place_trees_at(self.trees_position)
