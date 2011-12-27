@@ -47,7 +47,7 @@ class BaseGameTestCase(unittest.TestCase):
                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
                                   names=('4', 'base', 'b'))
 
-        self.tank_type = UnitType(attack_range=5, vision_range=7,
+        self.tank_type = UnitType(attack_range=5, vision_range=2,
                                   store_size=0,
                                   cost_of_build=10,
                                   can_build=False,
@@ -87,7 +87,7 @@ class BaseGameTestCase(unittest.TestCase):
 
 
     def _modify_world(self):
-        self.trees_position = (14, 16)
+        self.trees_position = (2, 63)
         self.game.game_map.place_trees_at(self.trees_position)
 
         self.minerals_position = (22, 16)
@@ -175,30 +175,44 @@ class TestUtils(BaseGameTestCase):
         self.assertEqual(found_unit, excepted_unit)
 
 
-    @ skip
     def test_generate_input(self):
-        message = Message(sender_ID=1234,
-                          receiver_ID=self.base.ID,
+        assert self.trees_position == (2, 63)
+        assert self.tank.type.vision_range == 2
+
+        message = Message(sender_ID=self.miner.ID,
+                          receiver_ID=self.tank.ID,
                           text='\t\ttext of message\t')
         self.game._send_message(message)
         number_of_messages = 1
 
-        vision_diameter = 2 * self.base.type.vision_range + 1
-        base_type_name = self.base_type.main_name
+        description_of_surroundings_dict = {'tank_type_name':self.tank.type.main_name,
+                                            'tank_ID':self.tank.ID,
+                                            'player_ID':self.player.ID}
+        description_of_field_with_trees = '3 0 0\n'
+        description_of_surroundings = ("1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
+                                      "1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
+                                      "1 0 0 " "1 0 0 " "%(tank_type_name)s %(tank_ID)d %(player_ID)d " "0 0 0 " + description_of_field_with_trees + \
+                                      "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0\n" \
+                                      "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0") % description_of_surroundings_dict
 
-        description_of_field_with_trees = '3 0 0'
-        description_of_surroundings = "0 0 0" "0 0 0" "0 0 0" "0 0 0" "0 0 0\n" \
-                                      "0 0 0" "0 0 0" "0 0 0" "0 0 0" "0 0 0\n" \
-                                      + description_of_field_with_trees + "0 0 0" "%(base_type_name)s %(self.base.ID)d %(self.player.ID)d" "0 0 0" "0 0 0\n" \
-                                      "0 0 0" "0 0 0" "0 0 0" "0 0 0" "0 0 0\n" \
-                                      "0 0 0" "0 0 0" "0 0 0" "0 0 0" "0 0 0"
-        messages = "%(message.sender_ID) " + message.text
-        excepted_input = "%(base_type_name)s %(self.base.ID)d %(self.player.ID)d %(number_of_messages)d %(self.base.position[0])d %(self.base.position[1])d %(vision_diameter)d\n" \
-                         "%(self.base.ID)d\n" \
-                         "%(description_of_surroundings)s\n" \
-                         "%(messages)s" % locals()
+        messages = "%(sender_ID)d " % {'sender_ID':message.sender_ID} \
+            + message.text
+        excepted_input_dict = {'tank_type_name':self.tank.type.main_name,
+                               'tank_ID':self.tank.ID,
+                               'player_ID':self.player.ID,
+                               'messages_len':number_of_messages,
+                               'tank_x':self.tank.position[0],
+                               'tank_y':self.tank.position[1],
+                               'vision_diameter':2 * self.tank.type.vision_range + 1,
+                               'range_of_attack':self.tank.type.attack_range,
+                               'messages':messages,
+                               'surroundings':description_of_surroundings}
+        excepted_input = "%(tank_type_name)s %(tank_ID)d %(player_ID)d %(messages_len)d %(tank_x)d %(tank_y)d %(vision_diameter)d\n" \
+                         "%(range_of_attack)d\n" \
+                         "%(surroundings)s\n" \
+                         "%(messages)s" % excepted_input_dict
 
-        input = self.game._generate_input_for(self.base)
+        input = self.game._generate_input_for(self.tank)
         self.assertEqual(excepted_input, input)
 
 

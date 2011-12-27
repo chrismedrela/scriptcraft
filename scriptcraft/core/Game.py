@@ -224,6 +224,68 @@ class Game(object):
         return response
 
 
+    def _generate_input_for(self, unit):
+        # first line of info
+        input_data_dict = {'type':unit.type.main_name,
+                           'ID':unit.ID,
+                           'player_ID':unit.player.ID,
+                           'messages_len':len(unit.input_messages),
+                           'x':unit.position[0],
+                           'y':unit.position[1],
+                           'vision_diameter':unit.type.vision_range*2+1,
+                           'extra_info': unit.minerals if unit.type.store_size!=0 else unit.type.attack_range}
+        input_data = '%(type)s %(ID)d %(player_ID)d %(messages_len)d %(x)d %(y)d %(vision_diameter)d\n%(extra_info)d\n' % input_data_dict
+
+        # info about surroundings
+        def generate_input_for_field(x, y):
+            # out of map?
+            is_valid_position = lambda x, y: x>=0 and y>=0 and x<self.game_map.size[0] and y<self.game_map.size[1]
+            if not is_valid_position(x, y):
+                return '1 0 0'
+
+            # not out of map
+            field = self.game_map[x][y]
+
+            if field.is_empty():
+                if field.is_flat():
+                    return '0 0 0'
+                else: # is upland
+                    return '1 0 0'
+
+            elif field.has_mineral_deposit():
+                minerals = field.get_minerals()
+                return '2 %d 0' % minerals
+
+            elif field.has_trees():
+                return '3 0 0'
+
+            elif field.has_unit():
+                unit_ID = field.get_unit_ID()
+                unit = self.units_by_IDs[unit_ID]
+                unit_type = unit.type.main_name
+                player_ID = unit.player.ID
+                return '%s %d %d' % (unit_type, unit_ID, player_ID)
+
+            else:
+                raise Exception('invalid field')
+
+
+        input_data += '\n'.join(map(' '.join,
+                                    [   [   generate_input_for_field(x, y)
+                                        for x in xrange(unit.position[0] - unit.type.vision_range,
+                                                        unit.position[0] + unit.type.vision_range + 1)]
+                                    for y in xrange(unit.position[1] - unit.type.vision_range,
+                                                    unit.position[1] + unit.type.vision_range + 1)]))
+        input_data += '\n'
+
+        # messages
+        input_data += '\n'.join(map(lambda message: '%d %s' % (message.sender_ID,
+                                                               message.text),
+                                    unit.input_messages))
+
+        return input_data
+
+
 
 #     tic(env/folder):
 #        _tic_for_world():
