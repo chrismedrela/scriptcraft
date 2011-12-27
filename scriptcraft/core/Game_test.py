@@ -160,7 +160,6 @@ class TestBasic(BaseGameTestCase):
 
 class TestUtils(BaseGameTestCase):
 
-    @ skip
     def test_searching_nearest_unit(self):
         Alice = self.game.new_player('Alice', (255, 0, 0))
         Bob_unit = self.game.new_unit(self.player, (61, 0), self.miner_type)
@@ -168,7 +167,7 @@ class TestUtils(BaseGameTestCase):
 
         position = (65, 0) # out of map
         range = 5
-        condition = lambda unit: unit.player.name != 'Alice'
+        condition = lambda unit: unit != Alice_unit
 
         found_unit = self.game.find_nearest_unit_in_range_fulfilling_condition(position, range, condition)
         excepted_unit = Bob_unit

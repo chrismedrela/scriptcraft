@@ -286,6 +286,32 @@ class Game(object):
         return input_data
 
 
+    def find_nearest_unit_in_range_fulfilling_condition(self, position, range, condition):
+        def positions_in_range(position, range):
+            for x in xrange(position[0]-range,
+                            position[0]+range+1):
+                for y in xrange(position[1]-range,
+                                position[1]+range+1):
+                    if distance((x, y), position) <= range:
+                        yield x, y
+
+        the_best_distance = 99999999999
+        the_nearest = None
+        is_valid_position = lambda (x, y): x>=0 and y>=0 and x<self.game_map.size[0] and y<self.game_map.size[1]
+        for x, y in filter(is_valid_position,
+                           positions_in_range(position, range)):
+            field = self.game_map[x][y]
+            if field.has_unit():
+                unit_ID = field.get_unit_ID()
+                unit = self.units_by_IDs[unit_ID]
+                dist = distance(unit.position, position)
+                if dist <= the_best_distance and condition(unit):
+                    the_nearest = unit
+                    the_best_distance = dist
+
+        return the_nearest
+
+
 
 #     tic(env/folder):
 #        _tic_for_world():
