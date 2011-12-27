@@ -148,6 +148,36 @@ class Game(object):
         destination.minerals += 1
 
 
+    def _send_message(self, message):
+        is_valid_ID = lambda ID: ID in self.units_by_IDs or ID == 0
+
+        if not is_valid_ID(message.sender_ID):
+            raise InvalidSender()
+
+        if not is_valid_ID(message.receiver_ID):
+            raise InvalidReceiver()
+
+        sender = self if message.sender_ID == 0 else self.units_by_IDs[message.sender_ID]
+        sender.output_messages.append(message)
+
+        receiver = self if message.receiver_ID == 0 else self.units_by_IDs[message.receiver_ID]
+        receiver.input_messages.append(message)
+
+
+    def _clear_mailboxes(self):
+        def clear_mailbox_of(obj):
+            obj.input_messages = []
+            obj.output_messages = []
+
+        clear_mailbox_of(self)
+
+        for unit in self.units_by_IDs.itervalues():
+            clear_mailbox_of(unit)
+
+
+
+
+
 
 
 
@@ -234,6 +264,9 @@ class Game(object):
 #    set_minerals_to_deposit(self, position_of_deposit, how_many)
 #
 #    set_program(unit, program)
+
+class InvalidSender(Exception):
+    pass
 
 class InvalidReceiver(Exception):
     pass

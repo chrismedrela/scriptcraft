@@ -446,7 +446,6 @@ class TestGenerateActions(BaseGameTestCase):
 
 class TestMessageSystem(BaseGameTestCase):
 
-    @ skip
     def test_send_message(self):
         """ Sending messages to alien should be legal. """
 
@@ -457,10 +456,9 @@ class TestMessageSystem(BaseGameTestCase):
         self.game._send_message(message)
 
         self.assertEqual(self.base.output_messages, [message])
-        self.assertEqual(self.Alice_base.input_messages, [message])
+        self.assertEqual(Alice_base.input_messages, [message])
 
 
-    @ skip
     def test_send_system_message(self):
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=0,
@@ -471,17 +469,15 @@ class TestMessageSystem(BaseGameTestCase):
         self.assertEqual(self.game.input_messages, [message])
 
 
-    @ skip
     def test_send_message_with_invalid_receiver(self):
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=1234567,
                           text='text of message')
-        illegal_operation = self.game._send_message(message)
+        illegal_operation = lambda: self.game._send_message(message)
 
         self.assertRaises(InvalidReceiver, illegal_operation)
 
 
-    @ skip
     def test_clear_mailboxes(self):
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=self.miner.ID,
