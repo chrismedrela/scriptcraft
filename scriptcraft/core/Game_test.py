@@ -110,7 +110,6 @@ class BaseGameTestCase(unittest.TestCase):
 class TestBasic():
 
 
-    @ skip
     def test_new_player(self):
         color = (255, 0, 0)
         Alice = self.game.new_player('Alice', color)

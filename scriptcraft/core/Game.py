@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+from scriptcraft.core.Player import Player
+
+
 class Game(object):
 
     def __init__(self, game_map, game_configuration):
@@ -13,6 +16,22 @@ class Game(object):
         self.input_messages = []
         self.output_messages = []
 
+
+    def new_player(self, name, color):
+        """ May raise NoFreeStartPosition """
+
+        start_position = self.game_map.reserve_next_free_start_position()
+        ID = self._get_new_ID()
+        player = Player(name, color, ID, start_position)
+
+        self.players_by_IDs[player.ID] = player
+
+        return player
+
+
+    def _get_new_ID(self):
+        self._units_and_players_counter += 1
+        return self._units_and_players_counter
 
 
 #     tic(env/folder):
