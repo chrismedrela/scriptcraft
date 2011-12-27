@@ -130,7 +130,6 @@ class TestBasic():
             self.assertTrue(distance(miner, base) == 1)
 
 
-    @ skip
     def test_new_unit(self):
         miner = self.game.new_unit(self.player_Bob, self.free_positions[0], self.miner_type)
 

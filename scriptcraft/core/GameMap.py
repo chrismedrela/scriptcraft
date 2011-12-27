@@ -91,6 +91,10 @@ class GameMap(list):
         function = lambda field: field.Erased()
         self._change_field_with_function(position, function)
 
+    def is_valid_position(self, position):
+        x, y = position
+        return x >= 0 and y >= 0 and x < self.size[0] and y < self.size[1]
+
     def _change_field_with_function_if_empty(self, position, function):
         if not self[position[0]][position[1]].is_empty():
             raise CannotPlaceOnOccupedField()

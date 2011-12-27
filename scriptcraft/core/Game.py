@@ -3,6 +3,7 @@
 
 from scriptcraft.core import direction
 from scriptcraft.core.Player import Player
+from scriptcraft.core.Unit import Unit
 
 
 
@@ -50,6 +51,22 @@ class Game(object):
             miners.append(miner)
 
         return player, base, miners
+
+
+    def new_unit(self, player, position, unit_type):
+        if not self.game_map.is_valid_position():
+            raise PositionOutOfMap()
+
+        if not self.game_map.get_field(position).is_empty():
+            raise FieldIsOccupied()
+
+        ID = self._get_new_ID()
+        unit = Unit(player, type, position, ID)
+
+        self.game_map.place_unit_at(position, ID)
+        self.units_by_IDs[unit.ID] = unit
+
+        return unit
 
 
 #     tic(env/folder):
