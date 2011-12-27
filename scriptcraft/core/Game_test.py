@@ -240,7 +240,6 @@ class TestFire(BaseGameTestCase):
 
 class TestStoreMinerals(BaseGameTestCase):
 
-    @ skip
     def test_store_minerals(self):
         self._test_store_minerals_from_deposit_to_miner(self.miner)
         self._test_store_minerals_from_miner_to_base(self.miner)
@@ -265,21 +264,19 @@ class TestStoreMinerals(BaseGameTestCase):
         self.assertEqual(self.base.minerals, minerals_in_base + 1)
 
 
-    @ skip
     def test_store_minerals_when_destination_is_full(self):
         self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
         illegal_operation = lambda: self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
         self.assertRaises(CannotStoreMinerals, illegal_operation)
 
 
-    @ skip
     def test_store_minerals_when_mineral_deposit_source_is_empty(self):
+        self.game.game_map.erase_at(self.minerals_position)
         self.game.game_map.place_minerals_at(self.minerals_position, 0)
         illegal_operation = lambda: self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
         self.assertRaises(CannotStoreMinerals, illegal_operation)
 
 
-    @ skip
     def test_store_minerals_when_miner_source_is_empty(self):
         illegal_operation = lambda: self.game.store_minerals_from_unit_to_unit(self.miner, self.base)
         self.assertRaises(CannotStoreMinerals, illegal_operation)

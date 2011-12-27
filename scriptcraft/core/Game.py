@@ -122,6 +122,35 @@ class Game(object):
         case()
 
 
+    def store_minerals_from_deposit_to_unit(self, source_position, destination):
+        field_with_source = self.game_map.get_field(source_position)
+        if field_with_source.get_minerals() == 0:
+            raise CannotStoreMinerals('source (mineral deposit) is empty')
+
+        if destination.minerals == destination.type.store_size:
+            raise CannotStoreMinerals('destination unit is full')
+
+        minerals_in_source = field_with_source.get_minerals()
+        self.game_map.erase_at(source_position)
+        self.game_map.place_minerals_at(source_position, minerals_in_source-1)
+
+        destination.minerals += 1
+
+
+    def store_minerals_from_unit_to_unit(self, source, destination):
+        if source.minerals == 0:
+            raise CannotStoreMinerals('source unit is empty')
+
+        if destination.minerals == destination.type.store_size:
+            raise CannotStoreMinerals('destination unit is full')
+
+        source.minerals -= 1
+        destination.minerals += 1
+
+
+
+
+
 
 
 
