@@ -2,10 +2,13 @@
 #-*- coding:utf-8 -*-
 
 from scriptcraft.core import direction
+from scriptcraft.core import parse
 from scriptcraft.core.GameMap import FieldIsOccupied
+from scriptcraft.core.Message import Message
 from scriptcraft.core.Player import Player
 from scriptcraft.core.Unit import Unit
 from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
+from scriptcraft.utils import *
 
 
 
@@ -175,14 +178,50 @@ class Game(object):
             clear_mailbox_of(unit)
 
 
+    def _generate_answer_to_system_message(self, message):
+        def list_units():
+            sender = self.units_by_IDs[message.sender_ID]
+            player = sender.player
+            text = "%d " % len(player.units)
+            text += " ".join(map(lambda unit: "%d %s" % (unit.ID, unit.type.main_name),
+                                  player.units))
+            return text
 
+        def unit_info():
+            unit_ID = parse._parse_as_int(split_text[1])
+            if unit_ID == None:
+                return None
 
+            unit = self.units_by_IDs.get(unit_ID, None)
+            if unit == None:
+                return None
 
+            text_dict = {'ID':unit.ID,
+                         'type':unit.type.main_name,
+                         'x':unit.position[0],
+                         'y':unit.position[1],
+                         'more_info': unit.minerals if unit.type.store_size != 0 else unit.type.attack_range}
+            text = "%(ID)d %(type)s %(x)d %(y)d %(more_info)d" % text_dict
+            return text
 
+        cleaned_text = message.text.lower()
+        split_text = tuple(cleaned_text.split())
 
+        if split_text == ('list', 'units') or split_text == ('lu',):
+            case = list_units
+        elif split_text[0] in ('unit', 'u') and len(split_text)==2:
+            case = unit_info
+        else:
+            return None
 
+        response_text = case()
+        if response_text == None:
+            return None
 
-
+        response = Message(sender_ID=0,
+                           receiver_ID=message.sender_ID,
+                           text=response_text)
+        return response
 
 
 

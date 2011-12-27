@@ -499,34 +499,49 @@ class TestMessageSystem(BaseGameTestCase):
 
 class TestAnsweringSystemQuestions(BaseGameTestCase):
 
-    @ skip
     def test_answering_system_question_about_list_of_units(self):
+        assert len(self.player.units) == 6
+
         full_question = ' lISt\tunItS '
         short_question = ' lU\t'
-        answer = '5' '2 4' '3 5' '4 5' '5 5' '6 5'
+        answer = '6 ' '2 4 ' '3 5 ' '4 5 ' '5 5 ' '6 5 ' '7 6'
 
-        self._test_correctness_of_answer_to_system_question(full_question, answer)
-        self._test_correctness_of_answer_to_system_question(short_question, answer)
+        self._test_correctness_of_answer_to_system_question_asked_by_base(full_question, answer)
+        self._test_correctness_of_answer_to_system_question_asked_by_base(short_question, answer)
 
 
-    @ skip
     def test_answering_system_question_about_unit(self):
-        full_question = ' uNit \t1 '
-        short_question = 'u 1'
-        answer = '1 4 16 16 10'
+        assert self.base.ID == 2
 
-        self._test_correctness_of_answer_to_system_question(full_question, answer)
-        self._test_correctness_of_answer_to_system_question(short_question, answer)
+        full_question = ' uNit \t2 '
+        short_question = 'u 2'
+        answer = '2 4 16 16 1' # ID, type, x, y, minerals or attack_range
+
+        self._test_correctness_of_answer_to_system_question_asked_by_base(full_question, answer)
+        self._test_correctness_of_answer_to_system_question_asked_by_base(short_question, answer)
 
 
-    def _test_correctness_of_answer_to_system_question(self, question, answer):
-        system_message = Message(sender_ID=self.player.ID,
-                                 receiver_ID=0,
-                                 text=question)
+    def test_answering_invalid_system_question(self):
+        question = 'invalid question'
 
+        system_message = self._generate_system_question_asked_by_base(question)
         answer = self.game._generate_answer_to_system_message(system_message)
-        excepted_answer = Message(sender_ID=0, receiver_ID=self.player.ID, text=answer)
+        excepted_answer = None
         self.assertEqual(excepted_answer, answer)
+
+
+    def _test_correctness_of_answer_to_system_question_asked_by_base(self, question, answer):
+        system_message = self._generate_system_question_asked_by_base(question)
+
+        answer_message = self.game._generate_answer_to_system_message(system_message)
+        excepted_answer_message = Message(sender_ID=0, receiver_ID=self.base.ID, text=answer)
+        self.assertEqual(excepted_answer_message, answer_message)
+
+
+    def _generate_system_question_asked_by_base(self, question):
+        return Message(sender_ID=self.base.ID,
+                       receiver_ID=0,
+                       text=question)
 
 
 

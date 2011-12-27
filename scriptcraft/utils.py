@@ -5,6 +5,7 @@ __all__ = [
     'Enum',
     'make_enum',
     'max_time',
+    'anything',
     'skip',
     'distance',
 ]
@@ -24,6 +25,12 @@ def skip(f):
     def wrapped(*args, **kwargs):
         pass
     return wrapped
+
+
+class _Anything(object):
+    def __eq__(self, other):
+        return True
+anything = _Anything()
 
 
 
