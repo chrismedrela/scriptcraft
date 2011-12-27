@@ -54,9 +54,6 @@ class Game(object):
 
 
     def new_unit(self, player, position, unit_type):
-        if not self.game_map.is_valid_position(position):
-            raise PositionOutOfMap()
-
         if not self.game_map.get_field(position).is_empty():
             raise FieldIsOccupied()
 
@@ -73,6 +70,15 @@ class Game(object):
         unit.player.remove_unit(unit)
         del self.units_by_IDs[unit.ID]
         self.game_map.erase_at(unit.position)
+
+
+    def move_unit_at(self, unit, new_position):
+        if not self.game_map.get_field(new_position).is_empty():
+            raise FieldIsOccupied()
+
+        self.game_map.erase_at(unit.position)
+        self.game_map.place_unit_at(new_position, unit.ID)
+        unit.position = new_position
 
 
 #     tic(env/folder):

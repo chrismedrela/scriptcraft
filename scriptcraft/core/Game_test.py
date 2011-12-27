@@ -295,7 +295,6 @@ class TestStoreMinerals(BaseGameTestCase):
 
 class TestMoveUnit(BaseGameTestCase):
 
-    @ skip
     def test_move_unit(self):
         old_position = self.miner.position
         new_position = self.free_positions[0]
@@ -306,7 +305,6 @@ class TestMoveUnit(BaseGameTestCase):
         self.assertTrue(self.game.game_map.get_field(new_position).has_unit())
 
 
-    @ skip
     def test_cannot_move_unit_on_occuped_field(self):
         new_position_for_miner = self.base.position
 
