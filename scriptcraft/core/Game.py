@@ -345,6 +345,9 @@ class Game(object):
         if not unit_type.movable:
             return actions.StopAction()
 
+        if not self.game_map.is_valid_position(destination):
+            return actions.StopAction()
+
         if not self.game_map.get_field(destination).is_empty():
             return actions.StopAction()
 

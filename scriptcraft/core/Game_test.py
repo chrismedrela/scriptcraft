@@ -327,6 +327,15 @@ class TestGenerateActions(BaseGameTestCase):
                                              destination=new_position)
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
+
+    def test_generate_action_for_miner_on_border(self):
+        self.game.move_unit_at(self.miner, (0, 2))
+
+        invalid_command = cmds.MoveCommand(direction=direction.W)
+        excepted_action = actions.StopAction()
+        self._test_generate_action(invalid_command, excepted_action, unit=self.miner)
+
+
     @ skip
     def test_generate_action_for_immovable_base_with_complex_move_command(self):
         command = cmds.ComplexMoveCommand(destination=self.free_positions)
