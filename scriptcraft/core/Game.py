@@ -50,6 +50,7 @@ class Game(object):
 
         base = self.new_unit(player, player.start_position, self.configuration.main_base_type)
         base.minerals = self.configuration.minerals_for_main_unit_at_start
+        player.set_base(base)
 
         miners = []
         for dx, dy in direction.FROM_RAY:

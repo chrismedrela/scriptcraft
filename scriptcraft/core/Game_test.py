@@ -118,6 +118,7 @@ class TestBasic(BaseGameTestCase):
 
         self.assertEqual(len(Alice.units), 4 + 1) # 4 miners and 1 base
         self.assertEqual(base.position, self.start_positions[1])
+        self.assertTrue(Alice.maybe_base != None)
         for miner in miners:
             field_with_miner = self.game.game_map.get_field(miner.position)
             self.assertTrue(field_with_miner.has_unit())
