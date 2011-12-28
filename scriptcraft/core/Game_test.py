@@ -449,18 +449,21 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
-    @ skip
     def test_generate_action_for_base_with_build_command_when_building_is_possible(self):
         assert self.base.position == (16, 16)
+        self.base.minerals = 100
+
         destination = (15, 16)
-        self.game.remove_unit_at(destination)
+
+        unit_ID_to_remove = self.game.game_map.get_field(destination).get_unit_ID()
+        unit = self.game.units_by_IDs[unit_ID_to_remove]
+        self.game.remove_unit(unit)
 
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        excepted_action = actions.BuildAction(self.miner_type, destination),
+        excepted_action = actions.BuildAction(self.miner_type, destination)
         self._test_generate_action(command, excepted_action, unit=self.base)
 
 
-    @ skip
     def test_generate_action_for_base_with_build_command_when_all_surrounding_fields_are_occuped(self):
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
         excepted_action = actions.StopAction()

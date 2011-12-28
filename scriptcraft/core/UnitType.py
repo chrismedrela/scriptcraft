@@ -79,7 +79,7 @@ class UnitType(namedtuple('UnitType', ('attack_range',
 
     @ property
     def can_be_built(self):
-        return self.build_cost == -1
+        return self.build_cost != -1
 
 
     @ property

@@ -448,7 +448,51 @@ class Game(object):
 
 
     def _generate_action_for_unit_with_build_command(self, unit):
-        pass
+        if not unit.type.can_build:
+            return actions.StopAction()
+
+        type_name = unit.command.unit_type_name
+        new_unit_type = self.configuration.units_types_by_names.get(type_name, None)
+
+        if not new_unit_type:
+            return actions.StopAction()
+
+        if not new_unit_type.can_be_built:
+            return actions.StopAction()
+
+        if (new_unit_type.build_cost > unit.minerals
+            if unit.type.has_storage
+            else new_unit_type.build_cost != 0):
+            return actions.StopAction()
+
+        # find free neightbour
+        maybe_free_position = self._find_flat_and_free_neighbour_of(unit.position)
+
+        if not maybe_free_position:
+            return actions.StopAction()
+        position = maybe_free_position
+
+        # build unit
+        if unit.type.has_storage:
+            unit.minerals -= new_unit_type.build_cost
+
+        return actions.BuildAction(unit_type=new_unit_type,
+                                   destination=position)
+
+
+    def _find_flat_and_free_neighbour_of(self, position):
+        x, y = position
+        neighbours = ((x-1, y),
+                       (x, y-1),
+                       (x+1, y),
+                       (x, y+1))
+
+        for candidate in neighbours:
+            if (self.game_map.is_valid_position(candidate)
+                and self.game_map.get_field(candidate).is_flat_and_empty()):
+                return candidate
+
+        return None
 
 
     def _find_path_and_generate_action(self, unit, goal=None):
