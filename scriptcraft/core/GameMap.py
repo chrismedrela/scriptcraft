@@ -122,38 +122,3 @@ class GameMap(list):
         c._free_start_positions = self._free_start_positions[:]
 
         return c
-
-    def find_direction_of_path_from_to(self, source, destination):
-        """ Return None if source==destination or if destination is unavailable """
-
-        if source == destination:
-            return None
-
-        problem = FindPathProblem(source, destination, self)
-        try:
-            result_node = aima.search.astar_search(problem)
-        except TooLongSearchingTime:
-            return None
-
-        print problem.iteration
-        print problem.h_coefficient
-
-        if result_node == None: # no path found
-            return None
-
-        if result_node == 'cutoff': # limit of depth
-            return None
-
-        path = result_node.path()
-        first_node = path[-1]
-        second_node = path[-2]
-
-        delta_x, delta_y = (second_node.state[0] - first_node.state[0],
-                            second_node.state[1] - first_node.state[1])
-
-        next_x, next_y = second_node.state
-
-        if self[next_x][next_y].is_flat() and self[next_x][next_y].is_empty():
-            return direction.FROM_RAY[(delta_x, delta_y)]
-        else:
-            return None

@@ -437,15 +437,15 @@ class FindPathProblem(aima.search.Problem):
 
     """
 
-    def __init__(self, start_position, goal, gamemap):
-        aima.search.Problem.__init__(self, start_position, goal)
+    def __init__(self, start_position, destination, gamemap):
+        aima.search.Problem.__init__(self, start_position, destination)
         self.gamemap = gamemap
 
     def successor(self, state):
         x, y = state
         neightbours = []
         gamemap = self.gamemap
-        goal = self.goal
+        goal = self.destination
         if gamemap.is_valid_position(x-1,y) and (is_flat_and_empty(gamemap[x-1][y]) or (x-1,y)==goal):
             neightbours.append( (None, (x-1,y)) )
         if gamemap.is_valid_position(x,y-1) and (is_flat_and_empty(gamemap[x][y-1]) or (x,y-1)==goal):
@@ -457,14 +457,14 @@ class FindPathProblem(aima.search.Problem):
         return neightbours
 
     def goal_test(self, state):
-        return state == self.goal
+        return state == self.destination
 
     def path_cost(self, c, state1, action, state2):
         return c + 1
 
     def h(self, node):
         x, y = node.state
-        return distance_between((x,y), self.goal)
+        return distance_between((x,y), self.destination)
 
 
 
