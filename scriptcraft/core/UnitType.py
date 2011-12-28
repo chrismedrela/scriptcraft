@@ -22,10 +22,10 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     Attributes:
     attack_range -- value 0 means unit cannot attack
     vision_range -- 0 is valid value
-    store_size -- value 0 means unit cannot store minerals; value -1 means
-        there is no limit
-    can_be_built -- if False then cost_of_build == -1
+    store_size -- value -1 means there is no limit
+    has_storage -- if False then store_size == 0
     cost_of_build -- 0 is valid value; it hasn't sense when buildable==False
+    can_be_built -- if False then cost_of_build == -1
     can_build
     movable
     behaviour_when_attacked -- enum BEHAVIOUR_WHEN_ATTACKED
@@ -46,6 +46,14 @@ class UnitType(namedtuple('UnitType', ('attack_range',
             del kwargs['can_be_built']
             kwargs['cost_of_build'] = -1
 
+        if 'has_storage' in kwargs:
+            if not kwargs['has_storage']:
+                assert kwargs.get('store_size', 0) == 0
+                kwargs['store_size'] = 0
+            else:
+                assert 'store_size' in kwargs
+            del kwargs['has_storage']
+
         return cls.__bases__[0].__new__(cls, **kwargs)
 
 
@@ -62,3 +70,8 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     @ property
     def can_be_built(self):
         return self.cost_of_build == -1
+
+
+    @ property
+    def has_storage(self):
+        return self.storage_size != 0

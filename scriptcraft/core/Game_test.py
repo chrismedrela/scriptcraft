@@ -40,6 +40,7 @@ class BaseGameTestCase(unittest.TestCase):
 
         self.base_type = UnitType(attack_range=0,
                                   vision_radius=2,
+                                  has_storage=True,
                                   store_size= -1,
                                   can_be_built=False,
                                   can_build=True,
@@ -48,7 +49,7 @@ class BaseGameTestCase(unittest.TestCase):
                                   names=('4', 'base', 'b'))
 
         self.tank_type = UnitType(attack_range=5, vision_radius=2,
-                                  store_size=0,
+                                  has_storage=False,
                                   cost_of_build=10,
                                   can_build=False,
                                   movable=True,
