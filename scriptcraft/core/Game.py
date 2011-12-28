@@ -232,7 +232,7 @@ class Game(object):
                            'messages_len':len(unit.input_messages),
                            'x':unit.position[0],
                            'y':unit.position[1],
-                           'vision_diameter':unit.type.vision_range*2+1,
+                           'vision_diameter':unit.type.vision_radius*2+1,
                            'extra_info': unit.minerals if unit.type.store_size!=0 else unit.type.attack_range}
         input_data = '%(type)s %(ID)d %(player_ID)d %(messages_len)d %(x)d %(y)d %(vision_diameter)d\n%(extra_info)d\n' % input_data_dict
 
@@ -272,10 +272,10 @@ class Game(object):
 
         input_data += '\n'.join(map(' '.join,
                                     [   [   generate_input_for_field(x, y)
-                                        for x in xrange(unit.position[0] - unit.type.vision_range,
-                                                        unit.position[0] + unit.type.vision_range + 1)]
-                                    for y in xrange(unit.position[1] - unit.type.vision_range,
-                                                    unit.position[1] + unit.type.vision_range + 1)]))
+                                        for x in xrange(unit.position[0] - unit.type.vision_radius,
+                                                        unit.position[0] + unit.type.vision_radius + 1)]
+                                    for y in xrange(unit.position[1] - unit.type.vision_radius,
+                                                    unit.position[1] + unit.type.vision_radius + 1)]))
         input_data += '\n'
 
         # messages

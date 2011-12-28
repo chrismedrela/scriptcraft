@@ -37,7 +37,7 @@ class TestPlayer(unittest.TestCase):
 
     def _build_simple_unit(self, player):
         unit_type = UnitType(attack_range=5,
-                             vision_range=10,
+                             vision_radius=10,
                              store_size=0,
                              cost_of_build=5,
                              can_build=False,

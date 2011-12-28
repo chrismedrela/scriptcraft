@@ -30,7 +30,7 @@ class BaseGameTestCase(unittest.TestCase):
 
     def _create_unit_types(self):
         self.miner_type = UnitType(attack_range=0,
-                                   vision_range=7,
+                                   vision_radius=7,
                                    store_size=1,
                                    cost_of_build=3,
                                    can_build=False,
@@ -39,7 +39,7 @@ class BaseGameTestCase(unittest.TestCase):
                                    names=('5', 'miner', 'm'))
 
         self.base_type = UnitType(attack_range=0,
-                                  vision_range=2,
+                                  vision_radius=2,
                                   store_size= -1,
                                   can_be_built=False,
                                   can_build=True,
@@ -47,7 +47,7 @@ class BaseGameTestCase(unittest.TestCase):
                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
                                   names=('4', 'base', 'b'))
 
-        self.tank_type = UnitType(attack_range=5, vision_range=2,
+        self.tank_type = UnitType(attack_range=5, vision_radius=2,
                                   store_size=0,
                                   cost_of_build=10,
                                   can_build=False,
@@ -176,7 +176,7 @@ class TestUtils(BaseGameTestCase):
 
     def test_generate_input(self):
         assert self.trees_position == (2, 63)
-        assert self.tank.type.vision_range == 2
+        assert self.tank.type.vision_radius == 2
 
         message = Message(sender_ID=self.miner.ID,
                           receiver_ID=self.tank.ID,
@@ -202,7 +202,7 @@ class TestUtils(BaseGameTestCase):
                                'messages_len':number_of_messages,
                                'tank_x':self.tank.position[0],
                                'tank_y':self.tank.position[1],
-                               'vision_diameter':2 * self.tank.type.vision_range + 1,
+                               'vision_diameter':2 * self.tank.type.vision_radius + 1,
                                'range_of_attack':self.tank.type.attack_range,
                                'messages':messages,
                                'surroundings':description_of_surroundings}
