@@ -21,8 +21,9 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     """
     Attributes:
     attack_range -- value 0 means unit cannot attack
-    vision_range -- 0 is valid value
     store_size -- value -1 means there is no limit
+    vision_radius -- 0 is valid value
+    vision_diameter -- computed from vision_radius; not allowed in __init__ args
     has_storage -- if False then store_size == 0
     cost_of_build -- 0 is valid value; it hasn't sense when buildable==False
     can_be_built -- if False then cost_of_build == -1
