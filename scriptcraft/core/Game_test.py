@@ -336,7 +336,6 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(invalid_command, excepted_action, unit=self.miner)
 
 
-    @ skip
     def test_generate_action_for_immovable_base_with_complex_move_command(self):
         command = cmds.ComplexMoveCommand(destination=self.free_positions)
         excepted_action = actions.StopAction()

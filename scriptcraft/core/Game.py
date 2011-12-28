@@ -3,6 +3,7 @@
 
 from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
+from scriptcraft.core.FindPathProblem import FindPathProblem
 from scriptcraft.core.GameMap import FieldIsOccupied
 from scriptcraft.core.Message import Message
 from scriptcraft.core.Player import Player
@@ -332,7 +333,21 @@ class Game(object):
 
 
     def _generate_action_for_unit_with_complex_move_command(self, unit):
-        pass
+        if not unit.type.movable:
+            return actions.StopAction()
+
+        if not self.game_map.is_valid_position(unit.command.destination):
+            return actions.StopAction()
+
+        source = unit.position
+        goal = unit.destination
+        problem = FindPathProblem(source, goal, self.game_map)
+        d = problem.find_direction()
+        ray = direction.FROM_RAY[d]
+        destination = (ray[0] + source[0],
+                       ray[1] + source[1])
+        return actions.MoveAction(source=unit.position,
+                                 destination=destination)
 
 
     def _generate_action_for_unit_with_move_command(self, unit):
