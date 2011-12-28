@@ -76,3 +76,8 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     @ property
     def has_storage(self):
         return self.storage_size != 0
+
+
+    @ property
+    def has_storage_limit(self):
+        return self.storage_size != -1

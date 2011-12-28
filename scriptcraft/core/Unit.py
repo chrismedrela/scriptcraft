@@ -17,6 +17,18 @@ class Unit(object):
         self.player = player
         self.ID = ID
         self.type = type
-        self.minerals = 0
+        self._minerals = 0
         self.output_messages = []
         self.input_messages = []
+
+
+    @ property
+    def minerals(self):
+        return self._minerals
+
+    @ minerals.setter
+    def minerals(self, value):
+        assert value >= 0
+        assert value <= self.type.storage_size or not self.type.has_storage_limit
+        self._minerals = value
+
