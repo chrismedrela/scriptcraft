@@ -410,7 +410,17 @@ class Game(object):
 
 
     def _generate_action_for_unit_with_fire_command(self, unit):
-        pass
+        if not unit.type.can_attack:
+            return actions.StopAction()
+
+        destination = unit.command.destination
+        if not self.game_map.is_valid_position(destination):
+            return actions.StopAction()
+
+        if distance(unit.position, destination) > unit.type.attack_range:
+            return actions.StopAction()
+
+        return actions.FireAction(destination)
 
 
     def _generate_action_for_unit_with_complex_attack_command(self, unit):

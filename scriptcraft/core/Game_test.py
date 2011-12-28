@@ -343,24 +343,22 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.base)
 
 
-    @ skip
     def test_generate_action_for_tank_with_fire_command_when_destination_is_in_attack_range(self):
         destination = (5,63)
         assert distance(destination, self.tank.position) == self.tank.type.attack_range
-        self._test_generate_action_for_tank_with_fire_command(destination)
+        excepted_action = actions.FireAction(destination)
+        self._test_generate_action_for_tank_with_fire_command(destination, excepted_action)
 
 
-    @ skip
     def test_generate_action_for_tank_with_fire_command_when_destination_is_too_far(self):
         destination = (6,63)
         assert distance(destination, self.tank.position) > self.tank.type.attack_range
-        self._test_generate_action_for_tank_with_fire_command(destination)
-
-
-    @ skip
-    def _test_generate_action_for_tank_with_fire_command(self, destination):
-        command = cmds.FireCommand(destination)
         excepted_action = actions.StopAction()
+        self._test_generate_action_for_tank_with_fire_command(destination, excepted_action)
+
+
+    def _test_generate_action_for_tank_with_fire_command(self, destination, excepted_action):
+        command = cmds.FireCommand(destination)
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
