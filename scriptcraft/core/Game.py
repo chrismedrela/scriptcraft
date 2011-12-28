@@ -364,7 +364,49 @@ class Game(object):
 
 
     def _generate_action_for_unit_with_complex_gather_command(self, unit):
-        pass
+        if not unit.type.movable or not unit.type.has_storage:
+            return actions.StopAction()
+
+        destination = unit.command.destination
+        if not self.game_map.is_valid_position(destination):
+            return actions.StopAction()
+
+        destination_field = self.game_map.get_field(destination)
+        if not destination_field.has_mineral_deposit():
+            return actions.StopAction()
+
+        if unit.minerals == unit.type.storage_size:
+            if not unit.player.maybe_base:
+                return actions.StopAction()
+
+            base = unit.player.maybe_base
+
+            if distance(unit.position, base.position) == 1:
+                # store
+                if base.minerals == unit.type.storage_size:
+                    return actions.StopAction()
+
+                else:
+                    return actions.StoreAction(storage_ID=base.ID)
+
+            else:
+                # go to base
+                return self._find_path_and_generate_action(unit, goal=base.position)
+
+        else:
+            if distance(unit.position, destination) == 1:
+                # gather
+                if destination_field.get_minerals() == 0:
+                    return actions.StopAction()
+
+                else:
+                    return actions.GatherAction(source=destination)
+
+            else:
+                # go to mineral deposit
+                return self._find_path_and_generate_action(unit, goal=destination)
+
+
 
 
     def _generate_action_for_unit_with_fire_command(self, unit):
@@ -387,6 +429,7 @@ class Game(object):
                 alien_on_destination_field = True
 
         if alien_on_destination_field:
+            # attack alien on destination field
             return actions.FireAction(destination=unit.command.destination)
 
         else:
@@ -395,10 +438,12 @@ class Game(object):
                                                                      lambda u: u.player != unit.player)
 
             if maybe_nearest_alien_in_attack_range:
+                # attack alien in attack range
                 alien = maybe_nearest_alien_in_attack_range
                 return actions.FireAction(destination=alien.position)
 
             else:
+                # no aliens in attack range ==> move to destination
                 return self._find_path_and_generate_action(unit)
 
 
@@ -406,9 +451,9 @@ class Game(object):
         pass
 
 
-    def _find_path_and_generate_action(self, unit):
+    def _find_path_and_generate_action(self, unit, goal=None):
         source = unit.position
-        goal = unit.command.destination
+        goal = goal or unit.command.destination
         problem = FindPathProblem(source, goal, self.game_map)
         maybe_direction = problem.find_direction()
         if not maybe_direction:

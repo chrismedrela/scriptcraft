@@ -21,7 +21,7 @@ class StopAction(namedtuple('StopAction', ())):
 class MoveAction(namedtuple('MoveAction', ('source', 'destination'))):
     __slots__ = ()
 
-class GatherAction(namedtuple('GatherAction', ('destination',))):
+class GatherAction(namedtuple('GatherAction', ('source',))):
     __slots__ = ()
 
 class StoreAction(namedtuple('StoreAction', ('storage_ID',))):

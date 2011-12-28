@@ -364,13 +364,11 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
-    @ skip
     def test_generate_action_for_full_miner_with_complex_gather_command(self):
         self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=self.miner.type.storage_size,
                                                                          direction='base')
 
 
-    @ skip
     def test_generate_action_for_empty_miner_with_complex_gather_command(self):
         self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=0,
                                                                          direction='mineral_deposit')
@@ -379,13 +377,18 @@ class TestGenerateActions(BaseGameTestCase):
     def _test_generate_action_for_miner_with_complex_gather_command(self, minerals_in_miner, direction):
         assert self.minerals_position == (22, 16)
         assert self.base.position == (16, 16)
+
         self.game.move_unit_at(self.miner, (19,16))
+
+        unit_ID_to_remove = self.game.game_map.get_field((17, 16)).get_unit_ID()
+        unit_to_remove = self.game.units_by_IDs[unit_ID_to_remove]
+        self.game.remove_unit(unit_to_remove)
 
         destinations = {'base':(18,16),
                         'mineral_deposit':(20,16)}
         destination = destinations[direction]
 
-        self.miner.set_minerals(self.miner.type.storage_size)
+        self.miner.minerals = minerals_in_miner
 
         command = cmds.ComplexGatherCommand(destination=self.minerals_position)
         excepted_action = actions.MoveAction(source=self.miner.position,
@@ -393,12 +396,12 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.miner)
 
 
-    @ skip
     def test_generate_action_for_empty_miner_with_complex_gather_command_when_mineral_deposit_is_empty(self):
         self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
-        self.game.game_map.place_minerals_at(self.mineral_position, how_many=0)
+        self.game.game_map.erase_at(self.minerals_position)
+        self.game.game_map.place_minerals_at(self.minerals_position, 0)
 
-        command = cmds.ComplexGatherCommand(self.mineral_position)
+        command = cmds.ComplexGatherCommand(self.minerals_position)
         excepted_action = actions.StopAction()
         self._test_generate_action(command, excepted_action, unit=self.miner)
 
