@@ -148,7 +148,6 @@ class TestBasic(BaseGameTestCase):
         self.assertEqual(self.base.program, program)
 
 
-    @ skip
     def _test_execute_gather_action(self):
         self.miner.action = actions.GatherAction(source=self.mineral_deposit)
         self.game._execute_action_of(self.miner)

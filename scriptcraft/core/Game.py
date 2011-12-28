@@ -520,6 +520,48 @@ class Game(object):
                                  destination=destination)
 
 
+    def _execute_action_for(self, unit):
+        action_type = type(unit.action)
+
+        switch = {actions.StopAction : self._execute_action_for_unit_with_stop_action,
+                  actions.MoveAction : self._execute_action_for_unit_with_move_action,
+                  actions.GatherAction : self._execute_action_for_unit_with_gather_action,
+                  actions.StoreAction : self._execute_action_for_unit_with_store_action,
+                  actions.FireAction : self._execute_action_for_unit_with_fire_action,
+                  actions.BuildAction : self._execute_action_for_unit_with_build_action}
+
+        case = switch[action_type]
+
+        return case(unit)
+
+
+    def _execute_action_for_unit_with_stop_action(self, unit):
+        pass
+
+
+    def _execute_action_for_unit_with_move_action(self, unit):
+        self.move_unit_at(unit, unit.action.destination)
+
+
+    def _execute_action_for_unit_with_gather_action(self, unit):
+        self.store_minerals_from_deposit_to_unit(unit.action.source, unit)
+
+
+    def _execute_action_for_unit_with_store_action(self, unit):
+        self.store_minerals_from_unit_to_unit(unit,
+                                              self.units_by_IDs[unit.action.storage_ID])
+
+
+    def _execute_action_for_unit_with_fire_action(self, unit):
+        self.fire_at(unit.action.position)
+
+
+    def _execute_action_for_unit_with_build_action(self, unit):
+        self.new_unit(unit.player,
+                      unit.action.destination,
+                      unit.action.unit_type)
+
+
 #     tic(env/folder):
 #        _tic_for_world():
 #            increase minerals deposit
