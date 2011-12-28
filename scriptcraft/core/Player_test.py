@@ -39,7 +39,7 @@ class TestPlayer(unittest.TestCase):
         unit_type = UnitType(attack_range=5,
                              vision_radius=10,
                              storage_size=0,
-                             cost_of_build=5,
+                             build_cost=5,
                              can_build=False,
                              movable=True,
                              behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,

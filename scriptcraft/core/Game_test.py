@@ -32,7 +32,7 @@ class BaseGameTestCase(unittest.TestCase):
         self.miner_type = UnitType(attack_range=0,
                                    vision_radius=7,
                                    storage_size=1,
-                                   cost_of_build=3,
+                                   build_cost=3,
                                    can_build=False,
                                    movable=True,
                                    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
@@ -50,7 +50,7 @@ class BaseGameTestCase(unittest.TestCase):
 
         self.tank_type = UnitType(attack_range=5, vision_radius=2,
                                   has_storage=False,
-                                  cost_of_build=10,
+                                  build_cost=10,
                                   can_build=False,
                                   movable=True,
                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,

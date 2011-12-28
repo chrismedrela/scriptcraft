@@ -13,7 +13,7 @@ BEHAVIOUR_WHEN_ATTACKED = make_enum("BEHAVIOUR_WHEN_ATTACKED",
 class UnitType(namedtuple('UnitType', ('attack_range',
                                        'vision_radius',
                                        'storage_size',
-                                       'cost_of_build',
+                                       'build_cost',
                                        'can_build',
                                        'movable',
                                        'behaviour_when_attacked',
@@ -25,8 +25,8 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     vision_diameter -- computed from vision_radius; not allowed in __init__ args
     storage_size -- value -1 means there is no limit
     has_storage -- if False then store_size == 0
-    cost_of_build -- 0 is valid value; it hasn't sense when buildable==False
-    can_be_built -- if False then cost_of_build == -1
+    build_cost -- 0 is valid value; it hasn't sense when buildable==False
+    can_be_built -- if False then build_cost == -1
     can_build
     movable
     behaviour_when_attacked -- enum BEHAVIOUR_WHEN_ATTACKED
@@ -39,13 +39,13 @@ class UnitType(namedtuple('UnitType', ('attack_range',
 
 
     def __new__(cls, **kwargs):
-        if 'cost_of_build' in kwargs:
-            assert kwargs['cost_of_build'] >= 0
+        if 'build_cost' in kwargs:
+            assert kwargs['build_cost'] >= 0
             assert kwargs.get('can_be_built', True)
         else:
             assert 'can_be_built' in kwargs and kwargs['can_be_built'] == False
             del kwargs['can_be_built']
-            kwargs['cost_of_build'] = -1
+            kwargs['build_cost'] = -1
 
         if 'has_storage' in kwargs:
             if not kwargs['has_storage']:
@@ -70,7 +70,7 @@ class UnitType(namedtuple('UnitType', ('attack_range',
 
     @ property
     def can_be_built(self):
-        return self.cost_of_build == -1
+        return self.build_cost == -1
 
 
     @ property
