@@ -64,6 +64,9 @@ class Field(namedtuple('Field', ('type', 'arg'))):
     def is_empty(self):
         return self.arg == 0
 
+    def is_flat_and_empty(self):
+        return self.type == 1 and self.arg == 0
+
     def has_trees(self):
         return self.arg == -1
 
