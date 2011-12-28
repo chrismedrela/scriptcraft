@@ -46,8 +46,6 @@ class GameMap(list):
         self.size = size
 
 
-
-
     def reserve_next_free_start_position(self):
         """
         For any free start position all following conditions are truth:
@@ -63,6 +61,7 @@ class GameMap(list):
 
         raise NoFreeStartPosition()
 
+
     def _is_free_position(self, position):
         x, y = position
 
@@ -76,9 +75,11 @@ class GameMap(list):
 
         return True
 
+
     def _is_position_on_border(self, position):
         x, y = position
         return x==0 or x==self.size[0]-1 or y==0 or y==self.size[1]-1
+
 
     def get_field(self, position):
         x, y = position
@@ -87,31 +88,42 @@ class GameMap(list):
 
         return self[position[0]][position[1]]
 
+
+    def is_valid_position(self, (x, y)):
+        return x >= 0 and y >= 0 and x <= self.size[0] and y <= self.size[1]
+
+
     def place_trees_at(self, position):
         function = lambda field: field.PlacedTrees()
         self._change_field_with_function_if_empty(position, function)
+
 
     def place_minerals_at(self, position, minerals):
         function = lambda field: field.PlacedMinerals(minerals)
         self._change_field_with_function_if_empty(position, function)
 
+
     def place_unit_at(self, position, unit_ID):
         function = lambda field: field.PlacedUnit(unit_ID)
         self._change_field_with_function_if_empty(position, function)
 
+
     def erase_at(self, position):
         function = lambda field: field.Erased()
         self._change_field_with_function(position, function)
+
 
     def _change_field_with_function_if_empty(self, position, function):
         if not self[position[0]][position[1]].is_empty():
             raise FieldIsOccupied()
         self._change_field_with_function(position, function)
 
+
     def _change_field_with_function(self, position, function):
         field = self[position[0]][position[1]]
         field = function(field)
         self[position[0]][position[1]] = field
+
 
     def __deepcopy__(self, memo):
         c = copy.copy(self)

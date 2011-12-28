@@ -4,9 +4,7 @@
 import unittest
 import copy
 
-from scriptcraft.core import direction
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition, FieldIsOccupied
-from scriptcraft.core.FindPathProblem import FindPathProblem
 from scriptcraft.utils import *
 
 
@@ -16,6 +14,7 @@ class TestGameMap(unittest.TestCase):
     @ max_time(80, repeat=3)
     def test_constructor(self):
         m = GameMap((128, 128), [(2,3), (4,5)])
+
 
     def test_start_positions(self):
         start_positions = ((0,0), (31, 31), (10,12), (22, 22), (23, 3))
@@ -29,11 +28,13 @@ class TestGameMap(unittest.TestCase):
         illegal_operation = m.reserve_next_free_start_position
         self.assertRaises(NoFreeStartPosition, illegal_operation)
 
+
     def test_cannot_place_on_occuped_field(self):
         m = GameMap((16, 16), ())
         m.place_unit_at((8, 9), 4)
         illegal_operation = lambda: m.place_minerals_at((8, 9), 8)
         self.assertRaises(FieldIsOccupied, illegal_operation)
+
 
     def test_getting_fields(self):
         m = GameMap((16, 16), ())
@@ -50,6 +51,7 @@ class TestGameMap(unittest.TestCase):
         self.assertEqual(m[7][6].is_empty(), True)
 
         self.assertEqual(m.get_field((7, 6)), m[7][6])
+
 
     @ max_time(150, repeat=3)
     def test_deepcopy_efficiency_and_correctness(self):
