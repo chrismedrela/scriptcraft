@@ -402,17 +402,15 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.miner)
 
 
-    @ skip
     def test_generate_action_for_tank_with_complex_attack_command_when_alien_in_destination(self):
         destination_of_attack = position_of_alien = (3, 63)
-        self._test_generate_action_for_tank_with_complex_attack_command(self, position_of_alien, destination_of_attack)
+        self._test_generate_action_for_tank_with_complex_attack_command(position_of_alien, destination_of_attack)
 
 
-    @ skip
     def test_generate_action_for_tank_with_complex_attack_command_when_an_alien_in_range(self):
         position_of_alien = (3, 63)
         destination = (10, 63)
-        self._test_generate_action_for_tank_with_complex_attack_command(self, position_of_alien, destination)
+        self._test_generate_action_for_tank_with_complex_attack_command(position_of_alien, destination)
 
 
     def _test_generate_action_for_tank_with_complex_attack_command(self, position, destination):
@@ -427,7 +425,6 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
-    @ skip
     def test_generate_action_for_tank_with_complex_attack_command_when_no_alien_in_range_and_target_not_accured(self):
         assert self.tank.position == (0, 63)
         destination = (2, 63)
@@ -439,7 +436,6 @@ class TestGenerateActions(BaseGameTestCase):
         self._test_generate_action(command, excepted_action, unit=self.tank)
 
 
-    @ skip
     def test_generate_action_for_tank_with_complex_attack_command_when_no_alien_in_range_and_target_accured(self):
         assert self.tank.position == (0, 63)
         destination = self.tank.position

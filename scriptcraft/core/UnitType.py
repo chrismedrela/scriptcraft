@@ -21,6 +21,7 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     """
     Attributes:
     attack_range -- value 0 means unit cannot attack
+    can_attack -- if False then attack_range == 0
     vision_radius -- 0 is valid value
     vision_diameter -- computed from vision_radius; not allowed in __init__ args
     storage_size -- value -1 means there is no limit
@@ -55,6 +56,14 @@ class UnitType(namedtuple('UnitType', ('attack_range',
                 assert 'storage_size' in kwargs
             del kwargs['has_storage']
 
+        if 'can_attack' in kwargs:
+            if not kwargs['can_attack']:
+                assert kwargs.get('attack_range', 0) == 0
+                kwargs['attack_range'] = 0
+            else:
+                assert 'attack_range' in kwargs
+            del kwargs['can_attack']
+
         return cls.__bases__[0].__new__(cls, **kwargs)
 
 
@@ -81,3 +90,9 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     @ property
     def has_storage_limit(self):
         return self.storage_size != -1
+
+
+    @ property
+    def can_attack(self):
+        return self.attack_range != 0
+

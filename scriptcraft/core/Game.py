@@ -339,15 +339,7 @@ class Game(object):
         if not self.game_map.is_valid_position(unit.command.destination):
             return actions.StopAction()
 
-        source = unit.position
-        goal = unit.destination
-        problem = FindPathProblem(source, goal, self.game_map)
-        d = problem.find_direction()
-        ray = direction.FROM_RAY[d]
-        destination = (ray[0] + source[0],
-                       ray[1] + source[1])
-        return actions.MoveAction(source=unit.position,
-                                 destination=destination)
+        return self._find_path_and_generate_action(unit)
 
 
     def _generate_action_for_unit_with_move_command(self, unit):
@@ -379,11 +371,53 @@ class Game(object):
 
 
     def _generate_action_for_unit_with_complex_attack_command(self, unit):
-        pass
+        if not unit.type.movable or not unit.type.can_attack:
+            return actions.StopAction()
+
+        if not self.game_map.is_valid_position(unit.command.destination):
+            return actions.StopAction()
+
+        destination_field = self.game_map.get_field(unit.command.destination)
+
+        alien_on_destination_field = False
+        if destination_field.has_unit():
+            unit_on_destination_field = self.units_by_IDs[destination_field.get_unit_ID()]
+            if unit_on_destination_field.player != unit.player:
+                alien_on_destination_field = True
+
+        if alien_on_destination_field:
+            return actions.FireAction(destination=unit.command.destination)
+
+        else:
+            maybe_nearest_alien_in_attack_range = \
+                self.find_nearest_unit_in_range_fulfilling_condition(unit.position, unit.type.attack_range,
+                                                                     lambda u: u.player != unit.player)
+
+            if maybe_nearest_alien_in_attack_range:
+                alien = maybe_nearest_alien_in_attack_range
+                return actions.FireAction(destination=alien.position)
+
+            else:
+                return self._find_path_and_generate_action(unit)
 
 
     def _generate_action_for_unit_with_build_command(self, unit):
         pass
+
+
+    def _find_path_and_generate_action(self, unit):
+        source = unit.position
+        goal = unit.command.destination
+        problem = FindPathProblem(source, goal, self.game_map)
+        maybe_direction = problem.find_direction()
+        if not maybe_direction:
+            return actions.StopAction()
+
+        ray = direction.TO_RAY[maybe_direction]
+        destination = (ray[0] + source[0],
+                       ray[1] + source[1])
+        return actions.MoveAction(source=unit.position,
+                                 destination=destination)
 
 
 #     tic(env/folder):
