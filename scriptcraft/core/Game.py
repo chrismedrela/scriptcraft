@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+import random
+
 from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
 from scriptcraft.core.FindPathProblem import FindPathProblem
@@ -560,6 +562,16 @@ class Game(object):
         self.new_unit(unit.player,
                       unit.action.destination,
                       unit.action.unit_type)
+
+
+    def _tic_for_world(self):
+        for x in xrange(self.game_map.size[0]):
+            for y in xrange(self.game_map.size[1]):
+                if self.game_map[x][y].has_mineral_deposit():
+                    if random.random() < self.configuration.probability_of_mineral_deposit_growing:
+                        minerals = self.game_map[x][y].get_minerals()
+                        self.game_map.erase_at((x, y))
+                        self.game_map.place_minerals_at((x, y), minerals+1)
 
 
 #     tic(env/folder):
