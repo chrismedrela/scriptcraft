@@ -130,7 +130,7 @@ class Game(object):
         if field_with_source.get_minerals() == 0:
             raise CannotStoreMinerals('source (mineral deposit) is empty')
 
-        if destination.minerals == destination.type.store_size:
+        if destination.minerals == destination.type.storage_size:
             raise CannotStoreMinerals('destination unit is full')
 
         minerals_in_source = field_with_source.get_minerals()
@@ -144,7 +144,7 @@ class Game(object):
         if source.minerals == 0:
             raise CannotStoreMinerals('source unit is empty')
 
-        if destination.minerals == destination.type.store_size:
+        if destination.minerals == destination.type.storage_size:
             raise CannotStoreMinerals('destination unit is full')
 
         source.minerals -= 1
@@ -200,7 +200,7 @@ class Game(object):
                          'type':unit.type.main_name,
                          'x':unit.position[0],
                          'y':unit.position[1],
-                         'more_info': unit.minerals if unit.type.store_size != 0 else unit.type.attack_range}
+                         'more_info': unit.minerals if unit.type.storage_size != 0 else unit.type.attack_range}
             text = "%(ID)d %(type)s %(x)d %(y)d %(more_info)d" % text_dict
             return text
 
@@ -233,7 +233,7 @@ class Game(object):
                            'x':unit.position[0],
                            'y':unit.position[1],
                            'vision_diameter':unit.type.vision_radius*2+1,
-                           'extra_info': unit.minerals if unit.type.store_size!=0 else unit.type.attack_range}
+                           'extra_info': unit.minerals if unit.type.storage_size!=0 else unit.type.attack_range}
         input_data = '%(type)s %(ID)d %(player_ID)d %(messages_len)d %(x)d %(y)d %(vision_diameter)d\n%(extra_info)d\n' % input_data_dict
 
         # info about surroundings

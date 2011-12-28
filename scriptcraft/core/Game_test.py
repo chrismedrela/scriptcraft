@@ -31,7 +31,7 @@ class BaseGameTestCase(unittest.TestCase):
     def _create_unit_types(self):
         self.miner_type = UnitType(attack_range=0,
                                    vision_radius=7,
-                                   store_size=1,
+                                   storage_size=1,
                                    cost_of_build=3,
                                    can_build=False,
                                    movable=True,
@@ -41,7 +41,7 @@ class BaseGameTestCase(unittest.TestCase):
         self.base_type = UnitType(attack_range=0,
                                   vision_radius=2,
                                   has_storage=True,
-                                  store_size= -1,
+                                  storage_size= -1,
                                   can_be_built=False,
                                   can_build=True,
                                   movable=False,
@@ -357,7 +357,7 @@ class TestGenerateActions(BaseGameTestCase):
 
     @ skip
     def test_generate_action_for_full_miner_with_complex_gather_command(self):
-        self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=self.miner.type.store_size,
+        self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=self.miner.type.storage_size,
                                                                          direction='base')
 
 
@@ -376,7 +376,7 @@ class TestGenerateActions(BaseGameTestCase):
                         'mineral_deposit':(20,16)}
         destination = destinations[direction]
 
-        self.miner.set_minerals(self.miner.type.store_size)
+        self.miner.set_minerals(self.miner.type.storage_size)
 
         command = cmds.ComplexGatherCommand(destination=self.minerals_position)
         excepted_action = actions.MoveAction(source=self.miner.position,
