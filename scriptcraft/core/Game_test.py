@@ -66,7 +66,14 @@ class BaseGameTestCase(unittest.TestCase):
                                         binary_extension='slbin',
                                         compilation_command='simplelang compile %s',
                                         running_command='simplelang run %s')
-        languages_by_names = {'simplelang':self.simple_language}
+        self.python_language = Language(ID='py',
+                                        name='Python',
+                                        source_extension='.py',
+                                        binary_extension='.py',
+                                        compilation_command='',
+                                        running_command='python bin.py')
+        languages_by_names = {'simplelang':self.simple_language,
+                              'py':self.python_language}
 
         game_configuration = GameConfiguration(units_types=self.unit_types,
                                                main_base_type=self.base_type,
@@ -581,6 +588,27 @@ class TestEfficiency(BaseGameTestCase):
     def test_efficiency_of_deepcopy(self):
         game_copy = copy.deepcopy(self.game)
         self.assertEqual(game_copy, self.game)
+
+
+
+class TestGameTic(BaseGameTestCase):
+
+    def test_basic(self):
+        code_source_for_base = """
+print "BUILD TANK"
+        """
+
+        code_source_for_miner = """
+print "MOVE 15 15"
+        """
+
+        program_for_base = Program(self.python_language, code_source_for_base)
+        program_for_miner = Program(self.python_language, code_source_for_miner)
+
+        self.game.set_program(self.base, program_for_base)
+        self.game.set_program(self.miner, program_for_miner)
+
+        self.game.tic('.')
 
 
 

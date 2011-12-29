@@ -170,10 +170,15 @@ class Game(object):
     def _compile_and_run_programs(self, folder):
         for unit in self.units_by_IDs.itervalues():
             input = self._generate_input_for(unit)
-            e = CompileAndRunProgram(unit.program, input, folder=folder+"/env")
-            if e.maybe_compilation_status:
-                unit.maybe_last_compilation_status = e.maybe_compilation_status
-            unit.maybe_run_status = e.maybe_running_status
+
+            if unit.program:
+                e = CompileAndRunProgram(unit.program, input, folder=folder+"/env")
+                if e.maybe_compilation_status:
+                    unit.maybe_last_compilation_status = e.maybe_compilation_status
+                unit.maybe_run_status = e.maybe_running_status
+
+            else:
+                unit.maybe_run_status = None
 
 
     def _analise_outputs(self):
