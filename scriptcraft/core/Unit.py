@@ -10,7 +10,6 @@ class Unit(object):
         self.program = None
         self.maybe_last_compilation_status = None
         self.maybe_run_status = None
-        self.execution_status = None
         self.command = StopCommand()
         self.action = StopAction()
         self.position = position

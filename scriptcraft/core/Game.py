@@ -5,9 +5,11 @@ import random
 
 from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
+from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.FindPathProblem import FindPathProblem
 from scriptcraft.core.GameMap import FieldIsOccupied
 from scriptcraft.core.Message import Message
+from scriptcraft.core.parse import Parse
 from scriptcraft.core.Player import Player
 from scriptcraft.core.Unit import Unit
 from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
@@ -153,6 +155,74 @@ class Game(object):
 
         source.minerals -= 1
         destination.minerals += 1
+
+
+    def tic(self, folder):
+        self._tic_for_world()
+        self._compile_and_run_programs(folder)
+        self._clear_mailboxes()
+        self._analise_outputs()
+        self._validate_and_send_messages()
+        self._reply_system_messages()
+        self._execute_commands()
+
+
+    def _compile_and_run_programs(self, folder):
+        for unit in self.units_by_IDs.itervalues():
+            input = self._generate_input_for(unit)
+            e = CompileAndRunProgram(unit.program, input, folder=folder+"/env")
+            if e.maybe_compilation_status:
+                unit.maybe_last_compilation_status = e.maybe_compilation_status
+            unit.maybe_run_status = e.maybe_running_status
+
+
+    def _analise_outputs(self):
+        for unit in self.units_by_IDs.itervalues():
+            if unit.maybe_run_status:
+                parser = Parse(unit.maybe_run_status.output)
+                messages = [Message(sender_ID=unit.ID,
+                                    receiver_ID=stub[0],
+                                    text=stub[1]) for stub in parser.message_stubs]
+                commands = parser.commands
+
+            else:
+                messages = []
+                commands = [cmds.StopCommand()]
+
+            unit.command = commands[-1] if commands else cmds.StopCommand()
+            unit.output_messages = messages
+
+
+    def _validate_and_send_messages(self):
+        def can_be_sent_by(message, unit):
+            receiver = self.units_by_IDs.get(message.receiver_ID, None)
+            return receiver != None and receiver.player == unit.player
+
+        for unit in self.units_by_IDs.itervalues():
+            for message in unit.output_messages:
+                if can_be_sent_by(message, unit):
+                    self._send_message(message)
+
+
+    def _reply_system_messages(self):
+        for message in self.input_messages:
+            reply = self._generate_answer_to_system_message(message)
+            if reply:
+                self._send_message(reply)
+
+
+    def _execute_commands(self):
+        units_IDs = self.units_by_IDs.keys()
+        random.shuffle(units_IDs)
+
+        for unit_ID in units_IDs:
+            unit = self.units_by_IDs.get(unit_ID, None)
+
+            if not unit:
+                continue
+
+            unit.action = self._generate_action_for(unit)
+            self._execute_action_for(unit)
 
 
     def _send_message(self, message):
@@ -574,84 +644,6 @@ class Game(object):
                         self.game_map.place_minerals_at((x, y), minerals+1)
 
 
-#     tic(env/folder):
-#        _tic_for_world():
-#            increase minerals deposit
-#
-#        _compile_and_run_programs():
-#            for each unit
-#                input = generate input for unit
-#                e = CompileAndRunProgram(unit.program, input, folder=self._maybe_folder+"/env")
-#                if e.maybe_compilation_status
-#                    unit.last_compilation_status = maybe_compilation_status
-#                unit.run_status = e.maybe_run_status
-#
-#        _clear_mailboxes() of all units
-#
-#        _analise_output():
-#            for each unit
-#                messages = []
-#                commands = [StopCommand()]
-#                if unit.running_status != NOT RUN:
-#                    p = Parser(unit.running_status.output, unit.ID)
-#                    messages = [create message for each stub in p.message_stubs]
-#                    commands = p.commands
-#
-#                self._send_message(each item in messages if message is correct)
-#
-#                set command:
-#                    unit.command = commands[-1] if not empty else StopCommand()
-#                    if len(commands) != 1 then warning
-#
-#        _reply_system_messages()
-#
-#        _execute():
-#            for each unit (first, copy list of units)
-#                check if unit exists
-#
-#                # set action and execute it:
-#                unit.action, errors = self._generate_action_for(unit)
-#                self._execute_action_of(unit)
-#
-#                unit.execution_status = new ExecutionStatus(errors)
-#
-#
-#    __init__(gamemap, configuration)
-#    deepcopy()
-#
-#    new_player_with_base(name, color):
-#        new_player()
-#        add base if configuration.main_base_type != None
-#        add four miners if configuration.main_miner_type != None
-#
-#    _generate_input_for(unit)
-#    _generate_action_for(unit)
-#    _execute_action_of(unit)
-#    _tic_for_world
-#    generate_answer_to_system_message
-#    find_nearest_unit_in_range_fulfilling_condition
-#    new_player(name, color)
-#
-#    # messages system
-#    _clear_mailboxes()
-#    _send_message(self, message):
-#        self.messages.append(message)
-#        add message to sender unit (or system)
-#        add message to receiver unit (or system)
-#
-#    # other methods changing instance
-#    new_unit(self, player, position, type)
-#    remove_unit_at(self, position)
-#    remove_unit(self, unit)
-#
-#    move_unit_at(self, unit, destination)
-#    fire_at(self, destination)
-#    store_minerals_from_unit_to_unit(self, source_unit, destination_unit)
-#    store_minerals_from_deposit_to_unit(self, source_position, destination_unit)
-#    set_minerals_to_unit(self, unit, how_many)
-#    set_minerals_to_deposit(self, position_of_deposit, how_many)
-#
-#    set_program(unit, program)
 
 class InvalidSender(Exception):
     pass
