@@ -31,8 +31,8 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     can_build
     movable
     behaviour_when_attacked -- enum BEHAVIOUR_WHEN_ATTACKED
-    names -- non-empty list or tuple
-    main_name -- the first name from names
+    names -- non-empty list or tuple (always lowercase)
+    main_name -- the first name from names (always lowercase)
 
     """
 
@@ -63,6 +63,9 @@ class UnitType(namedtuple('UnitType', ('attack_range',
             else:
                 assert 'attack_range' in kwargs
             del kwargs['can_attack']
+
+        kwargs['names'] = map(lambda x: x.lower(),
+                              kwargs['names'])
 
         return cls.__bases__[0].__new__(cls, **kwargs)
 
