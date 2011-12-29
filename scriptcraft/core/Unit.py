@@ -31,3 +31,4 @@ class Unit(object):
         assert value <= self.type.storage_size or not self.type.has_storage_limit
         self._minerals = value
 
+

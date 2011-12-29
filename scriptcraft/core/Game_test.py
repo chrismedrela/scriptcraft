@@ -587,7 +587,6 @@ class TestEfficiency(BaseGameTestCase):
     @ max_time(50, repeat=3)
     def test_efficiency_of_deepcopy(self):
         game_copy = copy.deepcopy(self.game)
-        self.assertEqual(game_copy, self.game)
 
 
 
