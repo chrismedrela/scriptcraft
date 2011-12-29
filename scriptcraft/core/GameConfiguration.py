@@ -3,6 +3,9 @@
 
 from collections import namedtuple
 
+from scriptcraft.utils import *
+
+
 class GameConfiguration(namedtuple("GameConfiguration",
     ('units_types_by_names',
      'main_base_type',
@@ -13,6 +16,7 @@ class GameConfiguration(namedtuple("GameConfiguration",
     )):
     __slots__ = ()
 
+    @ copy_if_an_instance_given
     def __new__(cls,
                 units_types,
                 main_base_type,
@@ -50,3 +54,8 @@ class GameConfiguration(namedtuple("GameConfiguration",
                                         probability_of_mineral_deposit_growing,
                                         languages_by_names)
 
+
+
+    def __deepcopy__(self, memo):
+        c = GameConfiguration(self)
+        return c

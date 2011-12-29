@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+from copy import deepcopy
 import unittest
 
 from scriptcraft.core.Field import Field
@@ -71,6 +72,12 @@ class TestField(unittest.TestCase):
         field = Field(upland=True, unit_ID=123)
 
         self.assertEqual(repr(field), '<Field(type=2, arg=123) : upland with unit 123>')
+
+
+    def test_deep_copy(self):
+        field = Field(unit_ID=123)
+        field_copy = deepcopy(field)
+        self.assertEqual(field, field_copy)
 
 
 

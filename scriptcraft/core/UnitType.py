@@ -39,6 +39,7 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     __slots__ = ()
 
 
+    @ copy_if_an_instance_given
     def __new__(cls, **kwargs):
         if 'build_cost' in kwargs:
             assert kwargs['build_cost'] >= 0
@@ -68,6 +69,11 @@ class UnitType(namedtuple('UnitType', ('attack_range',
                               kwargs['names'])
 
         return cls.__bases__[0].__new__(cls, **kwargs)
+
+
+    def __deepcopy__(self, memo):
+        c = UnitType(self)
+        return c
 
 
     @ property

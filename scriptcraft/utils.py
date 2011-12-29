@@ -8,12 +8,40 @@ __all__ = [
     'anything',
     'skip',
     'distance',
+    'copy_if_an_instance_given',
 ]
 
 import time
 from enum import Enum, make_enum
+from functools import wraps
 
 
+
+def copy_if_an_instance_given(f):
+    """ Decorator. Use with method __new__ of classes inheriting namedtuple.
+    Allow to make a copy instance by passing it as an only argument.
+
+    What's more, if you implement __deepcopy__ like this:
+
+      def __deepcopy__(self, memo):
+          c = MyClass(self)
+          return c
+
+    you can use deepcopy on your classes inheriting namedtuple with your own
+    implementation of __new__ method.
+
+    """
+
+    @ wraps(f)
+    def wraper(cls, *args, **kwargs):
+        if len(args) == 1 and type(args[0]) == cls and len(kwargs) == 0:
+            self = args[0]
+            l = [getattr(self, field) for field in cls._fields]
+            return cls.__bases__[0].__new__(cls, *l)
+
+        return f(cls, *args, **kwargs)
+
+    return wraper
 
 
 def distance(p1, p2):

@@ -11,7 +11,7 @@ from scriptcraft.utils import *
 
 class TestGameMap(unittest.TestCase):
 
-    @ max_time(80, repeat=3)
+    @ max_time(100, repeat=3)
     def test_constructor(self):
         m = GameMap((128, 128), [(2,3), (4,5)])
 
@@ -53,13 +53,18 @@ class TestGameMap(unittest.TestCase):
         self.assertEqual(m.get_field((7, 6)), m[7][6])
 
 
-    @ max_time(150, repeat=3)
+    @ max_time(200, repeat=3)
     def test_deepcopy_efficiency_and_correctness(self):
-        m = GameMap((128, 256), ())
+        start_positions = [(3, 3), (4, 5)]
+        m = GameMap((128, 256), start_positions)
         c = copy.deepcopy(m)
 
         m.place_unit_at((127,255), 3)
         self.assertEqual(c[127][255].is_empty(), True)
+
+        assert m._free_start_positions == c._free_start_positions
+        m.reserve_next_free_start_position()
+        self.assertNotEqual(m._free_start_positions, c._free_start_positions)
 
 
 

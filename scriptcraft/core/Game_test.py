@@ -578,9 +578,19 @@ class TestAnsweringSystemQuestions(BaseGameTestCase):
 class TestEfficiency(BaseGameTestCase):
 
     @ skip
-    @ max_time(50, repeat=3)
+    # @ max_time(50, repeat=3)
     def test_efficiency_of_deepcopy(self):
-        copy.deepcopy(self.game)
+        copy.deepcopy(self.game) #.units_by_IDs[2].type)
+
+
+
+
+class TestGameConfiguration(BaseGameTestCase):
+
+    def test_deep_copy(self):
+        configuration = self.game.configuration
+        configuration_copy = copy.deepcopy(configuration)
+        self.assertEqual(configuration, configuration_copy)
 
 
 
