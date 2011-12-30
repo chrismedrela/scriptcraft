@@ -11,6 +11,16 @@ BEHAVIOUR_WHEN_ATTACKED = make_enum("BEHAVIOUR_WHEN_ATTACKED",
                                     "DESTROY GET_MINERAL_OR_DESTROY")
 
 
+def _use_default_value_if_flag_is_False(kwargs, flag_name, attribute_name, default_value):
+    if flag_name in kwargs:
+        if not kwargs[flag_name]:
+            assert kwargs.get(attribute_name, default_value) == default_value
+            kwargs[attribute_name] = default_value
+        else:
+            assert attribute_name in kwargs
+        del kwargs[flag_name]
+
+
 class UnitType(namedtuple('UnitType', ('attack_range',
                                        'vision_radius',
                                        'storage_size',
@@ -41,29 +51,9 @@ class UnitType(namedtuple('UnitType', ('attack_range',
 
     @ copy_if_an_instance_given
     def __new__(cls, **kwargs):
-        if 'build_cost' in kwargs:
-            assert kwargs['build_cost'] >= 0
-            assert kwargs.get('can_be_built', True)
-        else:
-            assert 'can_be_built' in kwargs and kwargs['can_be_built'] == False
-            del kwargs['can_be_built']
-            kwargs['build_cost'] = -1
-
-        if 'has_storage' in kwargs:
-            if not kwargs['has_storage']:
-                assert kwargs.get('storage_size', 0) == 0
-                kwargs['storage_size'] = 0
-            else:
-                assert 'storage_size' in kwargs
-            del kwargs['has_storage']
-
-        if 'can_attack' in kwargs:
-            if not kwargs['can_attack']:
-                assert kwargs.get('attack_range', 0) == 0
-                kwargs['attack_range'] = 0
-            else:
-                assert 'attack_range' in kwargs
-            del kwargs['can_attack']
+        _use_default_value_if_flag_is_False(kwargs, 'can_be_built', 'build_cost', -1)
+        _use_default_value_if_flag_is_False(kwargs, 'has_storage', 'storage_size', 0)
+        _use_default_value_if_flag_is_False(kwargs, 'can_attack', 'attack_range', 0)
 
         if len(kwargs['names']) == 0:
             raise ValueError('unit type must have at least one name')
