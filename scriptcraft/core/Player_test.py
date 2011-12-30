@@ -47,7 +47,3 @@ class TestPlayer(unittest.TestCase):
         unit = Unit(player=player, type=unit_type, position=(2, 3), ID=7)
         return unit
 
-
-
-if __name__ == '__main__':
-    unittest.main()

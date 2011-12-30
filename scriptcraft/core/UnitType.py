@@ -31,8 +31,8 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     can_build
     movable
     behaviour_when_attacked -- enum BEHAVIOUR_WHEN_ATTACKED
-    names -- non-empty list or tuple (always lowercase)
-    main_name -- the first name from names (always lowercase)
+    names -- non-empty list or tuple (always lowercase); the first name is main name
+    main_name -- not allowed in __init__ args - it's the first name from names
 
     """
 
@@ -64,6 +64,9 @@ class UnitType(namedtuple('UnitType', ('attack_range',
             else:
                 assert 'attack_range' in kwargs
             del kwargs['can_attack']
+
+        if len(kwargs['names']) == 0:
+            raise ValueError('unit type must have at least one name')
 
         kwargs['names'] = map(lambda x: x.lower(),
                               kwargs['names'])

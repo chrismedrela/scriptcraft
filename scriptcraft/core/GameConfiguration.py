@@ -27,17 +27,13 @@ class GameConfiguration(namedtuple("GameConfiguration",
 
         units_types_by_names = {}
         for unit_type in units_types:
-            if len(unit_type.names) == 0:
-                raise ValueError("Unit without name(s) is not allowed.")
             for name in unit_type.names:
                 if name in units_types_by_names:
                     raise ValueError("Units types with the same names are not allowed.")
                 units_types_by_names[name] = unit_type
 
-        if main_base_type not in units_types:
-            raise ValueError("Main_base_type not in units_types")
-        if main_miner_type not in units_types:
-            raise ValueError("Main_miner_type not in units_types")
+        if main_base_type not in units_types or main_miner_type not in units_types:
+            raise ValueError("main_base_type or main_miner_type not in units_types")
 
         arg = (units_types_by_names,
                main_base_type,

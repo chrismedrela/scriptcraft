@@ -172,7 +172,7 @@ class Game(object):
             input = self._generate_input_for(unit)
 
             if unit.program:
-                e = CompileAndRunProgram(unit.program, input, folder=folder+"/env")
+                e = CompileAndRunProgram(unit.program, input, folder)
                 if e.maybe_compilation_status:
                     unit.maybe_last_compilation_status = e.maybe_compilation_status
                 unit.maybe_run_status = e.maybe_running_status
@@ -201,10 +201,14 @@ class Game(object):
     def _validate_and_send_messages(self):
         def can_be_sent_by(message, unit):
             receiver = self.units_by_IDs.get(message.receiver_ID, None)
-            return receiver != None and receiver.player == unit.player
+            return ((receiver != None and receiver.player == unit.player)
+                    or message.receiver_ID == 0)
 
         for unit in self.units_by_IDs.itervalues():
-            for message in unit.output_messages:
+            output_messages = unit.output_messages
+            unit.output_messages = []
+
+            for message in output_messages:
                 if can_be_sent_by(message, unit):
                     self._send_message(message)
 
@@ -311,7 +315,7 @@ class Game(object):
                            'messages_len':len(unit.input_messages),
                            'x':unit.position[0],
                            'y':unit.position[1],
-                           'vision_diameter':unit.type.vision_radius*2+1,
+                           'vision_diameter':unit.type.vision_diameter,
                            'extra_info': unit.minerals if unit.type.storage_size!=0 else unit.type.attack_range}
         input_data = '%(type)s %(ID)d %(player_ID)d %(messages_len)d %(x)d %(y)d %(vision_diameter)d\n%(extra_info)d\n' % input_data_dict
 
@@ -338,15 +342,14 @@ class Game(object):
             elif field.has_trees():
                 return '3 0 0'
 
-            elif field.has_unit():
+            else:
+                assert field.has_unit()
+
                 unit_ID = field.get_unit_ID()
                 unit = self.units_by_IDs[unit_ID]
                 unit_type = unit.type.main_name
                 player_ID = unit.player.ID
                 return '%s %d %d' % (unit_type, unit_ID, player_ID)
-
-            else:
-                raise Exception('invalid field')
 
 
         input_data += '\n'.join(map(' '.join,
@@ -497,6 +500,9 @@ class Game(object):
         if distance(unit.position, destination) > unit.type.attack_range:
             return actions.StopAction()
 
+        if unit.position == destination:
+            return actions.StopAction()
+
         return actions.FireAction(destination)
 
 
@@ -553,7 +559,7 @@ class Game(object):
             return actions.StopAction()
 
         # find free neightbour
-        maybe_free_position = self._find_flat_and_free_neighbour_of(unit.position)
+        maybe_free_position = self.game_map.find_flat_and_free_neighbour_of(unit.position)
 
         if not maybe_free_position:
             return actions.StopAction()
@@ -565,21 +571,6 @@ class Game(object):
 
         return actions.BuildAction(unit_type=new_unit_type,
                                    destination=position)
-
-
-    def _find_flat_and_free_neighbour_of(self, position):
-        x, y = position
-        neighbours = ((x-1, y),
-                       (x, y-1),
-                       (x+1, y),
-                       (x, y+1))
-
-        for candidate in neighbours:
-            if (self.game_map.is_valid_position(candidate)
-                and self.game_map.get_field(candidate).is_flat_and_empty()):
-                return candidate
-
-        return None
 
 
     def _find_path_and_generate_action(self, unit, goal=None):
@@ -600,43 +591,20 @@ class Game(object):
     def _execute_action_for(self, unit):
         action_type = type(unit.action)
 
-        switch = {actions.StopAction : self._execute_action_for_unit_with_stop_action,
-                  actions.MoveAction : self._execute_action_for_unit_with_move_action,
-                  actions.GatherAction : self._execute_action_for_unit_with_gather_action,
-                  actions.StoreAction : self._execute_action_for_unit_with_store_action,
-                  actions.FireAction : self._execute_action_for_unit_with_fire_action,
-                  actions.BuildAction : self._execute_action_for_unit_with_build_action}
+        switch = {actions.StopAction : lambda: None,
+                  actions.MoveAction : lambda: self.move_unit_at(unit,
+                                                                 unit.action.destination),
+                  actions.GatherAction : lambda: self.store_minerals_from_deposit_to_unit(unit.action.source,
+                                                                                          unit),
+                  actions.StoreAction : lambda: self.store_minerals_from_unit_to_unit(unit,
+                                                                                      self.units_by_IDs[unit.action.storage_ID]),
+                  actions.FireAction : lambda: self.fire_at(unit.action.position),
+                  actions.BuildAction : lambda: self.new_unit(unit.player,
+                                                              unit.action.destination,
+                                                              unit.action.unit_type)}
 
         case = switch[action_type]
-
-        return case(unit)
-
-
-    def _execute_action_for_unit_with_stop_action(self, unit):
-        pass
-
-
-    def _execute_action_for_unit_with_move_action(self, unit):
-        self.move_unit_at(unit, unit.action.destination)
-
-
-    def _execute_action_for_unit_with_gather_action(self, unit):
-        self.store_minerals_from_deposit_to_unit(unit.action.source, unit)
-
-
-    def _execute_action_for_unit_with_store_action(self, unit):
-        self.store_minerals_from_unit_to_unit(unit,
-                                              self.units_by_IDs[unit.action.storage_ID])
-
-
-    def _execute_action_for_unit_with_fire_action(self, unit):
-        self.fire_at(unit.action.position)
-
-
-    def _execute_action_for_unit_with_build_action(self, unit):
-        self.new_unit(unit.player,
-                      unit.action.destination,
-                      unit.action.unit_type)
+        case()
 
 
     def _tic_for_world(self):

@@ -11,7 +11,7 @@ from scriptcraft.utils import *
 
 class TestGameMap(unittest.TestCase):
 
-    @ max_time(100, repeat=3)
+    @ max_time(100, repeat=1)
     def test_constructor(self):
         m = GameMap((128, 128), [(2,3), (4,5)])
 
@@ -53,7 +53,17 @@ class TestGameMap(unittest.TestCase):
         self.assertEqual(m.get_field((7, 6)), m[7][6])
 
 
-    @ max_time(200, repeat=3)
+    def test_find_flat_and_free_neighbour_when_it_doesnt_exist(self):
+        m = GameMap((4, 4), ())
+        m.place_trees_at((1, 0))
+        m.place_trees_at((0, 1))
+
+        neighbour = m.find_flat_and_free_neighbour_of((0, 0))
+        excepted_neighbour = None
+        self.assertEqual(neighbour, excepted_neighbour)
+
+
+    @ max_time(200, repeat=1)
     def test_deepcopy_efficiency_and_correctness(self):
         start_positions = [(3, 3), (4, 5)]
         m = GameMap((128, 256), start_positions)
@@ -66,7 +76,3 @@ class TestGameMap(unittest.TestCase):
         m.reserve_next_free_start_position()
         self.assertNotEqual(m._free_start_positions, c._free_start_positions)
 
-
-
-if __name__ == '__main__':
-    unittest.main()

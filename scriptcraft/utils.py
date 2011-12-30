@@ -62,6 +62,7 @@ anything = _Anything()
 
 
 
+TURN_OFF_EFFICIENCY_TESTS = True
 class max_time(object):
     """ Dekorator do testów wydajnościowych - oznaczony tym dekoratorem test
     zawodzi, jeżeli zostanie przekroczony dany czas podany w milisekundach. """
@@ -84,7 +85,7 @@ class max_time(object):
                 times.append(delta_time_in_miliseconds)
 
             average = sum(times)/self.repeat
-            if average > self.max_time:
+            if average > self.max_time and not TURN_OFF_EFFICIENCY_TESTS:
                 formated_times = ", ".join(map(lambda t: "%.2f ms" % t, times))
                 test_case.fail('Too long average executing time  %.2f ms (max  %.2f ms); times: %s.' % \
                     (average, self.max_time, formated_times))

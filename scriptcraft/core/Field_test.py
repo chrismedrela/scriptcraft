@@ -96,8 +96,3 @@ class TestEfficiency(unittest.TestCase):
         for _ in xrange(64*64):
             f.PlacedMinerals(123)
 
-
-
-if __name__ == '__main__':
-    unittest.main()
-

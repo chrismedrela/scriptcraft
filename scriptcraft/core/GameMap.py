@@ -81,6 +81,21 @@ class GameMap(list):
         return x==0 or x==self.size[0]-1 or y==0 or y==self.size[1]-1
 
 
+    def find_flat_and_free_neighbour_of(self, position):
+        x, y = position
+        neighbours = ((x-1, y),
+                      (x, y-1),
+                      (x+1, y),
+                      (x, y+1))
+
+        for candidate in neighbours:
+            if (self.is_valid_position(candidate)
+                and self.get_field(candidate).is_flat_and_empty()):
+                return candidate
+
+        return None
+
+
     def get_field(self, position):
         x, y = position
         if x<0 or y<0 or x>=self.size[0] or y>=self.size[1]:

@@ -22,7 +22,7 @@ class TestFindingPath(unittest.TestCase):
         self._test_answer_equal_to(excepted_direction)
 
 
-    def test_destination_is_source_neightbour(self):
+    def test_destination_is_source_neighbour(self):
         s = '    \n' + \
             '    \n' + \
             '   *\n' + \
@@ -33,7 +33,7 @@ class TestFindingPath(unittest.TestCase):
         self._test_answer_equal_to(excepted_direction)
 
 
-    def test_destination_is_unavaiable_but_its_neightbour_is_not(self):
+    def test_destination_is_unavaiable_but_its_neighbour_is_not(self):
         s = 'tu    \n' + \
             'ttttt \n' + \
             '      \n' + \
@@ -57,7 +57,7 @@ class TestFindingPath(unittest.TestCase):
         self.assertTrue(answered_direction in (direction.E, direction.S))
 
 
-    def test_destination_is_unavailable_nor_its_neightbours(self):
+    def test_destination_is_unavailable_nor_its_neighbours(self):
         s = ' t  \n' + \
             ' t  \n' + \
             '*t  \n' + \
@@ -93,6 +93,28 @@ class TestFindingPath(unittest.TestCase):
 
         answered_direction = self._find_direction()
         self.assertTrue(answered_direction in (direction.E, direction.S))
+
+
+    def test_destination_is_unavailable_but_its_neighbours_are_not(self):
+        s = '*u'
+        self.destination = (1, 0)
+        self.game_map = self._create_game_map_from_text(s)
+
+        self._test_answer_equal_to(None)
+
+
+    def test_skip_if_too_long_searching_time(self):
+        size = 256
+        s = (' ttttttttttttttttttttttttttttttt\n'*1 + \
+             '                                \n'*10 + \
+             'ttttttttttttttttttttttttttttttt \n'*1)*5
+        s = s[:-1] # delete last '\n'
+        self.game_map = self._create_game_map_from_text(s)
+        self.destination = (0, 0)
+        self.source = (0, (1+10+1)*4)
+
+        self._test_answer_equal_to(None)
+        assert self.problem.iteration == FindPathProblem.ITERATIONS_LIMIT
 
 
     @ max_time(10)
@@ -149,7 +171,7 @@ class TestFindingPath(unittest.TestCase):
 
 
     def _find_direction(self):
-        problem = FindPathProblem(self.source, self.destination, self.game_map)
-        answer = problem.find_direction()
+        self.problem = FindPathProblem(self.source, self.destination, self.game_map)
+        answer = self.problem.find_direction()
         return answer
 

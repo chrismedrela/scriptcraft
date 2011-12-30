@@ -64,8 +64,18 @@ class CompileAndRunProgram(object):
         source = os.path.join(self.folder, 'env', self.program.language.binary_file_name)
         if os.path.exists(source):
             sha = self.program.sha()
+            self._create_cache_folder_if_necessary()
             destination = os.path.join(self.folder, 'cache', sha)
             shutil.copy(source, destination)
+
+    def _create_cache_folder_if_necessary(self):
+        cache_folder = os.path.join(self.folder, 'cache')
+        try:
+            os.mkdir(cache_folder)
+        except OSError as ex:
+            FOLDER_ALREADY_EXISTS = 17
+            if ex.errno != FOLDER_ALREADY_EXISTS:
+                raise
 
     def _clear_environment(self):
         env_folder = os.path.join(self.folder, 'env')

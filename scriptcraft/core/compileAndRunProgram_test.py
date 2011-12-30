@@ -13,18 +13,17 @@ from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.RunningStatus import RunningStatus
 
 class TestBasic(unittest.TestCase):
+
     def setUp(self):
         self.folder = "tmp_unittest"
-        try:
-            os.mkdir(self.folder)
-        except OSError as ex:
-            if ex.errno != 17: # folder already exists
-                raise ex
-        try:
-            os.mkdir(os.path.join(self.folder, 'cache'))
-        except OSError as ex:
-            if ex.errno != 17: # folder already exists
-                raise ex
+
+        os.mkdir(self.folder)
+        os.mkdir(os.path.join(self.folder, 'cache'))
+
+
+    def tearDown(self):
+        shutil.rmtree(self.folder)
+
 
     def test_cpp_program(self):
         program_code = self._build_valid_cpp_code()
@@ -39,14 +38,12 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
         self.assertEqual(status.maybe_running_status, excepted_running_status)
 
+
     def test_environment_folder_already_exists(self):
-        try:
-            os.mkdir(os.path.join(self.folder, 'env'))
-        except OSError as ex:
-            if ex.errno != 17: # folder already exists
-                raise ex
+        os.mkdir(os.path.join(self.folder, 'env'))
 
         self.test_cpp_program()
+
 
     def test_invalid_program(self):
         program_code = ""
@@ -64,8 +61,25 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
         self.assertEqual(status.maybe_running_status, excepted_running_status)
 
-    def tearDown(self):
-        shutil.rmtree(self.folder)
+
+    def test_os_problems(self):
+        program_code = self._build_valid_cpp_code()
+        program = self._build_cpp_program(program_code)
+        input = ""
+
+        def raise_IO_Error(self):
+            raise IOError()
+        old_try_run = CompileAndRunProgram._try_run
+        CompileAndRunProgram._try_run = raise_IO_Error
+
+        status = CompileAndRunProgram(program, input, self.folder)
+
+        excepted_running_status = None
+        self.assertEqual(status.maybe_running_status, excepted_running_status)
+
+        CompileAndRunProgram._try_run = old_try_run
+
+
 
     def test_compilation_not_necessary(self):
         program_code = self._build_valid_cpp_code()
@@ -112,6 +126,3 @@ class TestBasic(unittest.TestCase):
     def _build_successful_running_status(self):
         return RunningStatus(input="input text\nbla bla", output='tekst outputowy\nala', error_output='')
 
-
-if __name__ == '__main__':
-    unittest.main()
