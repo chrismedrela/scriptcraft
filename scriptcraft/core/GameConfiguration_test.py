@@ -22,23 +22,18 @@ class TestGameConfiguration(unittest.TestCase):
                        'languages_by_names':{}}
 
     def _create_unit_types(self):
-        self.miner_type = UnitType(attack_range=0,
-                                   vision_radius=7,
-                                   storage_size=1,
-                                   build_cost=3,
-                                   can_build=False,
-                                   movable=True,
-                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
-                                   names=('5', 'miner', 'm'))
+        kwargs = {'attack_range':0,
+                  'vision_radius':7,
+                  'storage_size':1,
+                  'build_cost':3,
+                  'can_build':False,
+                  'movable':True,
+                  'behaviour_when_attacked':BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                  'names':('5', 'miner', 'm')}
+        self.miner_type = UnitType(**kwargs)
 
-        self.second_miner_type = UnitType(attack_range=0,
-                                   vision_radius=7,
-                                   storage_size=2,
-                                   build_cost=3,
-                                   can_build=False,
-                                   movable=True,
-                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
-                                   names=('7', 'superminer', 'm'))
+        kwargs['names'] = ('7', 'superminer', 'm')
+        self.second_miner_type = UnitType(**kwargs)
 
         self.unit_types = [self.miner_type]
 
