@@ -10,6 +10,7 @@ from scriptcraft.utils import *
 BEHAVIOUR_WHEN_ATTACKED = make_enum("BEHAVIOUR_WHEN_ATTACKED",
                                     "DESTROY GET_MINERAL_OR_DESTROY")
 
+
 class UnitType(namedtuple('UnitType', ('attack_range',
                                        'vision_radius',
                                        'storage_size',
@@ -37,7 +38,6 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     """
 
     __slots__ = ()
-
 
     @ copy_if_an_instance_given
     def __new__(cls, **kwargs):
@@ -73,38 +73,30 @@ class UnitType(namedtuple('UnitType', ('attack_range',
 
         return cls.__bases__[0].__new__(cls, **kwargs)
 
-
     def __deepcopy__(self, memo):
         c = UnitType(self)
         return c
-
 
     @ property
     def main_name(self):
         return self.names[0]
 
-
     @ property
     def vision_diameter(self):
         return 2*self.vision_radius + 1
-
 
     @ property
     def can_be_built(self):
         return self.build_cost != -1
 
-
     @ property
     def has_storage(self):
         return self.storage_size != 0
-
 
     @ property
     def has_storage_limit(self):
         return self.storage_size != -1
 
-
     @ property
     def can_attack(self):
         return self.attack_range != 0
-

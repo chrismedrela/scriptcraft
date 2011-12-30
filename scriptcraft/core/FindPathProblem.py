@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
 import aima
 
 from scriptcraft.core import direction
@@ -9,9 +12,9 @@ class TooLongSearchingTime(Exception):
     pass
 
 
-
 class FindPathProblem(aima.search.Problem):
-    """ Represent problem of finding path in scriptcraft.core.GameMap
+    """
+    Represent problem of finding path in scriptcraft.core.GameMap
     to an field *or one of its neightbours*.
 
     """
@@ -19,7 +22,6 @@ class FindPathProblem(aima.search.Problem):
     ITERATIONS_LIMIT = 256
     MIN_DISTANCE_TO_USE_HEURA = 16
     H_COEFFICIENT_FOR_HEURA = 1.03
-
 
     def __init__(self, start_position, destination, game_map):
         aima.search.Problem.__init__(self, start_position, destination)
@@ -30,7 +32,6 @@ class FindPathProblem(aima.search.Problem):
                               if distance(start_position, destination) < FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
                               else FindPathProblem.H_COEFFICIENT_FOR_HEURA)
         self.iteration = 0
-
 
     def successor(self, state):
         self.iteration += 1
@@ -56,19 +57,15 @@ class FindPathProblem(aima.search.Problem):
 
         return neightbours
 
-
     def goal_test(self, state):
         return state == self.destination
-
 
     def path_cost(self, c, state1, action, state2):
         return c + 1
 
-
     def h(self, node):
         x, y = node.state
         return distance((x, y), self.destination) * self.h_coefficient
-
 
     def find_direction(self):
         """ Return None if start_position==destination or if destination is unavailable. """

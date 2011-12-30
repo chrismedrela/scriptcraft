@@ -2,9 +2,16 @@
 #-*- coding:utf-8 -*-
 
 """
-Definiuje stałe - kierunki świata.
+Define directions:
+N
+E
+W
+S
+
+and dictionaries TO_RAY, FROM_RAY and BY_NAME.
 
 """
+
 
 N, E, S, W = 'n', 'e', 's', 'w'
 
@@ -28,4 +35,3 @@ BY_NAME = {
 	'S' : S,
 	'W' : W,
 }
-

@@ -44,7 +44,6 @@ class Field(namedtuple('Field', ('type', 'arg'))):
 
     __slots__ = ()
 
-
     @ copy_if_an_instance_given
     def __new__(cls, upland=False, minerals=None, unit_ID=None, trees=False):
         type = 2 if upland else 1
@@ -61,64 +60,49 @@ class Field(namedtuple('Field', ('type', 'arg'))):
 
         return cls.__bases__[0].__new__(cls, type, arg)
 
-
     def __deepcopy__(self, memo):
         c = Field(self)
         return c
 
-
     def is_flat(self):
         return self.type == 1
-
 
     def is_upland(self):
         return self.type == 2
 
-
     def is_empty(self):
         return self.arg == 0
-
 
     def is_flat_and_empty(self):
         return self.type == 1 and self.arg == 0
 
-
     def has_trees(self):
         return self.arg == -1
-
 
     def has_mineral_deposit(self):
         return self.arg <= -2
 
-
     def has_unit(self):
         return self.arg > 0
-
 
     def get_minerals(self):
         assert self.arg <= -2
         return -(self.arg+2)
 
-
     def get_unit_ID(self):
         return self.arg
-
 
     def PlacedTrees(self):
         return self._replace(arg=-1)
 
-
     def PlacedMinerals(self, how_much):
         return self._replace(arg=-2-how_much)
-
 
     def PlacedUnit(self, unit_ID):
         return self._replace(arg=unit_ID)
 
-
     def Erased(self):
         return self._replace(arg=0)
-
 
     def __str__(self):
         return "<{empty}{shape}{obj}>".format(
@@ -130,8 +114,9 @@ class Field(namedtuple('Field', ('type', 'arg'))):
                 ' with unit {0}'.format(self.get_unit_ID())
         )
 
-
     def __repr__(self):
-        return '<' + super(Field, self).__repr__() + ' : ' + str(self)[1:-1] + '>'
-
-
+        return ('<' +
+                super(Field, self).__repr__() +
+                ' : ' +
+                str(self)[1:-1] +
+                '>')

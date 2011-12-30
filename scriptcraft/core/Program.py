@@ -4,9 +4,10 @@
 import hashlib
 from collections import namedtuple
 
-from scriptcraft.core.Language import Language
 
-class Program(namedtuple("Program", ('language', 'code'))):
+
+class Program(namedtuple("Program", ('language',
+                                     'code'))):
     __slots__ = ()
 
     def sha(self):

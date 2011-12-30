@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
 
 import unittest
 
@@ -9,7 +11,6 @@ from scriptcraft.utils import *
 
 
 class TestFindingPath(unittest.TestCase):
-
     def test_destination_equal_to_source(self):
         s = '    \n' + \
             '    \n' + \
@@ -21,7 +22,6 @@ class TestFindingPath(unittest.TestCase):
         excepted_direction = None
         self._test_answer_equal_to(excepted_direction)
 
-
     def test_destination_is_source_neighbour(self):
         s = '    \n' + \
             '    \n' + \
@@ -31,7 +31,6 @@ class TestFindingPath(unittest.TestCase):
 
         excepted_direction = direction.S
         self._test_answer_equal_to(excepted_direction)
-
 
     def test_destination_is_unavaiable_but_its_neighbour_is_not(self):
         s = 'tu    \n' + \
@@ -46,7 +45,6 @@ class TestFindingPath(unittest.TestCase):
         excepted_direction = direction.N
         self._test_answer_equal_to(excepted_direction)
 
-
     def test_destination_is_far_far_away_but_is_avaiable(self):
         size = 128
         self.game_map = GameMap((size, size))
@@ -55,7 +53,6 @@ class TestFindingPath(unittest.TestCase):
 
         answered_direction = self._find_direction()
         self.assertTrue(answered_direction in (direction.E, direction.S))
-
 
     def test_destination_is_unavailable_nor_its_neighbours(self):
         s = ' t  \n' + \
@@ -66,7 +63,6 @@ class TestFindingPath(unittest.TestCase):
 
         excepted_direction = None
         self._test_answer_equal_to(excepted_direction)
-
 
     def test_road_block(self):
         s = '                         \n' + \
@@ -94,14 +90,12 @@ class TestFindingPath(unittest.TestCase):
         answered_direction = self._find_direction()
         self.assertTrue(answered_direction in (direction.E, direction.S))
 
-
     def test_destination_is_unavailable_but_its_neighbours_are_not(self):
         s = '*u'
         self.destination = (1, 0)
         self.game_map = self._create_game_map_from_text(s)
 
         self._test_answer_equal_to(None)
-
 
     def test_skip_if_too_long_searching_time(self):
         size = 256
@@ -116,7 +110,6 @@ class TestFindingPath(unittest.TestCase):
         self._test_answer_equal_to(None)
         assert self.problem.iteration == FindPathProblem.ITERATIONS_LIMIT
 
-
     @ max_time(10)
     def test_efficiency_on_blank_map_with_non_heura_algorythm(self):
         size = FindPathProblem.MIN_DISTANCE_TO_USE_HEURA/2-1
@@ -129,7 +122,6 @@ class TestFindingPath(unittest.TestCase):
 
         assert distance(self.source, self.destination) < FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
 
-
     @ max_time(150)
     def test_efficiency_on_blank_map_with_heura_algorythm(self):
         size = 128
@@ -141,7 +133,6 @@ class TestFindingPath(unittest.TestCase):
         self.assertTrue(answered_direction != None)
 
         assert distance(self.source, self.destination) >= FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
-
 
     def _create_game_map_from_text(self, s):
         """ '*' means source and '^' - destination """
@@ -164,14 +155,11 @@ class TestFindingPath(unittest.TestCase):
 
         return m
 
-
     def _test_answer_equal_to(self, excepted_direction):
         answered_direction = self._find_direction()
         self.assertEqual(excepted_direction, answered_direction)
-
 
     def _find_direction(self):
         self.problem = FindPathProblem(self.source, self.destination, self.game_map)
         answer = self.problem.find_direction()
         return answer
-

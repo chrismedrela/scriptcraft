@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-
 from scriptcraft.core import direction, cmds
 from scriptcraft.core.Message import Message
 
@@ -100,8 +99,6 @@ _COMMANDS['BUILD'] = _COMMANDS['B'] = {
 }
 
 
-
-
 class Parse (object):
     """
     Arguments of __init__:
@@ -171,5 +168,3 @@ class Parse (object):
 
     def _invalid_line(self):
         self.invalid_lines_numbers.append(self._line_no)
-
-

@@ -5,9 +5,10 @@ import os
 import shutil
 import subprocess
 
+from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.Program import Program
 from scriptcraft.core.RunningStatus import RunningStatus
-from scriptcraft.core.CompilationStatus import CompilationStatus
+
 
 class CompileAndRunProgram(object):
     def __init__(self, program, input, folder):
@@ -50,18 +51,21 @@ class CompileAndRunProgram(object):
                 raise
 
     def _create_source_file(self):
-        source_file_path = os.path.join(self.folder, 'env', self.program.language.source_file_name)
+        source_file_path = os.path.join(self.folder, 'env',
+                                        self.program.language.source_file_name)
         with open(source_file_path, 'w') as stream:
             stream.write(self.program.code)
 
     def _execute_compilation_command(self):
         input = ''
         folder = os.path.join(self.folder, 'env')
-        output, error_output = self._execute_bash_command(self.program.language.compilation_command, input, folder)
+        output, error_output = self._execute_bash_command(
+            self.program.language.compilation_command, input, folder)
         return CompilationStatus(output, error_output)
 
     def _copy_binary_if_exists(self):
-        source = os.path.join(self.folder, 'env', self.program.language.binary_file_name)
+        source = os.path.join(self.folder, 'env',
+                              self.program.language.binary_file_name)
         if os.path.exists(source):
             sha = self.program.sha()
             self._create_cache_folder_if_necessary()
@@ -105,18 +109,24 @@ class CompileAndRunProgram(object):
     def _copy_binary(self):
         sha = self.program.sha()
         source = os.path.join(self.folder, 'cache', sha)
-        destination = os.path.join(self.folder, 'env', self.program.language.binary_file_name)
+        destination = os.path.join(self.folder, 'env',
+                                   self.program.language.binary_file_name)
         shutil.copy(source, destination)
 
     def _execute_run_command(self):
         input = self.input
         folder = os.path.join(self.folder, 'env')
-        output, error_output = self._execute_bash_command(self.program.language.running_command, input, folder)
+        output, error_output = self._execute_bash_command(
+            self.program.language.running_command, input, folder)
         return RunningStatus(input, output, error_output)
 
     def _execute_bash_command(self, command, input_data, folder):
-    	process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=folder)
+        process = subprocess.Popen(command,
+                                   stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=True,
+                                   cwd=folder)
         output, errors_output = process.communicate(input=input_data)
-    	exit_code = process.wait()
-    	return output, errors_output
-
+        exit_code = process.wait()
+        return output, errors_output

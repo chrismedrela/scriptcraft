@@ -6,6 +6,7 @@ from collections import namedtuple
 from scriptcraft.utils import *
 
 
+
 class GameConfiguration(namedtuple("GameConfiguration",
     ('units_types_by_names',
      'main_base_type',
@@ -49,8 +50,6 @@ class GameConfiguration(namedtuple("GameConfiguration",
                                         minerals_for_main_unit_at_start,
                                         probability_of_mineral_deposit_growing,
                                         languages_by_names)
-
-
 
     def __deepcopy__(self, memo):
         c = GameConfiguration(self)

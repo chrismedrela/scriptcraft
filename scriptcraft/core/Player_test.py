@@ -10,7 +10,6 @@ from scriptcraft.core.UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
 
 
 class TestPlayer(unittest.TestCase):
-
     def test_add_base_and_remove_it(self):
         player = self._build_simple_player()
         unit = self._build_simple_unit(player)
@@ -26,14 +25,12 @@ class TestPlayer(unittest.TestCase):
         self.assertEqual(player.maybe_base, None)
         self.assertEqual(unit.player, None)
 
-
     def _build_simple_player(self):
         color = (255, 0, 0)
         ID = 7
         start_position = (3, 4)
         result = Player("name", color, ID, start_position)
         return result
-
 
     def _build_simple_unit(self, player):
         unit_type = UnitType(attack_range=5,
@@ -46,4 +43,3 @@ class TestPlayer(unittest.TestCase):
                              names=['tank', 't'])
         unit = Unit(player=player, type=unit_type, position=(2, 3), ID=7)
         return unit
-

@@ -17,8 +17,19 @@ from scriptcraft.utils import *
 
 
 
-class Game(object):
+class InvalidSender(Exception):
+    pass
 
+
+class InvalidReceiver(Exception):
+    pass
+
+
+class CannotStoreMinerals(Exception):
+    pass
+
+
+class Game(object):
     def __init__(self, game_map, game_configuration):
         self.game_map = game_map
         self.units_by_IDs = {}
@@ -28,7 +39,6 @@ class Game(object):
         self.turn_number = 0
         self.input_messages = []
         self.output_messages = []
-
 
     def new_player(self, name, color):
         """ May raise NoFreeStartPosition """
@@ -41,11 +51,9 @@ class Game(object):
 
         return player
 
-
     def _get_new_ID(self):
         self._units_and_players_counter += 1
         return self._units_and_players_counter
-
 
     def new_player_with_base(self, name, color):
         """ May raise NoFreeStartPosition """
@@ -64,7 +72,6 @@ class Game(object):
 
         return player, base, miners
 
-
     def new_unit(self, player, position, unit_type):
         if not self.game_map.get_field(position).is_empty():
             raise FieldIsOccupied()
@@ -78,12 +85,10 @@ class Game(object):
 
         return unit
 
-
     def remove_unit(self, unit):
         unit.player.remove_unit(unit)
         del self.units_by_IDs[unit.ID]
         self.game_map.erase_at(unit.position)
-
 
     def move_unit_at(self, unit, new_position):
         if not self.game_map.get_field(new_position).is_empty():
@@ -93,10 +98,8 @@ class Game(object):
         self.game_map.place_unit_at(new_position, unit.ID)
         unit.position = new_position
 
-
     def set_program(self, unit, program):
         unit.program = program
-
 
     def fire_at(self, position):
         field = self.game_map.get_field(position)
@@ -109,7 +112,6 @@ class Game(object):
 
         else:
             pass
-
 
     def _fire_at_unit(self, field):
         def destroy():
@@ -130,7 +132,6 @@ class Game(object):
         case = switch[unit.type.behaviour_when_attacked]
         case()
 
-
     def store_minerals_from_deposit_to_unit(self, source_position, destination):
         field_with_source = self.game_map.get_field(source_position)
         if field_with_source.get_minerals() == 0:
@@ -145,7 +146,6 @@ class Game(object):
 
         destination.minerals += 1
 
-
     def store_minerals_from_unit_to_unit(self, source, destination):
         if source.minerals == 0:
             raise CannotStoreMinerals('source unit is empty')
@@ -156,7 +156,6 @@ class Game(object):
         source.minerals -= 1
         destination.minerals += 1
 
-
     def tic(self, folder):
         self._tic_for_world()
         self._compile_and_run_programs(folder)
@@ -165,7 +164,6 @@ class Game(object):
         self._validate_and_send_messages()
         self._reply_system_messages()
         self._execute_commands()
-
 
     def _compile_and_run_programs(self, folder):
         for unit in self.units_by_IDs.itervalues():
@@ -179,7 +177,6 @@ class Game(object):
 
             else:
                 unit.maybe_run_status = None
-
 
     def _analise_outputs(self):
         for unit in self.units_by_IDs.itervalues():
@@ -197,7 +194,6 @@ class Game(object):
             unit.command = commands[-1] if commands else cmds.StopCommand()
             unit.output_messages = messages
 
-
     def _validate_and_send_messages(self):
         def can_be_sent_by(message, unit):
             receiver = self.units_by_IDs.get(message.receiver_ID, None)
@@ -212,13 +208,11 @@ class Game(object):
                 if can_be_sent_by(message, unit):
                     self._send_message(message)
 
-
     def _reply_system_messages(self):
         for message in self.input_messages:
             reply = self._generate_answer_to_system_message(message)
             if reply:
                 self._send_message(reply)
-
 
     def _execute_commands(self):
         units_IDs = self.units_by_IDs.keys()
@@ -232,7 +226,6 @@ class Game(object):
 
             unit.action = self._generate_action_for(unit)
             self._execute_action_for(unit)
-
 
     def _send_message(self, message):
         is_valid_ID = lambda ID: ID in self.units_by_IDs or ID == 0
@@ -249,7 +242,6 @@ class Game(object):
         receiver = self if message.receiver_ID == 0 else self.units_by_IDs[message.receiver_ID]
         receiver.input_messages.append(message)
 
-
     def _clear_mailboxes(self):
         def clear_mailbox_of(obj):
             obj.input_messages = []
@@ -259,7 +251,6 @@ class Game(object):
 
         for unit in self.units_by_IDs.itervalues():
             clear_mailbox_of(unit)
-
 
     def _generate_answer_to_system_message(self, message):
         def list_units():
@@ -305,7 +296,6 @@ class Game(object):
                            receiver_ID=message.sender_ID,
                            text=response_text)
         return response
-
 
     def _generate_input_for(self, unit):
         # first line of info
@@ -367,7 +357,6 @@ class Game(object):
 
         return input_data
 
-
     def find_nearest_unit_in_range_fulfilling_condition(self, position, range, condition):
         def positions_in_range(position, range):
             for x in xrange(position[0]-range,
@@ -393,7 +382,6 @@ class Game(object):
 
         return the_nearest
 
-
     def _generate_action_for(self, unit):
         command_type = type(unit.command)
 
@@ -408,10 +396,8 @@ class Game(object):
 
         return case(unit)
 
-
     def _generate_action_for_unit_with_stop_command(self, unit):
         return actions.StopAction()
-
 
     def _generate_action_for_unit_with_complex_move_command(self, unit):
         if not unit.type.movable:
@@ -421,7 +407,6 @@ class Game(object):
             return actions.StopAction()
 
         return self._find_path_and_generate_action(unit)
-
 
     def _generate_action_for_unit_with_move_command(self, unit):
         command = unit.command
@@ -441,7 +426,6 @@ class Game(object):
 
         return actions.MoveAction(source=unit.position,
                                   destination=destination)
-
 
     def _generate_action_for_unit_with_complex_gather_command(self, unit):
         if not unit.type.movable or not unit.type.has_storage:
@@ -486,9 +470,6 @@ class Game(object):
                 # go to mineral deposit
                 return self._find_path_and_generate_action(unit, goal=destination)
 
-
-
-
     def _generate_action_for_unit_with_fire_command(self, unit):
         if not unit.type.can_attack:
             return actions.StopAction()
@@ -504,7 +485,6 @@ class Game(object):
             return actions.StopAction()
 
         return actions.FireAction(destination)
-
 
     def _generate_action_for_unit_with_complex_attack_command(self, unit):
         if not unit.type.movable or not unit.type.can_attack:
@@ -539,7 +519,6 @@ class Game(object):
                 # no aliens in attack range ==> move to destination
                 return self._find_path_and_generate_action(unit)
 
-
     def _generate_action_for_unit_with_build_command(self, unit):
         if not unit.type.can_build:
             return actions.StopAction()
@@ -572,7 +551,6 @@ class Game(object):
         return actions.BuildAction(unit_type=new_unit_type,
                                    destination=position)
 
-
     def _find_path_and_generate_action(self, unit, goal=None):
         source = unit.position
         goal = goal or unit.command.destination
@@ -586,7 +564,6 @@ class Game(object):
                        ray[1] + source[1])
         return actions.MoveAction(source=unit.position,
                                  destination=destination)
-
 
     def _execute_action_for(self, unit):
         action_type = type(unit.action)
@@ -606,7 +583,6 @@ class Game(object):
         case = switch[action_type]
         case()
 
-
     def _tic_for_world(self):
         for x in xrange(self.game_map.size[0]):
             for y in xrange(self.game_map.size[1]):
@@ -615,14 +591,3 @@ class Game(object):
                         minerals = self.game_map[x][y].get_minerals()
                         self.game_map.erase_at((x, y))
                         self.game_map.place_minerals_at((x, y), minerals+1)
-
-
-
-class InvalidSender(Exception):
-    pass
-
-class InvalidReceiver(Exception):
-    pass
-
-class CannotStoreMinerals(Exception):
-    pass
