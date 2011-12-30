@@ -43,12 +43,7 @@ class CompileAndRunProgram(object):
 
     def _create_environment_folder_if_necessary(self):
         env_folder = os.path.join(self.folder, 'env')
-        try:
-            os.mkdir(env_folder)
-        except OSError as ex:
-            FOLDER_ALREADY_EXISTS = 17
-            if ex.errno != FOLDER_ALREADY_EXISTS:
-                raise
+        self._create_folder_if_necessary(env_folder)
 
     def _create_source_file(self):
         source_file_path = os.path.join(self.folder, 'env',
@@ -74,12 +69,7 @@ class CompileAndRunProgram(object):
 
     def _create_cache_folder_if_necessary(self):
         cache_folder = os.path.join(self.folder, 'cache')
-        try:
-            os.mkdir(cache_folder)
-        except OSError as ex:
-            FOLDER_ALREADY_EXISTS = 17
-            if ex.errno != FOLDER_ALREADY_EXISTS:
-                raise
+        self._create_folder_if_necessary(cache_folder)
 
     def _clear_environment(self):
         env_folder = os.path.join(self.folder, 'env')
@@ -130,3 +120,11 @@ class CompileAndRunProgram(object):
         output, errors_output = process.communicate(input=input_data)
         exit_code = process.wait()
         return output, errors_output
+
+    def _create_folder_if_necessary(self, folder):
+        try:
+            os.mkdir(folder)
+        except OSError as ex:
+            FOLDER_ALREADY_EXISTS = 17
+            if ex.errno != FOLDER_ALREADY_EXISTS:
+                raise
