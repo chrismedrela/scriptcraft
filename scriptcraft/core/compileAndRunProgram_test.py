@@ -30,10 +30,10 @@ class TestBasic(unittest.TestCase):
 
         status = CompileAndRunProgram(program, input, self.folder)
 
-        excepted_compilation_status = self._build_successful_compilation_status()
-        excepted_running_status = self._build_successful_running_status()
-        self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
-        self.assertEqual(status.maybe_running_status, excepted_running_status)
+        expected_compilation_status = self._build_successful_compilation_status()
+        expected_running_status = self._build_successful_running_status()
+        self.assertEqual(status.maybe_compilation_status, expected_compilation_status)
+        self.assertEqual(status.maybe_running_status, expected_running_status)
 
     def test_environment_folder_already_exists(self):
         os.mkdir(os.path.join(self.folder, 'env'))
@@ -46,15 +46,15 @@ class TestBasic(unittest.TestCase):
 
         status = CompileAndRunProgram(program, input, self.folder)
 
-        excepted_compilation_status = CompilationStatus(
+        expected_compilation_status = CompilationStatus(
             error_output = ("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crt1.o: In function `_start':\n"
                             "(.text+0x20): undefined reference to `main'\n"
                             "collect2: ld returned 1 exit status\n"),
             output = '',
         )
-        excepted_running_status = None
-        self.assertEqual(status.maybe_compilation_status, excepted_compilation_status)
-        self.assertEqual(status.maybe_running_status, excepted_running_status)
+        expected_running_status = None
+        self.assertEqual(status.maybe_compilation_status, expected_compilation_status)
+        self.assertEqual(status.maybe_running_status, expected_running_status)
 
     def test_os_problems(self):
         def raise_IO_Error(self):
@@ -68,8 +68,8 @@ class TestBasic(unittest.TestCase):
 
         status = CompileAndRunProgram(program, input, self.folder)
 
-        excepted_running_status = None
-        self.assertEqual(status.maybe_running_status, excepted_running_status)
+        expected_running_status = None
+        self.assertEqual(status.maybe_running_status, expected_running_status)
 
         CompileAndRunProgram._try_run = old_try_run
 
@@ -81,9 +81,9 @@ class TestBasic(unittest.TestCase):
         status = CompileAndRunProgram(program, input, self.folder)  # compile and run
         status = CompileAndRunProgram(program, input, self.folder)  # now compilation is not necessary
 
-        excepted_running_status = self._build_successful_running_status()
+        expected_running_status = self._build_successful_running_status()
         self.assertTrue(status.maybe_compilation_status is None)
-        self.assertEqual(status.maybe_running_status, excepted_running_status)
+        self.assertEqual(status.maybe_running_status, expected_running_status)
 
     def _build_cpp_program(self, code):
         return Program(self._build_cpp_language(), code)

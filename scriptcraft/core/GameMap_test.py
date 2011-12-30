@@ -55,8 +55,8 @@ class TestGameMap(unittest.TestCase):
         m.place_trees_at((0, 1))
 
         neighbour = m.find_flat_and_free_neighbour_of((0, 0))
-        excepted_neighbour = None
-        self.assertEqual(neighbour, excepted_neighbour)
+        expected_neighbour = None
+        self.assertEqual(neighbour, expected_neighbour)
 
     @ max_time(200, repeat=1)
     def test_deepcopy_efficiency_and_correctness(self):

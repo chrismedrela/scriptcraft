@@ -11,9 +11,10 @@ __all__ = [
     'copy_if_an_instance_given',
 ]
 
-import time
-from enum import Enum, make_enum
 from functools import wraps
+import time
+
+from enum import Enum, make_enum
 
 
 
@@ -61,7 +62,6 @@ class _Anything(object):
 anything = _Anything()
 
 
-
 TURN_OFF_EFFICIENCY_TESTS = True
 class max_time(object):
     """ Dekorator do testów wydajnościowych - oznaczony tym dekoratorem test
@@ -91,6 +91,3 @@ class max_time(object):
                     (average, self.max_time, formated_times))
 
         return result
-
-
-

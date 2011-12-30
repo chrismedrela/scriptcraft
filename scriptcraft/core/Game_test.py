@@ -169,8 +169,8 @@ class TestUtils(BaseGameTestCase):
         condition = lambda unit: unit != Alice_unit
 
         found_unit = self.game.find_nearest_unit_in_range_fulfilling_condition(position, range, condition)
-        excepted_unit = Bob_unit
-        self.assertEqual(found_unit, excepted_unit)
+        expected_unit = Bob_unit
+        self.assertEqual(found_unit, expected_unit)
 
     def test_generate_input(self):
         assert self.trees_position == (2, 63)
@@ -195,7 +195,7 @@ class TestUtils(BaseGameTestCase):
 
         messages = "%(sender_ID)d " % {'sender_ID':message.sender_ID} \
             + message.text
-        excepted_input_dict = {'tank_type_name':self.tank.type.main_name,
+        expected_input_dict = {'tank_type_name':self.tank.type.main_name,
                                'tank_ID':self.tank.ID,
                                'player_ID':self.player.ID,
                                'messages_len':number_of_messages,
@@ -205,13 +205,13 @@ class TestUtils(BaseGameTestCase):
                                'range_of_attack':self.tank.type.attack_range,
                                'messages':messages,
                                'surroundings':description_of_surroundings}
-        excepted_input = "%(tank_type_name)s %(tank_ID)d %(player_ID)d %(messages_len)d %(tank_x)d %(tank_y)d %(vision_diameter)d\n" \
+        expected_input = "%(tank_type_name)s %(tank_ID)d %(player_ID)d %(messages_len)d %(tank_x)d %(tank_y)d %(vision_diameter)d\n" \
                          "%(range_of_attack)d\n" \
                          "%(surroundings)s\n" \
-                         "%(messages)s" % excepted_input_dict
+                         "%(messages)s" % expected_input_dict
 
         input = self.game._generate_input_for(self.tank)
-        self.assertEqual(excepted_input, input)
+        self.assertEqual(expected_input, input)
 
 
 class TestFire(BaseGameTestCase):
@@ -302,9 +302,9 @@ class TestGenerateActions(BaseGameTestCase):
         old_position = self.tank.position
         new_position = old_position[0], old_position[1] - 1
         command = cmds.MoveCommand(direction=direction.N)
-        excepted_action = actions.MoveAction(source=old_position,
+        expected_action = actions.MoveAction(source=old_position,
                                              destination=new_position)
-        self._test_generate_action(command, excepted_action, unit=self.tank)
+        self._test_generate_action(command, expected_action, unit=self.tank)
 
     def test_generate_action_for_miner_on_border_with_move_command(self):
         self.game.move_unit_at(self.miner, (2, 0))
@@ -333,18 +333,18 @@ class TestGenerateActions(BaseGameTestCase):
     def test_generate_action_for_tank_with_fire_command_when_destination_is_in_attack_range(self):
         destination = (5,63)
         assert distance(destination, self.tank.position) == self.tank.type.attack_range
-        excepted_action = actions.FireAction(destination)
-        self._test_generate_action_for_tank_with_fire_command(destination, excepted_action)
+        expected_action = actions.FireAction(destination)
+        self._test_generate_action_for_tank_with_fire_command(destination, expected_action)
 
     def test_generate_action_for_tank_with_fire_command_when_destination_is_too_far(self):
         destination = (6,63)
         assert distance(destination, self.tank.position) > self.tank.type.attack_range
-        excepted_action = actions.StopAction()
-        self._test_generate_action_for_tank_with_fire_command(destination, excepted_action)
+        expected_action = actions.StopAction()
+        self._test_generate_action_for_tank_with_fire_command(destination, expected_action)
 
-    def _test_generate_action_for_tank_with_fire_command(self, destination, excepted_action):
+    def _test_generate_action_for_tank_with_fire_command(self, destination, expected_action):
         command = cmds.FireCommand(destination)
-        self._test_generate_action(command, excepted_action, unit=self.tank)
+        self._test_generate_action(command, expected_action, unit=self.tank)
 
     def test_generate_action_for_base_that_cannot_attack_with_fire_command(self):
         command = cmds.FireCommand(self.miner.position)
@@ -383,15 +383,15 @@ class TestGenerateActions(BaseGameTestCase):
         self.miner.minerals = minerals_in_miner
 
         command = cmds.ComplexGatherCommand(destination=self.minerals_position)
-        excepted_action = actions.MoveAction(source=self.miner.position,
+        expected_action = actions.MoveAction(source=self.miner.position,
                                              destination=destination)
-        self._test_generate_action(command, excepted_action, unit=self.miner)
+        self._test_generate_action(command, expected_action, unit=self.miner)
 
     def test_generate_action_for_empty_miner_nearby_minerals_deposit_with_complex_gather_command(self):
         self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
         command = cmds.ComplexGatherCommand(self.minerals_position)
-        excepted_action = actions.GatherAction(source=self.minerals_position)
-        self._test_generate_action(command, excepted_action, unit=self.miner)
+        expected_action = actions.GatherAction(source=self.minerals_position)
+        self._test_generate_action(command, expected_action, unit=self.miner)
 
     def test_generate_action_for_empty_miner_with_complex_gather_command_when_mineral_deposit_is_empty(self):
         self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
@@ -436,8 +436,8 @@ class TestGenerateActions(BaseGameTestCase):
         assert distance(self.tank.position, alien_unit.position) <= self.tank.type.attack_range
 
         command = cmds.ComplexAttackCommand(destination)
-        excepted_action = actions.FireAction(position)
-        self._test_generate_action(command, excepted_action, unit=self.tank)
+        expected_action = actions.FireAction(position)
+        self._test_generate_action(command, expected_action, unit=self.tank)
 
     def test_generate_action_for_tank_with_complex_attack_command_when_no_alien_in_range_and_target_not_accured(self):
         assert self.tank.position == (0, 63)
@@ -445,9 +445,9 @@ class TestGenerateActions(BaseGameTestCase):
         direction = (1, 63)
 
         command = cmds.ComplexAttackCommand(destination)
-        excepted_action=actions.MoveAction(source=self.tank.position,
+        expected_action=actions.MoveAction(source=self.tank.position,
                                            destination=direction)
-        self._test_generate_action(command, excepted_action, unit=self.tank)
+        self._test_generate_action(command, expected_action, unit=self.tank)
 
     def test_generate_action_for_tank_with_complex_attack_command_when_no_alien_in_range_and_target_accured(self):
         assert self.tank.position == (0, 63)
@@ -479,8 +479,8 @@ class TestGenerateActions(BaseGameTestCase):
         self.game.remove_unit(unit)
 
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        excepted_action = actions.BuildAction(self.miner_type, destination)
-        self._test_generate_action(command, excepted_action, unit=self.base)
+        expected_action = actions.BuildAction(self.miner_type, destination)
+        self._test_generate_action(command, expected_action, unit=self.base)
 
     def test_generate_action_for_base_with_build_command_when_all_surrounding_fields_are_occuped(self):
         self.base.minerals = 100
@@ -502,13 +502,13 @@ class TestGenerateActions(BaseGameTestCase):
         self._assert_stop_action_for_command(command, unit=self.base)
 
     def _assert_stop_action_for_command(self, command, unit):
-        excepted_action = actions.StopAction()
-        self._test_generate_action(command, excepted_action, unit)
+        expected_action = actions.StopAction()
+        self._test_generate_action(command, expected_action, unit)
 
-    def _test_generate_action(self, command, excepted_action, unit):
+    def _test_generate_action(self, command, expected_action, unit):
         unit.command = command
         action = self.game._generate_action_for(unit)
-        self.assertEqual(action, excepted_action)
+        self.assertEqual(action, expected_action)
 
 
 class TestExecuteActions(BaseGameTestCase):
@@ -607,8 +607,8 @@ class TestAnsweringSystemQuestions(BaseGameTestCase):
 
         system_message = self._generate_system_question_asked_by_base(question)
         answer = self.game._generate_answer_to_system_message(system_message)
-        excepted_answer = None
-        self.assertEqual(excepted_answer, answer)
+        expected_answer = None
+        self.assertEqual(expected_answer, answer)
 
     def test_answering_system_question_about_not_existing_unit(self):
         question = 'unit 12345'
@@ -627,8 +627,8 @@ class TestAnsweringSystemQuestions(BaseGameTestCase):
         system_message = self._generate_system_question_asked_by_base(question)
 
         answer_message = self.game._generate_answer_to_system_message(system_message)
-        excepted_answer_message = Message(sender_ID=0, receiver_ID=self.base.ID, text=answer)
-        self.assertEqual(excepted_answer_message, answer_message)
+        expected_answer_message = Message(sender_ID=0, receiver_ID=self.base.ID, text=answer)
+        self.assertEqual(expected_answer_message, answer_message)
 
     def _generate_system_question_asked_by_base(self, question):
         return Message(sender_ID=self.base.ID,

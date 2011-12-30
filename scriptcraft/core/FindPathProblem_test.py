@@ -19,8 +19,8 @@ class TestFindingPath(unittest.TestCase):
         self.game_map = self._create_game_map_from_text(s)
 
         self.source = self.destination = (3, 2)
-        excepted_direction = None
-        self._test_answer_equal_to(excepted_direction)
+        expected_direction = None
+        self._test_answer_equal_to(expected_direction)
 
     def test_destination_is_source_neighbour(self):
         s = '    \n' + \
@@ -29,8 +29,8 @@ class TestFindingPath(unittest.TestCase):
             '   ^'
         self.game_map = self._create_game_map_from_text(s)
 
-        excepted_direction = direction.S
-        self._test_answer_equal_to(excepted_direction)
+        expected_direction = direction.S
+        self._test_answer_equal_to(expected_direction)
 
     def test_destination_is_unavaiable_but_its_neighbour_is_not(self):
         s = 'tu    \n' + \
@@ -42,8 +42,8 @@ class TestFindingPath(unittest.TestCase):
         self.game_map = self._create_game_map_from_text(s)
 
         self.destination = (1, 0)
-        excepted_direction = direction.N
-        self._test_answer_equal_to(excepted_direction)
+        expected_direction = direction.N
+        self._test_answer_equal_to(expected_direction)
 
     def test_destination_is_far_far_away_but_is_avaiable(self):
         size = 128
@@ -61,8 +61,8 @@ class TestFindingPath(unittest.TestCase):
             ' t^ '
         self.game_map = self._create_game_map_from_text(s)
 
-        excepted_direction = None
-        self._test_answer_equal_to(excepted_direction)
+        expected_direction = None
+        self._test_answer_equal_to(expected_direction)
 
     def test_road_block(self):
         s = '                         \n' + \
@@ -155,9 +155,9 @@ class TestFindingPath(unittest.TestCase):
 
         return m
 
-    def _test_answer_equal_to(self, excepted_direction):
+    def _test_answer_equal_to(self, expected_direction):
         answered_direction = self._find_direction()
-        self.assertEqual(excepted_direction, answered_direction)
+        self.assertEqual(expected_direction, answered_direction)
 
     def _find_direction(self):
         self.problem = FindPathProblem(self.source, self.destination, self.game_map)
