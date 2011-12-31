@@ -130,7 +130,6 @@ class TestEfficiencyParsingManyMessages(unittest.TestCase):
         Parse(self.input_data)
 
 
-
 class TestEfficiencyParsingCommands(unittest.TestCase):
     def setUp(self):
         self.input_data = ('S\n')*5000

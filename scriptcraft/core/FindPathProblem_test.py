@@ -12,22 +12,16 @@ from scriptcraft.utils import *
 
 class TestFindingPath(unittest.TestCase):
     def test_destination_equal_to_source(self):
-        s = '    \n' + \
-            '    \n' + \
-            '    \n' + \
-            '    '
-        self.game_map = self._create_game_map_from_text(s)
-
+        self.game_map = GameMap((4, 4))
         self.source = self.destination = (3, 2)
+
         expected_direction = None
         self._test_answer_equal_to(expected_direction)
 
     def test_destination_is_source_neighbour(self):
-        s = '    \n' + \
-            '    \n' + \
-            '   *\n' + \
-            '   ^'
-        self.game_map = self._create_game_map_from_text(s)
+        self.game_map = GameMap((4, 4))
+        self.source = (3, 2)
+        self.destination = (3, 3)
 
         expected_direction = direction.S
         self._test_answer_equal_to(expected_direction)
@@ -112,27 +106,23 @@ class TestFindingPath(unittest.TestCase):
 
     @ max_time(10)
     def test_efficiency_on_blank_map_with_non_heura_algorythm(self):
-        size = FindPathProblem.MIN_DISTANCE_TO_USE_HEURA/2-1
-        self.game_map = GameMap((size, size))
-        self.source = size-1, 0
-        self.destination = 0, size-1
-
-        answered_direction = self._find_direction()
-        self.assertTrue(answered_direction != None)
-
+        size_of_map = FindPathProblem.MIN_DISTANCE_TO_USE_HEURA/2-1
+        self._test_efficiency_on_blank_map(size_of_map)
         assert distance(self.source, self.destination) < FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
 
     @ max_time(150)
     def test_efficiency_on_blank_map_with_heura_algorythm(self):
-        size = 128
-        self.game_map = GameMap((size, size))
-        self.source = 0, 0
-        self.destination = size-1, size-1
+        size_of_map = 128
+        self._test_efficiency_on_blank_map(size_of_map)
+        assert distance(self.source, self.destination) >= FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
+
+    def _test_efficiency_on_blank_map(self, size_of_map):
+        self.game_map = GameMap((size_of_map, size_of_map))
+        self.source = size_of_map-1, 0
+        self.destination = 0, size_of_map-1
 
         answered_direction = self._find_direction()
         self.assertTrue(answered_direction != None)
-
-        assert distance(self.source, self.destination) >= FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
 
     def _create_game_map_from_text(self, s):
         """ '*' means source and '^' - destination """

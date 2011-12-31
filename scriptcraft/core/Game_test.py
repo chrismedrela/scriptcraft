@@ -524,8 +524,7 @@ class TestExecuteActions(BaseGameTestCase):
 
 
 class TestMessageSystem(BaseGameTestCase):
-    def test_send_message(self):
-        """ Sending messages to alien should be legal. """
+    def test_send_message_between_players_allowed(self):
 
         _, Alice_base, _ = self.game.new_player_with_base('Alice', (0, 255, 0))
         message = Message(sender_ID=self.base.ID,
