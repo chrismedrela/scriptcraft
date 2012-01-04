@@ -9,9 +9,11 @@ __all__ = [
     'skip',
     'distance',
     'copy_if_an_instance_given',
+    'TemporaryFileSystem'
 ]
 
 from functools import wraps
+import os, shutil
 import time
 
 from enum import Enum, make_enum
@@ -91,3 +93,46 @@ class max_time(object):
                     (average, self.max_time, formated_times))
 
         return result
+
+
+class TemporaryFileSystem(object):
+    def __init__(self, main_folder):
+        self.main_folder = main_folder
+        self._temporary_files = []
+        self._temporary_folders = []
+
+    def write_file(self, file_path, data):
+        file_path = os.path.join(self.main_folder, file_path)
+        assert not os.path.exists(file_path)
+        self._temporary_files.append(file_path)
+        with open(file_path, 'w') as s:
+            s.write(data)
+
+    def read_file(self, file_path):
+        file_path = os.path.join(self.main_folder, file_path)
+        with open(file_path, 'r') as s:
+            return s.read()
+
+    def create_folder_if_necessary(self, path):
+        path = os.path.join(self.main_folder, path)
+        self._temporary_folders.append(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        else:
+            assert os.path.isdir(path), 'Oops! "%s" is not a folder.' % path
+
+    def exists_file_or_folder(self, path):
+        path = os.path.join(self.main_folder, path)
+        return os.path.exists(path)
+
+    def delete_files_and_folders(self):
+        for file in self._temporary_files:
+            if os.path.exists(file):
+                os.remove(file)
+        self._temporary_files = []
+
+        for folder in self._temporary_folders:
+            if os.path.exists(folder):
+                assert folder != 'scriptcraft'
+                shutil.rmtree(folder)
+        self._temporary_folders = []
