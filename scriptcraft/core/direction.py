@@ -30,8 +30,8 @@ FROM_RAY = {
 }
 
 BY_NAME = {
-	'N' : N,
-	'E' : E,
-	'S' : S,
-	'W' : W,
+	'N':N, 'n':N,
+	'E':E, 'e':E,
+	'S':S, 's':S,
+	'W':W, 'w':W,
 }
