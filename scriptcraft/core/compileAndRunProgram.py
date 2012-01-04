@@ -2,8 +2,6 @@
 #-*- coding:utf-8 -*-
 
 import os
-import shutil
-import subprocess
 
 from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.Environment import Environment

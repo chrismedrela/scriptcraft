@@ -2,8 +2,6 @@
 #-*- coding:utf-8 -*-
 
 import unittest
-import os
-import shutil
 
 from scriptcraft.utils import *
 from scriptcraft.core.CompilationStatus import CompilationStatus

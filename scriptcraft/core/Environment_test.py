@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 
 import unittest
-import shutil, os
+import os
 
 from scriptcraft.core.Environment import Environment
 
