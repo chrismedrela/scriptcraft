@@ -17,11 +17,12 @@ class TestBasic(unittest.TestCase):
 
     def setUp(self):
         self.folder = "tmp_unittest"
-        os.mkdir(self.folder)
-        os.mkdir(os.path.join(self.folder, 'cache'))
+        self.file_system = TemporaryFileSystem(self.folder)
+        self.file_system.create_folder_if_necessary('')
+        self.file_system.create_folder_if_necessary('cache')
 
     def tearDown(self):
-        shutil.rmtree(self.folder)
+        self.file_system.delete_files_and_folders()
 
     def test_cpp_program(self):
         program_code = self._build_valid_cpp_code()
@@ -36,7 +37,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(status.maybe_running_status, expected_running_status)
 
     def test_environment_folder_already_exists(self):
-        os.mkdir(os.path.join(self.folder, 'env'))
+        self.file_system.create_folder_if_necessary('env')
         self.test_cpp_program()
 
     def test_invalid_program(self):

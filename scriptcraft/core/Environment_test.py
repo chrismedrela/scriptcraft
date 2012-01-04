@@ -61,18 +61,18 @@ class TestEnvironment(unittest.TestCase):
         self.assertFalse(exists_file)
 
     def test_remove_folder_recursively(self):
-        self.file_system.create_folder_if_necessary('to_remove')
-        self.file_system.create_folder_if_necessary('to_remove/subfolder')
         file_not_to_remove = 'file_not_to_remove.dat'
         self.file_system.write_file(file_not_to_remove, self.simple_data)
-        self.file_system.write_file('to_remove/file1.txt', self.simple_data)
-        self.file_system.write_file('to_remove/subfolder/file2.txt', self.simple_data)
-        folder_path = 'to_remove'
 
-        self.env.remove_folder_recursively(folder_path)
+        self.file_system.create_folder_if_necessary('to_remove')
+        self.file_system.write_file('to_remove/file1.txt', self.simple_data)
+        self.file_system.create_folder_if_necessary('to_remove/subfolder')
+        self.file_system.write_file('to_remove/subfolder/file2.txt', self.simple_data)
+
+        self.env.remove_folder_recursively('to_remove')
 
         self.assertTrue(self.file_system.exists_file_or_folder(file_not_to_remove))
-        self.assertFalse(self.file_system.exists_file_or_folder(folder_path))
+        self.assertFalse(self.file_system.exists_file_or_folder('to_remove'))
 
     def test_remove_nonexistent_folder(self):
         folder = 'folder'
@@ -82,13 +82,14 @@ class TestEnvironment(unittest.TestCase):
         self.env.remove_folder_recursively(folder)
 
     def test_copy_file(self):
+        self.file_system.create_folder_if_necessary('folder')
         source_path_as_iterable = ('folder', 'file.src')
         source_path = os.path.join(*source_path_as_iterable)
+        self.file_system.write_file(source_path, self.simple_data)
+
+        self.file_system.create_folder_if_necessary('destfolder')
         destination_path_as_iterable = ('destfolder', 'file.dest')
         destination_path = os.path.join(*destination_path_as_iterable)
-        self.file_system.create_folder_if_necessary('folder')
-        self.file_system.create_folder_if_necessary('destfolder')
-        self.file_system.write_file(source_path, self.simple_data)
 
         self.env.copy_file(source_path_as_iterable, destination_path_as_iterable)
 
