@@ -6,8 +6,10 @@ import shutil
 import subprocess
 
 from scriptcraft.core.CompilationStatus import CompilationStatus
+from scriptcraft.core.Environment import Environment
 from scriptcraft.core.Program import Program
 from scriptcraft.core.RunningStatus import RunningStatus
+
 
 
 class CompileAndRunProgram(object):
@@ -15,6 +17,7 @@ class CompileAndRunProgram(object):
         self.program = program
         self.input = input
         self.folder = folder
+        self.env = Environment(folder)
 
         self.maybe_compilation_status = self._compile()
         self.maybe_running_status = self._run()
@@ -23,12 +26,14 @@ class CompileAndRunProgram(object):
         try:
             return self._try_compile()
         except (OSError, IOError):
+            import traceback
+            print 'a'
+            traceback.print_exc()
             return None
 
     def _try_compile(self):
         if not self._is_compilation_necessary():
             return None
-        self._create_environment_folder_if_necessary()
         self._create_source_file()
         compilation_status = self._execute_compilation_command()
         self._copy_binary_if_exists()
@@ -36,55 +41,46 @@ class CompileAndRunProgram(object):
         return compilation_status
 
     def _is_compilation_necessary(self):
-        sha = self.program.sha()
-        binary_file_path = os.path.join(self.folder, 'cache', sha)
-        compilation_necessary = not os.path.exists(binary_file_path)
-        return compilation_necessary
-
-    def _create_environment_folder_if_necessary(self):
-        env_folder = os.path.join(self.folder, 'env')
-        self._create_folder_if_necessary(env_folder)
+        binary = ('cache', self.program.sha())
+        return not self.env.exists_file(binary)
 
     def _create_source_file(self):
-        source_file_path = os.path.join(self.folder, 'env',
-                                        self.program.language.source_file_name)
-        with open(source_file_path, 'w') as stream:
-            stream.write(self.program.code)
+        self.env.create_file(('env', self.program.language.source_file_name),
+                             self.program.code)
 
     def _execute_compilation_command(self):
         input = ''
-        folder = os.path.join(self.folder, 'env')
-        output, error_output = self._execute_bash_command(
-            self.program.language.compilation_command, input, folder)
+        folder = 'env'
+        output, error_output, exit_status = \
+            self.env.execute_bash_command(self.program.language.compilation_command,
+                                          input, folder)
         return CompilationStatus(output, error_output)
 
     def _copy_binary_if_exists(self):
-        source = os.path.join(self.folder, 'env',
-                              self.program.language.binary_file_name)
-        if os.path.exists(source):
-            sha = self.program.sha()
-            self._create_cache_folder_if_necessary()
-            destination = os.path.join(self.folder, 'cache', sha)
-            shutil.copy(source, destination)
+        source = ('env', self.program.language.binary_file_name)
+        destination = ('cache', self.program.sha())
+        if self.env.exists_file(source):
+            self.env.copy_file(source, destination)
 
     def _create_cache_folder_if_necessary(self):
         cache_folder = os.path.join(self.folder, 'cache')
         self._create_folder_if_necessary(cache_folder)
 
     def _clear_environment(self):
-        env_folder = os.path.join(self.folder, 'env')
-        shutil.rmtree(env_folder)
+        self.env.remove_folder_recursively('env')
 
     def _run(self):
         try:
             return self._try_run()
         except (OSError, IOError):
+            import traceback
+            print 'a'
+            traceback.print_exc()
             return None
 
     def _try_run(self):
         if not self._is_compilation_successful():
             return None
-        self._create_environment_folder_if_necessary()
         self._copy_binary()
         self._create_source_file()
         running_status = self._execute_run_command()
@@ -92,39 +88,17 @@ class CompileAndRunProgram(object):
         return running_status
 
     def _is_compilation_successful(self):
-        binary_file_name = self.program.sha()
-        binary_file_path = os.path.join(self.folder, 'cache', binary_file_name)
-        return os.path.exists(binary_file_path)
+        return self.env.exists_file(('cache', self.program.sha()))
 
     def _copy_binary(self):
-        sha = self.program.sha()
-        source = os.path.join(self.folder, 'cache', sha)
-        destination = os.path.join(self.folder, 'env',
-                                   self.program.language.binary_file_name)
-        shutil.copy(source, destination)
+        source = ('cache', self.program.sha())
+        destination = ('env', self.program.language.binary_file_name)
+        self.env.copy_file(source, destination)
 
     def _execute_run_command(self):
         input = self.input
-        folder = os.path.join(self.folder, 'env')
-        output, error_output = self._execute_bash_command(
-            self.program.language.running_command, input, folder)
+        folder = 'env'
+        output, error_output, exit_code = \
+            self.env.execute_bash_command(self.program.language.running_command,
+                                          input, folder)
         return RunningStatus(input, output, error_output)
-
-    def _execute_bash_command(self, command, input_data, folder):
-        process = subprocess.Popen(command,
-                                   stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   shell=True,
-                                   cwd=folder)
-        output, errors_output = process.communicate(input=input_data)
-        exit_code = process.wait()
-        return output, errors_output
-
-    def _create_folder_if_necessary(self, folder):
-        try:
-            os.mkdir(folder)
-        except OSError as ex:
-            FOLDER_ALREADY_EXISTS = 17
-            if ex.errno != FOLDER_ALREADY_EXISTS:
-                raise

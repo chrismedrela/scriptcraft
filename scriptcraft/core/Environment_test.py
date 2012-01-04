@@ -15,7 +15,7 @@ class TestEnvironment(unittest.TestCase):
         self.simple_data = 'data data data'
         self._temporary_files = []
         self._temporary_folders = []
-        self._create_temporary_folder_if_necessary('')
+        self._create_folder_if_necessary('')
         self.env = Environment(self.main_folder)
 
     def tearDown(self):
@@ -27,8 +27,8 @@ class TestEnvironment(unittest.TestCase):
                                                 path_as_iterable=path)
 
     def test_create_file_when_path_is_iterable(self):
-        self._create_temporary_folder_if_necessary('folder')
-        self._create_temporary_folder_if_necessary('folder/subfolder')
+        self._create_folder_if_necessary('folder')
+        self._create_folder_if_necessary('folder/subfolder')
         path_as_iterable = ('folder', 'subfolder', 'file.file_extension')
         path = os.path.join(*path_as_iterable)
 
@@ -43,7 +43,7 @@ class TestEnvironment(unittest.TestCase):
 
     def test_file_exists(self):
         folder_name = 'folder'
-        self._create_temporary_folder_if_necessary(folder_name)
+        self._create_folder_if_necessary(folder_name)
         path_as_iterable = (folder_name, 'file.txt')
         path = os.path.join(*path_as_iterable)
         self._write_temporary_file(path, data='')
@@ -54,15 +54,15 @@ class TestEnvironment(unittest.TestCase):
 
     def test_file_exists_returns_False_when_folder_with_the_same_name_exists(self):
         path = 'folder'
-        self._create_temporary_folder_if_necessary(path)
+        self._create_folder_if_necessary(path)
 
         exists_file = self.env.exists_file(path)
 
         self.assertFalse(exists_file)
 
     def test_remove_folder_recursively(self):
-        self._create_temporary_folder_if_necessary('to_remove')
-        self._create_temporary_folder_if_necessary('to_remove/subfolder')
+        self._create_folder_if_necessary('to_remove')
+        self._create_folder_if_necessary('to_remove/subfolder')
         file_not_to_remove = 'file_not_to_remove.dat'
         self._write_temporary_file(file_not_to_remove, self.simple_data)
         self._write_temporary_file('to_remove/file1.txt', self.simple_data)
@@ -86,8 +86,8 @@ class TestEnvironment(unittest.TestCase):
         source_path = os.path.join(*source_path_as_iterable)
         destination_path_as_iterable = ('destfolder', 'file.dest')
         destination_path = os.path.join(*destination_path_as_iterable)
-        self._create_temporary_folder_if_necessary('folder')
-        self._create_temporary_folder_if_necessary('destfolder')
+        self._create_folder_if_necessary('folder')
+        self._create_folder_if_necessary('destfolder')
         self._write_temporary_file(source_path, self.simple_data)
 
         self.env.copy_file(source_path_as_iterable, destination_path_as_iterable)
@@ -109,9 +109,10 @@ class TestEnvironment(unittest.TestCase):
     def test_execute_bash_command(self):
         input_data = ''
         command = 'echo bla bla && unknown_command'
+        folder = ''
 
         output, error_output, exit_code = \
-            self.env.execute_bash_command(command, input_data)
+            self.env.execute_bash_command(command, input_data, folder)
 
         self.assertEqual(output, 'bla bla\n')
         self.assertTrue(error_output != '')
@@ -130,7 +131,7 @@ class TestEnvironment(unittest.TestCase):
         with open(file_path, 'r') as s:
             return s.read()
 
-    def _create_temporary_folder_if_necessary(self, path):
+    def _create_folder_if_necessary(self, path):
         path = os.path.join(self.main_folder, path)
         self._temporary_folders.append(path)
         if not os.path.exists(path):
