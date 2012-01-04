@@ -15,7 +15,6 @@ class TestEnvironment(unittest.TestCase):
         self.main_folder = 'tmp_unittest_test_environment'
         self.simple_data = 'data data data'
         self.file_system = TemporaryFileSystem(self.main_folder)
-        self.file_system.create_folder_if_necessary('')
         self.env = Environment(self.main_folder)
 
     def tearDown(self):

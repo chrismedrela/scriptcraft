@@ -100,6 +100,7 @@ class TemporaryFileSystem(object):
         self.main_folder = main_folder
         self._temporary_files = []
         self._temporary_folders = []
+        self.create_folder_if_necessary('') # create main folder
 
     def write_file(self, file_path, data):
         file_path = os.path.join(self.main_folder, file_path)

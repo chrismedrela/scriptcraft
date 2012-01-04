@@ -18,7 +18,6 @@ class TestBasic(unittest.TestCase):
     def setUp(self):
         self.folder = "tmp_unittest"
         self.file_system = TemporaryFileSystem(self.folder)
-        self.file_system.create_folder_if_necessary('')
         self.file_system.create_folder_if_necessary('cache')
 
     def tearDown(self):
