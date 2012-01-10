@@ -10,6 +10,7 @@ class Program(namedtuple("Program", ('language',
                                      'code'))):
     __slots__ = ()
 
+    @ property
     def sha(self):
         sha = hashlib.sha1()
         sha.update(self.code)

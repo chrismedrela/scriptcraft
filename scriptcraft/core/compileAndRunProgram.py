@@ -39,7 +39,7 @@ class CompileAndRunProgram(object):
         return compilation_status
 
     def _is_compilation_necessary(self):
-        binary = ('cache', self.program.sha())
+        binary = ('cache', self.program.sha)
         return not self.env.exists_file(binary)
 
     def _create_source_file(self):
@@ -56,7 +56,7 @@ class CompileAndRunProgram(object):
 
     def _copy_binary_if_exists(self):
         source = ('env', self.program.language.binary_file_name)
-        destination = ('cache', self.program.sha())
+        destination = ('cache', self.program.sha)
         if self.env.exists_file(source):
             self.env.copy_file(source, destination)
 
@@ -86,10 +86,10 @@ class CompileAndRunProgram(object):
         return running_status
 
     def _is_compilation_successful(self):
-        return self.env.exists_file(('cache', self.program.sha()))
+        return self.env.exists_file(('cache', self.program.sha))
 
     def _copy_binary(self):
-        source = ('cache', self.program.sha())
+        source = ('cache', self.program.sha)
         destination = ('env', self.program.language.binary_file_name)
         self.env.copy_file(source, destination)
 
