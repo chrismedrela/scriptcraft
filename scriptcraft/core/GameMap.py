@@ -101,6 +101,10 @@ class GameMap(list):
     def is_valid_position(self, (x, y)):
         return x >= 0 and y >= 0 and x < self.size[0] and y < self.size[1]
 
+    def is_valid_and_accessible(self, position):
+        return (self.is_valid_position(position)
+                and self.get_field(position).is_flat_and_empty())
+
     def place_trees_at(self, position):
         function = lambda field: field.PlacedTrees()
         self._change_field_with_function_if_empty(position, function)

@@ -91,6 +91,13 @@ class TestFindingPath(unittest.TestCase):
 
         self._test_answer_equal_to(None)
 
+    def test_destination_behind_border(self):
+        self.game_map = GameMap((3, 3), ())
+        self.destination = (3, 0)
+        self.source = (2, 0)
+
+        self._test_answer_equal_to(None)
+
     def test_skip_if_too_long_searching_time(self):
         size = 256
         s = (' ttttttttttttttttttttttttttttttt\n'*1 + \
