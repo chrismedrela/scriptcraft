@@ -99,7 +99,7 @@ class GameMap(list):
         return self[position[0]][position[1]]
 
     def is_valid_position(self, (x, y)):
-        return x >= 0 and y >= 0 and x <= self.size[0] and y <= self.size[1]
+        return x >= 0 and y >= 0 and x < self.size[0] and y < self.size[1]
 
     def place_trees_at(self, position):
         function = lambda field: field.PlacedTrees()

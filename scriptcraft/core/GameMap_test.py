@@ -58,6 +58,10 @@ class TestGameMap(unittest.TestCase):
         expected_neighbour = None
         self.assertEqual(neighbour, expected_neighbour)
 
+    def test_is_valid_position(self):
+        m = GameMap((8, 8), ())
+        self.assertFalse(m.is_valid_position((8, 4)))
+
     @ max_time(200, repeat=1)
     def test_deepcopy_efficiency_and_correctness(self):
         start_positions = [(3, 3), (4, 5)]
