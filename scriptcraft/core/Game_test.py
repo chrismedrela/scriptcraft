@@ -103,10 +103,10 @@ class BaseGameTestCase(unittest.TestCase):
         self.game.game_map.place_minerals_at(self.minerals_position, minerals_in_deposit)
 
         self.free_positions = [(35, 36), (35, 37), (35, 38)]
-        for free_position in self.free_positions:
-            assert self.game.game_map.get_field(free_position).is_empty()
+        assert all(self.game.game_map.get_field(free_position).is_empty()
+                   for free_position in self.free_positions)
 
-        self.upland_position = (1, 63)
+        #self.upland_position = (1, 63)
         # self.game.game_map.
         # TODO
 
@@ -164,17 +164,16 @@ class TestUtils(BaseGameTestCase):
         Bob_unit = self.game.new_unit(self.player, (61, 0), self.miner_type)
         Alice_unit = self.game.new_unit(Alice, (62, 0), self.miner_type)
 
-        position = (65, 0) # out of map
-        range = 5
-        condition = lambda unit: unit != Alice_unit
-
-        found_unit = self.game.find_nearest_unit_in_range_fulfilling_condition(position, range, condition)
+        found_unit = self.game.find_nearest_unit_in_range_fulfilling_condition(
+            position=(65, 0),
+            range=5,
+            condition=lambda unit: unit != Alice_unit)
         expected_unit = Bob_unit
         self.assertEqual(found_unit, expected_unit)
 
     def test_generate_input(self):
         assert self.trees_position == (2, 63)
-        assert self.upland_position == (1, 63)
+        #assert self.upland_position == (1, 63)
         assert self.tank.type.vision_radius == 2
 
         message = Message(sender_ID=self.miner.ID,
@@ -183,15 +182,15 @@ class TestUtils(BaseGameTestCase):
         self.game._send_message(message)
         number_of_messages = 1
 
-        description_of_surroundings_dict = {'tank_type_name':self.tank.type.main_name,
-                                            'tank_ID':self.tank.ID,
-                                            'player_ID':self.player.ID}
-        description_of_field_with_trees = '3 0 0\n'
-        description_of_surroundings = ("1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
-                                      "1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
-                                      "1 0 0 " "1 0 0 " "%(tank_type_name)s %(tank_ID)d %(player_ID)d " "0 0 0 " + description_of_field_with_trees + \
-                                      "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0\n" \
-                                      "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0") % description_of_surroundings_dict
+        surroundings_dict = {'tank_type_name':self.tank.type.main_name,
+                             'tank_ID':self.tank.ID,
+                             'player_ID':self.player.ID}
+        field_with_trees = '3 0 0\n'
+        surroundings = ("1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
+                        "1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
+                        "1 0 0 " "1 0 0 " "%(tank_type_name)s %(tank_ID)d %(player_ID)d " "0 0 0 " + field_with_trees + \
+                        "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0\n" \
+                        "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0") % surroundings_dict
 
         messages = "%(sender_ID)d " % {'sender_ID':message.sender_ID} \
             + message.text
@@ -204,7 +203,7 @@ class TestUtils(BaseGameTestCase):
                                'vision_diameter':2 * self.tank.type.vision_radius + 1,
                                'range_of_attack':self.tank.type.attack_range,
                                'messages':messages,
-                               'surroundings':description_of_surroundings}
+                               'surroundings':surroundings}
         expected_input = "%(tank_type_name)s %(tank_ID)d %(player_ID)d %(messages_len)d %(tank_x)d %(tank_y)d %(vision_diameter)d\n" \
                          "%(range_of_attack)d\n" \
                          "%(surroundings)s\n" \
@@ -291,14 +290,24 @@ class TestMoveUnit(BaseGameTestCase):
         self.assertTrue(self.game.game_map.get_field(new_position).has_unit())
 
     def test_cannot_move_unit_on_occuped_field(self):
-        new_position_for_miner = self.base.position
-
-        illegal_operation = lambda: self.game.move_unit_at(self.miner, new_position_for_miner)
+        illegal_operation = lambda: self.game.move_unit_at(self.miner,
+                                                           self.base.position)
         self.assertRaises(FieldIsOccupied, illegal_operation)
 
 
-class TestGenerateActions(BaseGameTestCase):
-    def test_generate_action_for_miner_with_move_command(self):
+class BaseGenerateActionTestCase(BaseGameTestCase):
+    def _assert_stop_action_for_command(self, command, unit):
+        expected_action = actions.StopAction()
+        self._test_generate_action(command, expected_action, unit)
+
+    def _test_generate_action(self, command, expected_action, unit):
+        unit.command = command
+        action = self.game._generate_action_for(unit)
+        self.assertEqual(action, expected_action)
+
+
+class TestGenerateActionsForMoveCommand(BaseGenerateActionTestCase):
+    def test_miner(self):
         old_position = self.tank.position
         new_position = old_position[0], old_position[1] - 1
         command = cmds.MoveCommand(direction=direction.N)
@@ -306,67 +315,108 @@ class TestGenerateActions(BaseGameTestCase):
                                              destination=new_position)
         self._test_generate_action(command, expected_action, unit=self.tank)
 
-    def test_generate_action_for_miner_on_border_with_move_command(self):
+    def test_miner_on_border(self):
         self.game.move_unit_at(self.miner, (2, 0))
 
         invalid_command = cmds.MoveCommand(direction=direction.N)
         self._assert_stop_action_for_command(invalid_command, unit=self.miner)
 
-    def test_generate_action_for_immovable_base_with_move_command(self):
-        command = cmds.MoveCommand(direction.N)
-        self._assert_stop_action_for_command(command, unit=self.base)
-
-    def test_generate_action_for_miner_with_move_command_when_destination_field_is_occupied(self):
+    def test_destination_occupied(self):
         assert self.miner.position == (16, 17)
         assert self.base.position == (16, 16)
         command = cmds.MoveCommand(direction.N)
         self._assert_stop_action_for_command(command, unit=self.miner)
 
-    def test_generate_action_when_complex_move_command_has_invalid_destination(self):
-        invalid_command = cmds.ComplexMoveCommand(destination=(10000, 0))
-        self._assert_stop_action_for_command(invalid_command, unit=self.miner)
-
-    def test_generate_action_for_immovable_base_with_complex_move_command(self):
-        command = cmds.ComplexMoveCommand(destination=self.free_positions)
+    def test_immovable_base(self):
+        command = cmds.MoveCommand(direction.N)
         self._assert_stop_action_for_command(command, unit=self.base)
 
-    def test_generate_action_for_tank_with_fire_command_when_destination_is_in_attack_range(self):
+
+class TestGenerateActionsForFireCommand(BaseGenerateActionTestCase):
+    def test_destination_in_attack_range(self):
         destination = (5,63)
         assert distance(destination, self.tank.position) == self.tank.type.attack_range
         expected_action = actions.FireAction(destination)
-        self._test_generate_action_for_tank_with_fire_command(destination, expected_action)
+        self._test_tank(destination, expected_action)
 
-    def test_generate_action_for_tank_with_fire_command_when_destination_is_too_far(self):
+    def test_destination_too_far(self):
         destination = (6,63)
         assert distance(destination, self.tank.position) > self.tank.type.attack_range
         expected_action = actions.StopAction()
-        self._test_generate_action_for_tank_with_fire_command(destination, expected_action)
+        self._test_tank(destination, expected_action)
 
-    def _test_generate_action_for_tank_with_fire_command(self, destination, expected_action):
+    def _test_tank(self, destination, expected_action):
         command = cmds.FireCommand(destination)
         self._test_generate_action(command, expected_action, unit=self.tank)
 
-    def test_generate_action_for_base_that_cannot_attack_with_fire_command(self):
+    def test_base_that_cannot_attack(self):
         command = cmds.FireCommand(self.miner.position)
         self._assert_stop_action_for_command(command, unit=self.base)
 
-    def test_generate_action_for_tank_with_fire_command_cannot_fire_self(self):
+    def test_cannot_fire_self(self):
         command = cmds.FireCommand(self.tank.position)
         self._assert_stop_action_for_command(command, unit=self.tank)
 
-    def test_generate_action_when_fire_command_has_invalid_destination_position(self):
+    def test_invalid_destination(self):
         command = cmds.FireCommand((10000, 0))
         self._assert_stop_action_for_command(command, unit=self.tank)
 
-    def test_generate_action_for_full_miner_with_complex_gather_command(self):
-        self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=self.miner.type.storage_size,
-                                                                         direction='base')
 
-    def test_generate_action_for_empty_miner_with_complex_gather_command(self):
-        self._test_generate_action_for_miner_with_complex_gather_command(minerals_in_miner=0,
-                                                                         direction='mineral_deposit')
+class TestGenerateActionsForBuildCommand(BaseGenerateActionTestCase):
+    def test_basic(self):
+        assert self.base.position == (16, 16)
+        self.base.minerals = 100
 
-    def _test_generate_action_for_miner_with_complex_gather_command(self, minerals_in_miner, direction):
+        destination = (15, 16)
+
+        unit_ID_to_remove = self.game.game_map.get_field(destination).get_unit_ID()
+        unit = self.game.units_by_IDs[unit_ID_to_remove]
+        self.game.remove_unit(unit)
+
+        command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
+        expected_action = actions.BuildAction(self.miner_type, destination)
+        self._test_generate_action(command, expected_action, unit=self.base)
+
+    def test_all_neighbours_occupied(self):
+        self.base.minerals = 100
+        command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
+        self._assert_stop_action_for_command(command, unit=self.base)
+
+    def test_unit_not_buildable(self):
+        self.game.remove_unit(self.miner)
+        command = cmds.BuildCommand(unit_type_name=self.base.type.main_name)
+        self._assert_stop_action_for_command(command, unit=self.base)
+
+    def test_invalid_unit_type_name(self):
+        self.game.remove_unit(self.miner)
+        command = cmds.BuildCommand(unit_type_name='invalid type name')
+        self._assert_stop_action_for_command(command, unit=self.base)
+
+    def test_miner_that_cannot_build(self):
+        command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
+        self._assert_stop_action_for_command(command, unit=self.miner)
+
+
+class TestGenerateActionsForComplexMoveCommand(BaseGenerateActionTestCase):
+    def test_invalid_destination(self):
+        invalid_command = cmds.ComplexMoveCommand(destination=(10000, 0))
+        self._assert_stop_action_for_command(invalid_command, unit=self.miner)
+
+    def test_immovable_base(self):
+        command = cmds.ComplexMoveCommand(destination=self.free_positions)
+        self._assert_stop_action_for_command(command, unit=self.base)
+
+
+class TestGenerateActionsForComplexGatherCommand(BaseGenerateActionTestCase):
+    def test_full_miner(self):
+        self._test_miner(minerals_in_miner=self.miner.type.storage_size,
+                         direction='base')
+
+    def test_empty_miner(self):
+        self._test_miner(minerals_in_miner=0,
+                         direction='mineral_deposit')
+
+    def _test_miner(self, minerals_in_miner, direction):
         assert self.minerals_position == (22, 16)
         assert self.base.position == (16, 16)
 
@@ -387,13 +437,13 @@ class TestGenerateActions(BaseGameTestCase):
                                              destination=destination)
         self._test_generate_action(command, expected_action, unit=self.miner)
 
-    def test_generate_action_for_empty_miner_nearby_minerals_deposit_with_complex_gather_command(self):
+    def test_empty_miner_nearby_mineral_deposit(self):
         self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
         command = cmds.ComplexGatherCommand(self.minerals_position)
         expected_action = actions.GatherAction(source=self.minerals_position)
         self._test_generate_action(command, expected_action, unit=self.miner)
 
-    def test_generate_action_for_empty_miner_with_complex_gather_command_when_mineral_deposit_is_empty(self):
+    def test_empty_miner_and_empty_mineral_deposit(self):
         self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
         self.game.game_map.erase_at(self.minerals_position)
         self.game.game_map.place_minerals_at(self.minerals_position, 0)
@@ -401,34 +451,36 @@ class TestGenerateActions(BaseGameTestCase):
         command = cmds.ComplexGatherCommand(self.minerals_position)
         self._assert_stop_action_for_command(command, unit=self.miner)
 
-    def test_generate_action_for_tank_without_storage_with_complex_gather_command(self):
+    def test_tank_without_storage(self):
         command = cmds.ComplexGatherCommand(self.minerals_position)
         self._assert_stop_action_for_command(command, unit=self.tank)
 
-    def test_generate_action_when_complex_gather_command_has_invalid_destination_position(self):
+    def test_position_out_of_map(self):
         command = cmds.ComplexGatherCommand((10000, 0))
         self._assert_stop_action_for_command(command, unit=self.miner)
 
-    def test_generate_action_when_complex_gather_command_has_destination_without_minerals(self):
+    def test_position_without_mineral_deposit(self):
         command = cmds.ComplexGatherCommand(self.free_positions[0])
         self._assert_stop_action_for_command(command, unit=self.miner)
 
-    def test_generate_action_for_full_miner_with_complex_gather_command_when_player_has_not_base(self):
+    def test_full_miner_no_base(self):
         self.miner.minerals = self.miner.type.storage_size
         self.game.remove_unit(self.base)
         command = cmds.ComplexGatherCommand(self.minerals_position)
         self._assert_stop_action_for_command(command, unit=self.miner)
 
-    def test_generate_action_for_tank_with_complex_attack_command_when_alien_in_destination(self):
-        destination_of_attack = position_of_alien = (3, 63)
-        self._test_generate_action_for_tank_with_complex_attack_command(position_of_alien, destination_of_attack)
 
-    def test_generate_action_for_tank_with_complex_attack_command_when_an_alien_in_range(self):
+class TestGenerateActionsForComplexAttackCommand(BaseGenerateActionTestCase):
+    def test_alien_in_destination(self):
+        destination_of_attack = position_of_alien = (3, 63)
+        self._test_tank(position_of_alien, destination_of_attack)
+
+    def test_alien_in_range(self):
         position_of_alien = (3, 63)
         destination = (10, 63)
-        self._test_generate_action_for_tank_with_complex_attack_command(position_of_alien, destination)
+        self._test_tank(position_of_alien, destination)
 
-    def _test_generate_action_for_tank_with_complex_attack_command(self, position, destination):
+    def _test_tank(self, position, destination):
         Alice = self.game.new_player('Alice', (0,255,0))
         alien_unit = self.game.new_unit(Alice, position, self.miner_type)
 
@@ -439,7 +491,7 @@ class TestGenerateActions(BaseGameTestCase):
         expected_action = actions.FireAction(position)
         self._test_generate_action(command, expected_action, unit=self.tank)
 
-    def test_generate_action_for_tank_with_complex_attack_command_when_no_alien_in_range_and_target_not_accured(self):
+    def test_no_alien_and_target_accessible(self):
         assert self.tank.position == (0, 63)
         destination = (2, 63)
         direction = (1, 63)
@@ -449,66 +501,24 @@ class TestGenerateActions(BaseGameTestCase):
                                            destination=direction)
         self._test_generate_action(command, expected_action, unit=self.tank)
 
-    def test_generate_action_for_tank_with_complex_attack_command_when_no_alien_in_range_and_target_accured(self):
+    def test_no_alien_and_target_occupied(self):
         assert self.tank.position == (0, 63)
         destination = self.tank.position
 
         command = cmds.ComplexAttackCommand(destination)
         self._assert_stop_action_for_command(command, unit=self.tank)
 
-    def test_generate_action_for_miner_that_cannot_attack_with_complex_attack_command(self):
+    def test_miner_that_cannot_attack(self):
         command = cmds.ComplexAttackCommand(self.base.position)
         self._assert_stop_action_for_command(command, unit=self.miner)
 
-    def test_generate_action_for_tank_with_complex_attack_command_when_destination_position_is_invalid(self):
+    def test_invalid_position(self):
         command = cmds.ComplexAttackCommand((10000, 0))
         self._assert_stop_action_for_command(command, unit=self.tank)
 
-    def test_generate_action_for_tank_with_complex_attack_command_cannot_attack_self(self):
+    def test_cannot_attack_self(self):
         command = cmds.ComplexAttackCommand(self.tank.position)
         self._assert_stop_action_for_command(command, unit=self.tank)
-
-    def test_generate_action_for_base_with_build_command_when_building_is_possible(self):
-        assert self.base.position == (16, 16)
-        self.base.minerals = 100
-
-        destination = (15, 16)
-
-        unit_ID_to_remove = self.game.game_map.get_field(destination).get_unit_ID()
-        unit = self.game.units_by_IDs[unit_ID_to_remove]
-        self.game.remove_unit(unit)
-
-        command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        expected_action = actions.BuildAction(self.miner_type, destination)
-        self._test_generate_action(command, expected_action, unit=self.base)
-
-    def test_generate_action_for_base_with_build_command_when_all_surrounding_fields_are_occuped(self):
-        self.base.minerals = 100
-        command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        self._assert_stop_action_for_command(command, unit=self.base)
-
-    def test_generate_action_for_miner_that_cannot_build_with_build_command(self):
-        command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
-        self._assert_stop_action_for_command(command, unit=self.miner)
-
-    def test_generate_action_for_base_with_build_command_when_unit_type_name_is_invalid(self):
-        self.game.remove_unit(self.miner)
-        command = cmds.BuildCommand(unit_type_name='invalid type name')
-        self._assert_stop_action_for_command(command, unit=self.base)
-
-    def test_generate_action_for_base_with_build_command_when_unit_type_is_not_buildable(self):
-        self.game.remove_unit(self.miner)
-        command = cmds.BuildCommand(unit_type_name=self.base.type.main_name)
-        self._assert_stop_action_for_command(command, unit=self.base)
-
-    def _assert_stop_action_for_command(self, command, unit):
-        expected_action = actions.StopAction()
-        self._test_generate_action(command, expected_action, unit)
-
-    def _test_generate_action(self, command, expected_action, unit):
-        unit.command = command
-        action = self.game._generate_action_for(unit)
-        self.assertEqual(action, expected_action)
 
 
 class TestExecuteActions(BaseGameTestCase):
@@ -580,56 +590,56 @@ class TestMessageSystem(BaseGameTestCase):
         self.assertFalse(self.game.input_messages)
 
 
-class TestAnsweringSystemQuestions(BaseGameTestCase):
-    def test_answering_system_question_about_list_of_units(self):
+class TestAnsweringSystemRequest(BaseGameTestCase):
+    def test_list_of_units_request(self):
         assert len(self.player.units) == 6
 
         full_question = ' lISt\tunItS '
         short_question = ' lU\t'
         answer = '6 ' '2 4 ' '3 5 ' '4 5 ' '5 5 ' '6 5 ' '7 6'
 
-        self._test_correctness_of_answer_to_system_question_asked_by_base(full_question, answer)
-        self._test_correctness_of_answer_to_system_question_asked_by_base(short_question, answer)
+        self._test_requests_correctness_demanded_by_base(full_question, answer)
+        self._test_requests_correctness_demanded_by_base(short_question, answer)
 
-    def test_answering_system_question_about_unit(self):
+    def test_unit_info_request(self):
         assert self.base.ID == 2
 
         full_question = ' uNit \t2 '
         short_question = 'u 2'
         answer = '2 4 16 16 1' # ID, type, x, y, minerals or attack_range
 
-        self._test_correctness_of_answer_to_system_question_asked_by_base(full_question, answer)
-        self._test_correctness_of_answer_to_system_question_asked_by_base(short_question, answer)
+        self._test_requests_correctness_demanded_by_base(full_question, answer)
+        self._test_requests_correctness_demanded_by_base(short_question, answer)
 
-    def test_answering_invalid_system_question(self):
+    def test_invalid_request(self):
         question = 'invalid question'
 
-        system_message = self._generate_system_question_asked_by_base(question)
+        system_message = self._generate_system_request_demanded_by_base(question)
         answer = self.game._generate_answer_to_system_message(system_message)
         expected_answer = None
         self.assertEqual(expected_answer, answer)
 
-    def test_answering_system_question_about_not_existing_unit(self):
+    def test_request_not_existing_unit(self):
         question = 'unit 12345'
         assert 12345 not in self.game.units_by_IDs
 
-        system_message = self._generate_system_question_asked_by_base(question)
+        system_message = self._generate_system_request_demanded_by_base(question)
         self._assert_no_reply_to(system_message)
 
-    def test_answering_system_question_about_unit_when_unit_ID_is_not_number(self):
+    def test_invalid_unit_info_request_with_non_numerical_ID(self):
         question = 'unit blabla'
 
-        system_message = self._generate_system_question_asked_by_base(question)
+        system_message = self._generate_system_request_demanded_by_base(question)
         self._assert_no_reply_to(system_message)
 
-    def _test_correctness_of_answer_to_system_question_asked_by_base(self, question, answer):
-        system_message = self._generate_system_question_asked_by_base(question)
+    def _test_requests_correctness_demanded_by_base(self, question, answer):
+        system_message = self._generate_system_request_demanded_by_base(question)
 
         answer_message = self.game._generate_answer_to_system_message(system_message)
         expected_answer_message = Message(sender_ID=0, receiver_ID=self.base.ID, text=answer)
         self.assertEqual(expected_answer_message, answer_message)
 
-    def _generate_system_question_asked_by_base(self, question):
+    def _generate_system_request_demanded_by_base(self, question):
         return Message(sender_ID=self.base.ID,
                        receiver_ID=0,
                        text=question)
