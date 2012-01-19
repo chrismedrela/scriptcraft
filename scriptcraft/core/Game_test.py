@@ -165,7 +165,7 @@ class TestUtils(BaseGameTestCase):
         Alice_unit = self.game.new_unit(Alice, (62, 0), self.miner_type)
 
         found_unit = self.game.find_nearest_unit_in_range_fulfilling_condition(
-            position=(65, 0),
+            center=(65, 0),
             range=5,
             condition=lambda unit: unit != Alice_unit)
         expected_unit = Bob_unit
@@ -542,8 +542,8 @@ class TestMessageSystem(BaseGameTestCase):
                           text='text of message')
         self.game._send_message(message)
 
-        self.assertEqual(self.base.output_messages, [message])
-        self.assertEqual(Alice_base.input_messages, [message])
+        self.assertEqual(self.base.outbox, [message])
+        self.assertEqual(Alice_base.inbox, [message])
 
     def test_send_system_message(self):
         message = Message(sender_ID=self.base.ID,
@@ -551,8 +551,8 @@ class TestMessageSystem(BaseGameTestCase):
                           text='text of message')
         self.game._send_message(message)
 
-        self.assertEqual(self.base.output_messages, [message])
-        self.assertEqual(self.game.input_messages, [message])
+        self.assertEqual(self.base.outbox, [message])
+        self.assertEqual(self.game.inbox, [message])
 
     def test_send_message_with_invalid_receiver(self):
         message = Message(sender_ID=self.base.ID,
@@ -585,9 +585,9 @@ class TestMessageSystem(BaseGameTestCase):
 
         self.game._clear_mailboxes()
 
-        self.assertFalse(self.base.output_messages)
-        self.assertFalse(self.miner.input_messages)
-        self.assertFalse(self.game.input_messages)
+        self.assertFalse(self.base.outbox)
+        self.assertFalse(self.miner.inbox)
+        self.assertFalse(self.game.inbox)
 
 
 class TestAnsweringSystemRequest(BaseGameTestCase):

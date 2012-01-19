@@ -37,8 +37,8 @@ class Game(object):
         self.configuration = game_configuration
         self._units_and_players_counter = 0
         self.turn_number = 0
-        self.input_messages = []
-        self.output_messages = []
+        self.inbox = []
+        self.outbox = []
 
     def new_player(self, name, color):
         """ May raise NoFreeStartPosition """
@@ -184,7 +184,8 @@ class Game(object):
                 parser = Parse(unit.maybe_run_status.output)
                 messages = [Message(sender_ID=unit.ID,
                                     receiver_ID=stub[0],
-                                    text=stub[1]) for stub in parser.message_stubs]
+                                    text=stub[1])
+                            for stub in parser.message_stubs]
                 commands = parser.commands
 
             else:
@@ -192,7 +193,7 @@ class Game(object):
                 commands = [cmds.StopCommand()]
 
             unit.command = commands[-1] if commands else cmds.StopCommand()
-            unit.output_messages = messages
+            unit.outbox_queue = messages
 
     def _validate_and_send_messages(self):
         def can_be_sent_by(message, unit):
@@ -201,15 +202,12 @@ class Game(object):
                     or message.receiver_ID == 0)
 
         for unit in self.units_by_IDs.itervalues():
-            output_messages = unit.output_messages
-            unit.output_messages = []
-
-            for message in output_messages:
+            for message in unit.outbox_queue:
                 if can_be_sent_by(message, unit):
                     self._send_message(message)
 
     def _reply_system_messages(self):
-        for message in self.input_messages:
+        for message in self.inbox:
             reply = self._generate_answer_to_system_message(message)
             if reply:
                 self._send_message(reply)
@@ -237,15 +235,15 @@ class Game(object):
             raise InvalidReceiver()
 
         sender = self if message.sender_ID == 0 else self.units_by_IDs[message.sender_ID]
-        sender.output_messages.append(message)
+        sender.outbox.append(message)
 
         receiver = self if message.receiver_ID == 0 else self.units_by_IDs[message.receiver_ID]
-        receiver.input_messages.append(message)
+        receiver.inbox.append(message)
 
     def _clear_mailboxes(self):
         def clear_mailbox_of(obj):
-            obj.input_messages = []
-            obj.output_messages = []
+            obj.inbox = []
+            obj.outbox = []
 
         clear_mailbox_of(self)
 
@@ -302,7 +300,7 @@ class Game(object):
         input_data_dict = {'type':unit.type.main_name,
                            'ID':unit.ID,
                            'player_ID':unit.player.ID,
-                           'messages_len':len(unit.input_messages),
+                           'messages_len':len(unit.inbox),
                            'x':unit.position[0],
                            'y':unit.position[1],
                            'vision_diameter':unit.type.vision_diameter,
@@ -353,32 +351,31 @@ class Game(object):
         # messages
         input_data += '\n'.join(map(lambda message: '%d %s' % (message.sender_ID,
                                                                message.text),
-                                    unit.input_messages))
+                                    unit.inbox))
 
         return input_data
 
-    def find_nearest_unit_in_range_fulfilling_condition(self, position, range, condition):
-        def positions_in_range(position, range):
-            for x in xrange(position[0]-range,
-                            position[0]+range+1):
-                for y in xrange(position[1]-range,
-                                position[1]+range+1):
-                    if distance((x, y), position) <= range:
+    def find_nearest_unit_in_range_fulfilling_condition(self, center, range, condition):
+        def positions_in_range(center, range):
+            for x in xrange(center[0]-range,
+                            center[0]+range+1):
+                for y in xrange(center[1]-range,
+                                center[1]+range+1):
+                    if distance((x, y), center) <= range:
                         yield x, y
 
-        the_best_distance = 99999999999
-        the_nearest = None
-        is_valid_position = lambda (x, y): x>=0 and y>=0 and x<self.game_map.size[0] and y<self.game_map.size[1]
-        for x, y in filter(is_valid_position,
-                           positions_in_range(position, range)):
-            field = self.game_map[x][y]
-            if field.has_unit():
-                unit_ID = field.get_unit_ID()
-                unit = self.units_by_IDs[unit_ID]
-                dist = distance(unit.position, position)
-                if dist <= the_best_distance and condition(unit):
-                    the_nearest = unit
-                    the_best_distance = dist
+        valid_fields = (self.game_map.get_field(pos)
+                        for pos in positions_in_range(center, range)
+                        if self.game_map.is_valid_position(pos))
+        units = (self.units_by_IDs[field.get_unit_ID()]
+                 for field in valid_fields
+                 if field.has_unit())
+        units_fulfilling_condition = filter(lambda unit: condition(unit),
+                                            units)
+        the_nearest = (None
+                       if not units_fulfilling_condition
+                       else min(units_fulfilling_condition,
+                                key=lambda unit: distance(center, unit.position)))
 
         return the_nearest
 
@@ -507,8 +504,9 @@ class Game(object):
 
         else:
             maybe_nearest_alien_in_attack_range = \
-                self.find_nearest_unit_in_range_fulfilling_condition(unit.position, unit.type.attack_range,
-                                                                     lambda u: u.player != unit.player)
+                self.find_nearest_unit_in_range_fulfilling_condition( \
+                    unit.position, unit.type.attack_range,
+                    lambda u: u.player != unit.player)
 
             if maybe_nearest_alien_in_attack_range:
                 # attack alien in attack range
@@ -568,17 +566,24 @@ class Game(object):
     def _execute_action_for(self, unit):
         action_type = type(unit.action)
 
-        switch = {actions.StopAction : lambda: None,
-                  actions.MoveAction : lambda: self.move_unit_at(unit,
-                                                                 unit.action.destination),
-                  actions.GatherAction : lambda: self.store_minerals_from_deposit_to_unit(unit.action.source,
-                                                                                          unit),
-                  actions.StoreAction : lambda: self.store_minerals_from_unit_to_unit(unit,
-                                                                                      self.units_by_IDs[unit.action.storage_ID]),
-                  actions.FireAction : lambda: self.fire_at(unit.action.position),
-                  actions.BuildAction : lambda: self.new_unit(unit.player,
-                                                              unit.action.destination,
-                                                              unit.action.unit_type)}
+        switch = {
+            actions.StopAction : \
+                lambda: None,
+            actions.MoveAction : \
+                lambda: self.move_unit_at(unit,
+                                          unit.action.destination),
+            actions.GatherAction : \
+                lambda: self.store_minerals_from_deposit_to_unit(unit.action.source,
+                                                                 unit),
+            actions.StoreAction : \
+                lambda: self.store_minerals_from_unit_to_unit(unit,
+                                                              self.units_by_IDs[unit.action.storage_ID]),
+            actions.FireAction : \
+                lambda: self.fire_at(unit.action.position),
+            actions.BuildAction : \
+                lambda: self.new_unit(unit.player,
+                                      unit.action.destination,
+                                      unit.action.unit_type)}
 
         case = switch[action_type]
         case()

@@ -18,8 +18,8 @@ class Unit(object):
         self.ID = ID
         self.type = type
         self._minerals = 0
-        self.output_messages = []
-        self.input_messages = []
+        self.outbox = []
+        self.inbox = []
 
     @ property
     def minerals(self):
