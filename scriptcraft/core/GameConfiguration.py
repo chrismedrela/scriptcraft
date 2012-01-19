@@ -24,7 +24,7 @@ class GameConfiguration(namedtuple("GameConfiguration",
                 main_miner_type,
                 minerals_for_main_unit_at_start,
                 probability_of_mineral_deposit_growing,
-                languages_by_names):
+                languages):
 
         units_types_by_names = {}
         for unit_type in units_types:
@@ -35,6 +35,12 @@ class GameConfiguration(namedtuple("GameConfiguration",
 
         if main_base_type not in units_types or main_miner_type not in units_types:
             raise ValueError("main_base_type or main_miner_type not in units_types")
+
+        languages_by_names = {}
+        for language in languages:
+            if language.name in languages_by_names:
+                raise ValueError("Languages with the same names are not allowed")
+            languages_by_names[language.name] = language
 
         arg = (units_types_by_names,
                main_base_type,

@@ -73,15 +73,14 @@ class BaseGameTestCase(unittest.TestCase):
                                         binary_extension='.py',
                                         compilation_command='cp src.py bin.py',
                                         running_command='python bin.py')
-        languages_by_names = {'simplelang':self.simple_language,
-                              'py':self.python_language}
+        languages = [self.simple_language, self.python_language]
 
         game_configuration = GameConfiguration(units_types=self.unit_types,
                                                main_base_type=self.base_type,
                                                main_miner_type=self.miner_type,
                                                minerals_for_main_unit_at_start=1,
                                                probability_of_mineral_deposit_growing=1.0,
-                                               languages_by_names=languages_by_names)
+                                               languages=languages)
 
         self.start_positions = [(16, 16), (48, 48), (16, 48), (48, 16)]
         self.map_size = 64, 64

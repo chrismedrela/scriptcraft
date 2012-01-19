@@ -19,7 +19,7 @@ class TestGameConfiguration(unittest.TestCase):
                        'main_miner_type':self.miner_type,
                        'minerals_for_main_unit_at_start':10,
                        'probability_of_mineral_deposit_growing':0.1,
-                       'languages_by_names':{}}
+                       'languages':()}
 
     def _create_unit_types(self):
         kwargs = {'attack_range':0,
