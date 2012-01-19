@@ -7,6 +7,7 @@ from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.Environment import Environment
 from scriptcraft.core.Program import Program
 from scriptcraft.core.RunningStatus import RunningStatus
+from scriptcraft.utils import *
 
 
 
@@ -20,16 +21,8 @@ class CompileAndRunProgram(object):
         self.maybe_compilation_status = self._compile()
         self.maybe_running_status = self._run()
 
+    @ on_error_return((OSError, IOError), None)
     def _compile(self):
-        try:
-            return self._try_compile()
-        except (OSError, IOError):
-            import traceback
-            print 'a'
-            traceback.print_exc()
-            return None
-
-    def _try_compile(self):
         if not self._is_compilation_necessary():
             return None
         self._create_source_file()
@@ -60,23 +53,11 @@ class CompileAndRunProgram(object):
         if self.env.exists_file(source):
             self.env.copy_file(source, destination)
 
-    def _create_cache_folder_if_necessary(self):
-        cache_folder = os.path.join(self.folder, 'cache')
-        self._create_folder_if_necessary(cache_folder)
-
     def _clear_environment(self):
         self.env.remove_folder_recursively('env')
 
+    @ on_error_return((OSError, IOError), None)
     def _run(self):
-        try:
-            return self._try_run()
-        except (OSError, IOError):
-            import traceback
-            print 'a'
-            traceback.print_exc()
-            return None
-
-    def _try_run(self):
         if not self._is_compilation_successful():
             return None
         self._copy_binary()

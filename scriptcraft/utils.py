@@ -9,7 +9,9 @@ __all__ = [
     'skip',
     'distance',
     'copy_if_an_instance_given',
-    'TemporaryFileSystem'
+    'TemporaryFileSystem',
+    'on_error_return',
+    'on_error_do',
 ]
 
 from functools import wraps
@@ -18,6 +20,55 @@ import time
 
 from enum import Enum, make_enum
 
+
+
+def on_error_return(errors, return_value):
+    """ Decorator. Surround function calling with try-except clause.
+    If an exception from 'errors' list occurs during executing function,
+    return 'return_value'.
+
+    Example
+    >>> @ on_error_return ((IOError,), None)
+        def f():
+            ...
+
+    """
+
+    def inner(f):
+        @ wraps(f)
+        def wraper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except errors:
+                return return_value
+
+        return wraper
+    return inner
+
+
+def on_error_do(errors, function):
+    """ Decorator. Surround function calling with try-except clause.
+    If an exception from 'errors' list occurs during executing function,
+    execute 'function' with the exception as an argument.
+
+    Example
+    >>> @ on_error ((IOError,),
+                    do=lambda exception: my_except_clause())
+        def f():
+            ...
+
+    """
+
+    def inner(f):
+        @ wraps(f)
+        def wraper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except errors as error:
+                return function(error)
+
+        return wraper
+    return inner
 
 
 def copy_if_an_instance_given(f):

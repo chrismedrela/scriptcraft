@@ -54,23 +54,6 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(status.maybe_compilation_status, expected_compilation_status)
         self.assertEqual(status.maybe_running_status, expected_running_status)
 
-    def test_os_problems(self):
-        def raise_IO_Error(self):
-            raise IOError()
-        old_try_run = CompileAndRunProgram._try_run
-        CompileAndRunProgram._try_run = raise_IO_Error
-
-        program_code = self._build_valid_cpp_code()
-        program = self._build_cpp_program(program_code)
-        input = ""
-
-        status = CompileAndRunProgram(program, input, self.folder)
-
-        expected_running_status = None
-        self.assertEqual(status.maybe_running_status, expected_running_status)
-
-        CompileAndRunProgram._try_run = old_try_run
-
     def test_compilation_not_necessary(self):
         program_code = self._build_valid_cpp_code()
         program = self._build_cpp_program(program_code)
