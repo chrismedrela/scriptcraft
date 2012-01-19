@@ -40,6 +40,11 @@ class TestEnvironment(unittest.TestCase):
         self.assertEqual(self.file_system.read_file(path),
                          self.simple_data)
 
+    def test_creating_file_raise_error_when_the_file_exists(self):
+        self.file_system.write_file('file', self.simple_data)
+        operation = lambda: self.env.create_file('file', self.simple_data)
+        self.assertRaises(IOError, operation)
+
     def test_file_exists(self):
         folder_name = 'folder'
         self.file_system.create_folder_if_necessary(folder_name)
@@ -105,6 +110,13 @@ class TestEnvironment(unittest.TestCase):
         illegal_operation = lambda: self.env.copy_file(source_path,
                                                        destination_path)
         self.assertRaises(IOError, illegal_operation)
+
+    def test_creating_folder_raise_error_when_file_with_the_same_name_exists(self):
+        name = 'collision'
+        self.file_system.write_file(name, self.simple_data)
+        operation = lambda: self.env.create_file((name, 'file.txt'),
+                                                 self.simple_data)
+        self.assertRaises(IOError, operation)
 
     def test_execute_bash_command(self):
         input_data = ''

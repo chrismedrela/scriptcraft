@@ -21,6 +21,8 @@ class Environment(object):
     def create_file(self, path, data):
         iterable_path, path = self._cleaned_path(path)
         self._create_folder_if_necessary_for_file(iterable_path)
+        if os.path.exists(path):
+            raise IOError('Cannot create folder - the file with the same name exists.')
         with open(path, 'w') as s:
             s.write(data)
 
