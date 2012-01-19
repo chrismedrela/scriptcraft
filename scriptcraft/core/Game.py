@@ -55,7 +55,7 @@ class Game(object):
         self._units_and_players_counter += 1
         return self._units_and_players_counter
 
-    def new_player_with_base(self, name, color):
+    def new_player_with_units(self, name, color):
         """ May raise NoFreeStartPosition """
 
         player = self.new_player(name, color)

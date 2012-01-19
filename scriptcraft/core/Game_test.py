@@ -89,7 +89,7 @@ class BaseGameTestCase(unittest.TestCase):
         self.game = Game(game_map, game_configuration)
 
     def _create_player_Bob(self):
-        self.player, self.base, self.miners = self.game.new_player_with_base('Bob', (255, 0, 0))
+        self.player, self.base, self.miners = self.game.new_player_with_units('Bob', (255, 0, 0))
         self.miner = self.miners[0]
         self.tank = self.game.new_unit(self.player, (0,63), self.tank_type)
 
@@ -121,7 +121,7 @@ class TestBasic(BaseGameTestCase):
 
     def test_new_player_with_base(self):
         color = (0, 255, 0)
-        Alice, base, miners = self.game.new_player_with_base('Alice', color)
+        Alice, base, miners = self.game.new_player_with_units('Alice', color)
 
         self.assertEqual(len(Alice.units), 4 + 1) # 4 miners and 1 base
         self.assertEqual(base.position, self.start_positions[1])
@@ -536,7 +536,7 @@ class TestExecuteActions(BaseGameTestCase):
 class TestMessageSystem(BaseGameTestCase):
     def test_send_message_between_players_allowed(self):
 
-        _, Alice_base, _ = self.game.new_player_with_base('Alice', (0, 255, 0))
+        _, Alice_base, _ = self.game.new_player_with_units('Alice', (0, 255, 0))
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=Alice_base.ID,
                           text='text of message')
