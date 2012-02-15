@@ -13,7 +13,7 @@ from scriptcraft.core.GameConfiguration import GameConfiguration
 from scriptcraft.core.GameMap import GameMap, PositionOutOfMap, FieldIsOccupied
 from scriptcraft.core.Language import Language
 from scriptcraft.core.Message import Message
-from scriptcraft.core.Program import Program
+from scriptcraft.core.Program import Program, STAR_PROGRAM
 from scriptcraft.core.UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
 from scriptcraft.utils import *
 
@@ -656,30 +656,41 @@ class TestEfficiency(BaseGameTestCase):
 
 class TestGameTic(BaseGameTestCase):
     def test_tic(self):
-        code_source_for_base = """
+        folder = 'tmp_unittest'
+        file_system = TemporaryFileSystem(folder)
+
+        try:
+            assert self.tank.position == (0, 63)
+
+            code_source_for_base = """
 print "BUILD TANK"
 print "3 message"
 print "1234567 message with invalid receiver"
 print "0 list units"
-        """
+print "%d MOVE 5 63" # command for tank
+            """ % self.tank.ID
 
-        code_source_for_miner = """
+            code_source_for_miner = """
 print "MOVE 15 15"
-        """
+            """
 
-        program_for_base = Program(self.python_language, code_source_for_base)
-        program_for_miner = Program(self.python_language, code_source_for_miner)
+            program_for_base = Program(self.python_language, code_source_for_base)
+            program_for_miner = Program(self.python_language, code_source_for_miner)
+            program_for_tank = STAR_PROGRAM
+            self.game.set_program(self.base, program_for_base)
+            self.game.set_program(self.miner, program_for_miner)
+            self.game.set_program(self.tank, program_for_tank)
 
-        self.game.set_program(self.base, program_for_base)
-        self.game.set_program(self.miner, program_for_miner)
+            self.game.tic(folder)
+            self.game.tic(folder)
 
-        os.mkdir('tmp_unittest')
-        self.game.tic('tmp_unittest')
-        self.game.tic('tmp_unittest')
-        shutil.rmtree('tmp_unittest')
+            self.assertTrue(self.base.maybe_run_status != None)
+            self.assertTrue(self.miner.maybe_run_status != None)
+            self.assertTrue(self.tank.maybe_run_status != None)
+            self.assertEqual(self.tank.position, (1, 63))
 
-        self.assertTrue(self.base.maybe_run_status != None)
-        self.assertTrue(self.miner.maybe_run_status != None)
+        finally:
+            file_system.delete_files_and_folders()
 
     def test_tic_for_world(self):
         assert self.game.configuration.probability_of_mineral_deposit_growing == 1.0

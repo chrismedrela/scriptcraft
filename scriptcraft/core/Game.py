@@ -11,6 +11,7 @@ from scriptcraft.core.GameMap import FieldIsOccupied
 from scriptcraft.core.Message import Message
 from scriptcraft.core.parse import Parse
 from scriptcraft.core.Player import Player
+from scriptcraft.core.Program import Program, STAR_PROGRAM, run_star_program
 from scriptcraft.core.Unit import Unit
 from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
 from scriptcraft.utils import *
@@ -99,6 +100,9 @@ class Game(object):
         unit.position = new_position
 
     def set_program(self, unit, program):
+        assert (isinstance(program, Program)
+                or program == STAR_PROGRAM
+                or program is None)
         unit.program = program
 
     def fire_at(self, position):
@@ -169,11 +173,14 @@ class Game(object):
         for unit in self.units_by_IDs.itervalues():
             input = self._generate_input_for(unit)
 
-            if unit.program:
+            if isinstance(unit.program, Program):
                 e = CompileAndRunProgram(unit.program, input, folder)
                 if e.maybe_compilation_status:
                     unit.maybe_last_compilation_status = e.maybe_compilation_status
                 unit.maybe_run_status = e.maybe_running_status
+
+            elif unit.program == STAR_PROGRAM:
+                unit.maybe_run_status = run_star_program(input)
 
             else:
                 unit.maybe_run_status = None
