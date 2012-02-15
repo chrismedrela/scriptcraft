@@ -2,7 +2,6 @@
 #-*- coding:utf-8 -*-
 
 from scriptcraft.core import direction, cmds
-from scriptcraft.core.Message import Message
 
 
 
@@ -103,7 +102,6 @@ class Parse (object):
     """
     Arguments of __init__:
      input_data -- data that should be parsed (many lines allowed)
-     sender_ID -- used for sender attribute in message.Message
 
     Data are parsed in __init__. After it some attributes are created:
      commands : list(cmds.*Command)
