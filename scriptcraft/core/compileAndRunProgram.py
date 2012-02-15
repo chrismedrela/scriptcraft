@@ -6,7 +6,7 @@ import os
 from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.Environment import Environment
 from scriptcraft.core.Program import Program
-from scriptcraft.core.RunningStatus import RunningStatus
+from scriptcraft.core.RunStatus import RunStatus
 from scriptcraft.utils import *
 
 
@@ -80,4 +80,4 @@ class CompileAndRunProgram(object):
         output, error_output, exit_code = \
             self.env.execute_bash_command(self.program.language.running_command,
                                           input, folder)
-        return RunningStatus(input, output, error_output)
+        return RunStatus(input, output, error_output)

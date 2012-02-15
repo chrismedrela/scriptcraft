@@ -8,7 +8,7 @@ from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.Language import Language
 from scriptcraft.core.Program import Program
-from scriptcraft.core.RunningStatus import RunningStatus
+from scriptcraft.core.RunStatus import RunStatus
 
 
 class TestBasic(unittest.TestCase):
@@ -94,6 +94,6 @@ class TestBasic(unittest.TestCase):
         return CompilationStatus(error_output='', output='')
 
     def _build_successful_running_status(self):
-        return RunningStatus(input="input text\nbla bla",
+        return RunStatus(input="input text\nbla bla",
                              output='tekst outputowy\nala',
                              error_output='')

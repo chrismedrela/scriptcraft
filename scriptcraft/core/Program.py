@@ -4,7 +4,7 @@
 import hashlib
 from collections import namedtuple
 
-from scriptcraft.core.RunningStatus import RunningStatus
+from scriptcraft.core.RunStatus import RunStatus
 from scriptcraft.utils import *
 
 
@@ -43,7 +43,7 @@ def run_star_program(input):
     """
     output = "\n".join(commands)
 
-    return RunningStatus(input=input,
+    return RunStatus(input=input,
                          output=output,
                          error_output='')
 

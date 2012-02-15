@@ -4,7 +4,7 @@
 import unittest
 
 from scriptcraft.core.Program import run_star_program
-from scriptcraft.core.RunningStatus import RunningStatus
+from scriptcraft.core.RunStatus import RunStatus
 
 
 
@@ -21,7 +21,7 @@ class TestRunStarProgram(unittest.TestCase):
         excepted_error_output = ''
 
         run_status = run_star_program(input)
-        excepted_run_status = RunningStatus(input=input,
-                                            output=excepted_output,
-                                            error_output=excepted_error_output)
+        excepted_run_status = RunStatus(input=input,
+                                        output=excepted_output,
+                                        error_output=excepted_error_output)
         self.assertEqual(run_status, excepted_run_status)
