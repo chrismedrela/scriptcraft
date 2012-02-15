@@ -2,6 +2,7 @@
 #-*- coding:utf-8 -*-
 
 __all__ = [
+    'Const',
     'Enum',
     'make_enum',
     'max_time',
@@ -113,6 +114,10 @@ class _Anything(object):
     def __eq__(self, other):
         return True
 anything = _Anything()
+
+
+def Const(name):
+    return str(name)
 
 
 TURN_OFF_EFFICIENCY_TESTS = True
