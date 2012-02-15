@@ -317,8 +317,7 @@ class Game(object):
         # info about surroundings
         def generate_input_for_field(x, y):
             # out of map?
-            is_valid_position = lambda x, y: x>=0 and y>=0 and x<self.game_map.size[0] and y<self.game_map.size[1]
-            if not is_valid_position(x, y):
+            if not self.game_map.is_valid_position((x, y)):
                 return '1 0 0'
 
             # not out of map
