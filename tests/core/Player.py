@@ -25,9 +25,18 @@ class TestPlayer(unittest.TestCase):
         self.assertEqual(player.maybe_base, None)
         self.assertEqual(unit.player, None)
 
+    def test_to_str(self):
+        player = self._build_simple_player()
+        unit = self._build_simple_unit(player)
+        player.add_unit(unit)
+
+        expected = ("<Player:14 | color (255, 0, 0) started at (3, 4) "
+                    "with units {7}")
+        self.assertEqual(expected, str(player))
+
     def _build_simple_player(self):
         color = (255, 0, 0)
-        ID = 7
+        ID = 14
         start_position = (3, 4)
         result = Player("name", color, ID, start_position)
         return result

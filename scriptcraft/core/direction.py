@@ -35,3 +35,10 @@ BY_NAME = {
 	'S':S, 's':S,
 	'W':W, 'w':W,
 }
+
+TO_FULL_NAME = {
+	N:'north',
+	W:'west',
+	S:'south',
+	E:'east',
+}

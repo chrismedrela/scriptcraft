@@ -9,7 +9,7 @@ from scriptcraft.utils import *
 
 
 
-STAR_PROGRAM = Const('starprogram')
+STAR_PROGRAM = Const('star program')
 def run_star_program(input):
     commands = []
     lines = iter(input.split('\n'))
@@ -58,3 +58,7 @@ class Program(namedtuple("Program", ('language',
         sha.update(self.code)
         sha = sha.hexdigest()
         return sha
+
+    def __str__(self):
+        return "<Program %s in %s>" \
+               % (self.sha, self.language.name)

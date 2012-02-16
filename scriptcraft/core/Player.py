@@ -24,3 +24,13 @@ class Player(object):
         self.units.remove(unit)
         if self.maybe_base == unit:
             self.maybe_base = None
+
+    def __str__(self):
+        return ("<Player:%d | "
+                "color (%d, %d, %d) "
+                "started at (%d, %d) "
+                "with units {%s}") \
+                % (self.ID,
+                   self.color[0], self.color[1], self.color[2],
+                   self.start_position[0], self.start_position[1],
+                   ", ".join(map(lambda unit: str(unit.ID), self.units)))

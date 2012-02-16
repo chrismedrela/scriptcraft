@@ -19,37 +19,66 @@ haven't be sensible (for example every string is valid value for unit_type_name)
 
 from collections import namedtuple
 
+import scriptcraft.core.direction
+
+
 
 class StopCommand(namedtuple('StopCommand',
                              ())):
     __slots__ = ()
+
+    def __str__(self):
+        return '<Command stop>'
 
 
 class MoveCommand(namedtuple('MoveCommand',
                              ('direction',))):
     __slots__ = ()
 
+    def __str__(self):
+        return '<Command move to %d>' \
+               % direction.TO_FULL_NAME[self.direction]
+
 
 class ComplexMoveCommand(namedtuple('ComplexMoveCommand',
                                     ('destination',))):
     __slots__ = ()
+
+    def __str__(self):
+        return '<Command move at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
 
 
 class ComplexGatherCommand(namedtuple('ComplexGatherCommand',
                                       ('destination',))):
     __slots__ = ()
 
+    def __str__(self):
+        return '<Command gather from (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
 
 class FireCommand(namedtuple('FireCommand',
                              ('destination',))):
     __slots__ = ()
+
+    def __str__(self):
+        return '<Command fire at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
 
 
 class ComplexAttackCommand(namedtuple('ComplexAttackCommand',
                                       ('destination',))):
     __slots__ = ()
 
+    def __str__(self):
+        return '<Command attack at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
 
 class BuildCommand(namedtuple('BuildCommand',
                               ('unit_type_name',))):
     __slots__ = ()
+
+    def __str__(self):
+        return '<Command build %s>' % self.unit_type_name

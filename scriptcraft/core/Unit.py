@@ -30,3 +30,13 @@ class Unit(object):
         assert value >= 0
         assert value <= self.type.storage_size or not self.type.has_storage_limit
         self._minerals = value
+
+    def __str__(self):
+        return ("<Unit:%d | "
+                "%s of player %d at (%d, %d) "
+                "%s "
+                "with %s doing %s>") \
+                % (self.ID,
+                   self.type.main_name, self.player.ID, self.position[0], self.position[1],
+                   "with %s" % self.program if self.program else "without program",
+                   self.command, self.action)
