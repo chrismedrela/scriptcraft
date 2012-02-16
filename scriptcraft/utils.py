@@ -120,7 +120,7 @@ def Const(name):
     return str(name)
 
 
-TURN_OFF_EFFICIENCY_TESTS = True
+TURN_OFF_EFFICIENCY_TESTS = False
 class max_time(object):
     """ Dekorator do testów wydajnościowych - oznaczony tym dekoratorem test
     zawodzi, jeżeli zostanie przekroczony dany czas podany w milisekundach. """
