@@ -2,20 +2,21 @@
 #-*- coding:utf-8 -*-
 
 __all__ = [
+    'anything',
     'Const',
+    'copy_if_an_instance_given',
+    'distance',
     'Enum',
     'make_enum',
     'max_time',
-    'anything',
-    'skip',
-    'distance',
-    'copy_if_an_instance_given',
-    'TemporaryFileSystem',
-    'on_error_return',
+    'memoized',
     'on_error_do',
+    'on_error_return',
+    'skip',
+    'TemporaryFileSystem',
 ]
 
-from functools import wraps
+from functools import partial, wraps
 import os, shutil
 import time
 
@@ -108,6 +109,33 @@ def skip(f):
     def wrapped(*args, **kwargs):
         pass
     return wrapped
+
+
+class memoized(object):
+    """Decorator that caches a function's return value each time it is called.
+    If called later with the same arguments, the cached value is returned, and
+    not re-evaluated.
+    """
+    def __init__(self, func):
+        self.func = func
+        self.cache = {}
+    def __call__(self, *args):
+        try:
+            return self.cache[args]
+        except KeyError:
+            value = self.func(*args)
+            self.cache[args] = value
+            return value
+        except TypeError:
+            # uncachable -- for instance, passing a list as an argument.
+            # Better to not cache than to blow up entirely.
+            return self.func(*args)
+    def __repr__(self):
+        """Return the function's docstring."""
+        return self.func.__doc__
+    def __get__(self, obj, objtype):
+        """Support instance methods."""
+        return partial(self.__call__, obj)
 
 
 class _Anything(object):
