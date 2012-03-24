@@ -75,7 +75,6 @@ class GameViewer(gtk.DrawingArea):
                 if field.has_unit():
                     unit = self.game.units_by_IDs[field.get_unit_ID()]
                     type_name = unit.type.main_name
-                    print unit, type_name
                     if type_name == '4': # base
                         draw_pixbuf((x, y), self.get_scaled_sprite('base'))
                     elif type_name == '6': # tank
@@ -156,34 +155,60 @@ class ClientWindow(gtk.Window):
         super(ClientWindow, self).__init__(gtk.WINDOW_TOPLEVEL)
         self.set_title("First tests")
         self.connect("destroy", lambda widget: gtk.main_quit())
+        self._build_GUI()
+
+    def _build_GUI(self):
+        self._build_area()
+        self._build_menu_bar()
+        self._build_window()
+
+    def _build_area(self):
+        self.area = GameViewer()
+        self.area.show()
+
+    def _build_menu_bar(self):
+        self._build_game_menu()
+        self.menu_bar = gtk.MenuBar()
+        self.menu_bar.append(self.menu_game_item)
+        self.menu_bar.show()
+
+    def _build_game_menu(self):
+        self.menu_game_item = gtk.MenuItem("Game")
+        self.menu_game = gtk.Menu()
+        self.menu_game_item.set_submenu(self.menu_game)
+
+        self._build_quit_button()
+        #items = [(gtk.MenuItem("New game"), lambda *args: f(args)),
+        #         (gtk.MenuItem("Open game"), lambda *args: f(args)),
+        #         (gtk.MenuItem("Save game"), lambda *args: f(args)),
+        #         (gtk.MenuItem("Add player"), lambda *args: f(args)),
+        #         (gtk.MenuItem("Tic"), lambda *args: f(args)),
+        #         (gtk.MenuItem("Quit"), lambda *args: f(args)),]
+        #map(lambda (i, f): i.connect("activate", f), items)
+        #map(lambda (i, f): menu_game.append(i), items)
+        #map(lambda (i, f): i.show(), items)
+
+        self.menu_game_item.show()
+
+    def _build_quit_button(self):
+        quit_item = gtk.MenuItem("_Quit")
+        quit_item.connect_object("activate", gtk.Widget.destroy, self)
+        self.menu_game.append(quit_item)
+        quit_item.show()
+
+    def _build_window(self):
+        vbox = gtk.VBox(False, 0)
+        self.add(vbox)
+        vbox.show()
+        vbox.pack_start(self.menu_bar, False, False, 2)
+        vbox.pack_end(self.area, True, True, 2)
 
 
 class HelloWorld(object):
+
     def __init__(self):
-        # build GUI
-        self.area = GameViewer()
-        self.area.show()
         self.window = ClientWindow()
-        self.window.add(self.area)
-        self._build_menu_bar()
         self.window.show()
-
-    def _build_menu_bar(self):
-        # create menu
-        items = [gtk.MenuItem("New game"),
-                 gtk.MenuItem("Open game"),
-                 gtk.MenuItem("Save game"),
-                 gtk.MenuItem("Add player"),
-                 gtk.MenuItem("Tic"),
-                 gtk.MenuItem("Quit")]
-        menu_game = gtk.Menu()
-        map(menu_game.append, items)
-        map(lambda i: i.show(), items)
-
-        # create menubar
-        menubar = gtk.MenuBar()
-        self.window.add(menubar)
-        menubar.show()
 
     def main(self):
         gtk.main()
