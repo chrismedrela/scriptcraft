@@ -150,17 +150,25 @@ class GameViewer(gtk.DrawingArea):
         """
 
 
-class ClientWindow(gtk.Window):
+class HelloWorld(object):
+
     def __init__(self):
-        super(ClientWindow, self).__init__(gtk.WINDOW_TOPLEVEL)
-        self.set_title("First tests")
-        self.connect("destroy", lambda widget: gtk.main_quit())
         self._build_GUI()
+        self.window.show()
+
+    def main(self):
+        gtk.main()
+
+    def quit(self):
+        """ Called when a user click 'quit' option or close the window. """
+        gtk.main_quit()
 
     def _build_GUI(self):
+        self._prebuild_window()
         self._build_area()
         self._build_menu_bar()
         self._build_window()
+        self.window.show()
 
     def _build_area(self):
         self.area = GameViewer()
@@ -192,26 +200,22 @@ class ClientWindow(gtk.Window):
 
     def _build_quit_button(self):
         quit_item = gtk.MenuItem("_Quit")
-        quit_item.connect_object("activate", gtk.Widget.destroy, self)
+        quit_item.connect_object("activate", gtk.Widget.destroy, self.window)
         self.menu_game.append(quit_item)
         quit_item.show()
 
+    def _prebuild_window(self):
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+
     def _build_window(self):
+        self.window.set_title("First tests")
+        self.window.connect("destroy", lambda widget: self.quit())
+
         vbox = gtk.VBox(False, 0)
-        self.add(vbox)
+        self.window.add(vbox)
         vbox.show()
         vbox.pack_start(self.menu_bar, False, False, 2)
         vbox.pack_end(self.area, True, True, 2)
-
-
-class HelloWorld(object):
-
-    def __init__(self):
-        self.window = ClientWindow()
-        self.window.show()
-
-    def main(self):
-        gtk.main()
 
 
 if __name__ == "__main__":
