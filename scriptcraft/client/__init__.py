@@ -21,9 +21,9 @@ class GameViewer(gtk.DrawingArea):
         super(GameViewer, self).__init__()
 
         self.set_size_request(800, 600)
-        self.connect("motion-notify-event", self.motion_event)
-        self.connect("scroll-event", self.scroll_event)
-        self.connect("expose-event", self.expose_callback)
+        self.connect("motion-notify-event", self._motion_event)
+        self.connect("scroll-event", self._scroll_event)
+        self.connect("expose-event", self._expose_callback)
         self.set_events(gtk.gdk.BUTTON_PRESS_MASK |
                         gtk.gdk.MOTION_NOTIFY |
                         gtk.gdk.POINTER_MOTION_MASK)
@@ -33,21 +33,20 @@ class GameViewer(gtk.DrawingArea):
         self.delta = [-0.25, -0.25]
 
         self.scaled_sprite_cache = {}
+        self._game = None
 
-        # set game
-        b = BaseGameTestCase(methodName='__init__')
-        b.setUp()
-        self.game = b.game
+    def set_game(self, game):
+        """
+        Set Game or None. The game wont be modified but it will be
+        read so you shouldnt modify this game.
+        """
+        self._game = game
 
-
-    def expose_callback(self, area, event):
+    def _expose_callback(self, area, event):
         context = self.window.cairo_create()
 
-        width, height = self.allocation.width, self.allocation.height
-        x_min = max(int(math.floor(self.to_game_coordinate((0, 0))[0])), 0)
-        x_max = min(int(math.ceil(self.to_game_coordinate((width, height))[0])), self.game.game_map.size[0]-1)
-        y_min = max(int(math.floor(self.to_game_coordinate((width, 0))[1])), 0)
-        y_max = min(int(math.ceil(self.to_game_coordinate((0, height))[1])), self.game.game_map.size[1]-1)
+        if not self._game:
+            return True
 
         def draw_pixbuf((x, y), pixbuf):
             X, Y = self.to_screen_coordinate((x, y))
@@ -56,38 +55,47 @@ class GameViewer(gtk.DrawingArea):
             context.set_source_pixbuf(pixbuf, X, Y)
             context.paint()
 
+        width, height = self.allocation.width, self.allocation.height
+        x_min = max(int(math.floor(self.to_game_coordinate((0, 0))[0])), 0)
+        x_max = min(int(math.ceil(self.to_game_coordinate((width, height))[0])), self._game.game_map.size[0]-1)
+        y_min = max(int(math.floor(self.to_game_coordinate((width, 0))[1])), 0)
+        y_max = min(int(math.ceil(self.to_game_coordinate((0, height))[1])), self._game.game_map.size[1]-1)
+
         for x in xrange(x_min, x_max+1):
             for y in xrange(y_min, y_max+1):
-                field = self.game.game_map.get_field((x, y))
+                field = self._game.game_map.get_field((x, y))
 
                 # ground
-                draw_pixbuf((x, y), self.get_scaled_sprite('flat_field'))
+                draw_pixbuf((x, y), self._get_scaled_sprite('flat_field'))
 
                 # minerals
                 if field.has_mineral_deposit():
-                    draw_pixbuf((x, y), self.get_scaled_sprite('minerals'))
+                    draw_pixbuf((x, y), self._get_scaled_sprite('minerals'))
 
                 # trees
                 if field.has_trees():
-                    draw_pixbuf((x, y), self.get_scaled_sprite('tree'))
+                    draw_pixbuf((x, y), self._get_scaled_sprite('tree'))
 
                 # unit
                 if field.has_unit():
-                    unit = self.game.units_by_IDs[field.get_unit_ID()]
+                    unit = self._game.units_by_IDs[field.get_unit_ID()]
                     type_name = unit.type.main_name
                     if type_name == '4': # base
-                        draw_pixbuf((x, y), self.get_scaled_sprite('base'))
+                        draw_pixbuf((x, y), self._get_scaled_sprite('base'))
                     elif type_name == '6': # tank
-                        draw_pixbuf((x, y), self.get_scaled_sprite('tank'))
+                        draw_pixbuf((x, y), self._get_scaled_sprite('tank'))
                     elif type_name == '5': # miner
                         if unit.minerals:
-                            draw_pixbuf((x, y), self.get_scaled_sprite('full_miner'))
+                            draw_pixbuf((x, y), self._get_scaled_sprite('full_miner'))
                         else:
-                            draw_pixbuf((x, y), self.get_scaled_sprite('empty_miner'))
+                            draw_pixbuf((x, y), self._get_scaled_sprite('empty_miner'))
 
         return True
 
-    def scroll_event(self, area, event):
+    def _scroll_event(self, area, event):
+        if not self._game:
+            return
+
         WSP = 1.1
         if event.direction in (gtk.gdk.SCROLL_UP, gtk.gdk.SCROLL_DOWN):
             zoom = self.zoom * (WSP if event.direction == gtk.gdk.SCROLL_UP else 1/WSP)
@@ -95,7 +103,10 @@ class GameViewer(gtk.DrawingArea):
             self.set_zoom(zoom, point)
             self.queue_draw()
 
-    def motion_event(self, area, event):
+    def _motion_event(self, area, event):
+        if not self._game:
+            return
+
         if hasattr(self, 'last_mouse_position'):
             if event.state & gtk.gdk.BUTTON3_MASK:
                 dx = self.last_mouse_position[0] - event.x
@@ -123,11 +134,11 @@ class GameViewer(gtk.DrawingArea):
         self.scaled_sprite_cache = {}
 
     @ memoized
-    def get_sprite(self, name):
+    def _get_sprite(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file("../graphic/%s.png" % name)
         return pixbuf
 
-    def get_scaled_sprite(self, name):
+    def _get_scaled_sprite(self, name):
         # if cached, return cached value
         id = (name, self.zoom)
         sprite = self.scaled_sprite_cache.get(id, None)
@@ -135,7 +146,7 @@ class GameViewer(gtk.DrawingArea):
             return sprite
 
         # otherwise compute, save in cache and return
-        sprite = self.get_sprite(name)
+        sprite = self._get_sprite(name)
         new_width = int(sprite.get_width()*self.zoom)+2
         new_height = int(sprite.get_height()*self.zoom)+2
         scaled = sprite.scale_simple(new_width, new_height, gtk.gdk.INTERP_BILINEAR)
@@ -155,6 +166,11 @@ class HelloWorld(object):
     def __init__(self):
         self._build_GUI()
         self.window.show()
+
+        # set game
+        b = BaseGameTestCase(methodName='__init__')
+        b.setUp()
+        self.area.set_game(b.game)
 
     def main(self):
         gtk.main()
