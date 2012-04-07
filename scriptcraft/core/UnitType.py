@@ -90,3 +90,37 @@ class UnitType(namedtuple('UnitType', ('attack_range',
     @ property
     def can_attack(self):
         return self.attack_range != 0
+
+
+DEFAULT_MINER_TYPE = UnitType(
+    attack_range=0,
+    vision_radius=7,
+    storage_size=1,
+    build_cost=3,
+    can_build=False,
+    movable=True,
+    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+    names=('5', 'miner', 'm')
+)
+DEFAULT_BASE_TYPE = UnitType(
+    attack_range=0,
+    vision_radius=16,
+    has_storage=True,
+    storage_size= -1,
+    can_be_built=False,
+    can_build=True,
+    movable=False,
+    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
+    names=('4', 'base', 'b')
+)
+DEFAULT_TANK_TYPE = UnitType(
+    can_attack=True,
+    attack_range=3,
+    vision_radius=7,
+    has_storage=False,
+    build_cost=10,
+    can_build=False,
+    movable=True,
+    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+    names=('6', 'tank', 't')
+)

@@ -3,6 +3,8 @@
 
 from collections import namedtuple
 
+from scriptcraft.core import Language
+from scriptcraft.core import UnitType
 from scriptcraft.utils import *
 
 
@@ -60,3 +62,16 @@ class GameConfiguration(namedtuple("GameConfiguration",
     def __deepcopy__(self, memo):
         c = GameConfiguration(self)
         return c
+
+
+DEFAULT_GAME_CONFIGURATION = GameConfiguration(
+    units_types=[UnitType.DEFAULT_BASE_TYPE,
+                 UnitType.DEFAULT_MINER_TYPE,
+                 UnitType.DEFAULT_TANK_TYPE],
+    main_base_type=UnitType.DEFAULT_BASE_TYPE,
+    main_miner_type=UnitType.DEFAULT_MINER_TYPE,
+    minerals_for_main_unit_at_start=10,
+    probability_of_mineral_deposit_growing=0.1,
+    languages = [Language.DEFAULT_CPP_LANGUAGE,
+                 Language.DEFAULT_PYTHON_LANGUAGE],
+)
