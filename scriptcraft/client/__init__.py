@@ -8,8 +8,13 @@ import math
 import time
 import re
 import os
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from scriptcraft.core.Game import Game
+from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap
 from tests.core.Game import BaseGameTestCase
 from scriptcraft.utils import *
@@ -181,7 +186,7 @@ class HelloWorld(object):
 
     def create_new_game(self):
         chooser = gtk.FileChooserDialog(
-            title=None,
+            title="Choose map file",
             parent=self.window,
             action=gtk.FILE_CHOOSER_ACTION_OPEN,
             buttons=(gtk.STOCK_CANCEL,
@@ -205,9 +210,26 @@ class HelloWorld(object):
             return
 
         # we have selected file in 'file_path' and we have to continue
-        # (the user didn't select cancel button)
+        # (the user didn't select cancel button); we will load
+        # selected map
         print 'selected', file_path
+        try:
+            stream = open(file_path, 'r')
+            game_map = pickle.load(stream)
+        except (pickle.UnpicklingError, IOError) as ex:
+            dialog = gtk.MessageDialog(parent=self.window,
+                                       flags=gtk.DIALOG_MODAL,
+                                       type=gtk.MESSAGE_WARNING,
+                                       buttons=gtk.BUTTONS_OK,
+                                       message_format="Zonk!")
+            dialog.run()
+            return
+        finally:
+            stream.close()
 
+        # we will create game
+        game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+        self.area.set_game(game)
 
     def _build_GUI(self):
         self._prebuild_window()
