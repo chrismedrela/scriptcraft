@@ -179,6 +179,36 @@ class HelloWorld(object):
         """ Called when a user click 'quit' option or close the window. """
         gtk.main_quit()
 
+    def create_new_game(self):
+        chooser = gtk.FileChooserDialog(
+            title=None,
+            parent=self.window,
+            action=gtk.FILE_CHOOSER_ACTION_OPEN,
+            buttons=(gtk.STOCK_CANCEL,
+                     gtk.RESPONSE_CANCEL,
+                     gtk.STOCK_OPEN,
+                     gtk.RESPONSE_OK))
+        filter = gtk.FileFilter()
+        filter.set_name("Map files")
+        filter.add_pattern("*.map")
+        chooser.add_filter(filter)
+        filter = gtk.FileFilter()
+        filter.set_name("All files")
+        filter.add_pattern("*")
+        chooser.add_filter(filter)
+
+        response = chooser.run()
+        file_path = chooser.get_filename()
+        chooser.destroy()
+
+        if response == gtk.RESPONSE_CANCEL:
+            return
+
+        # we have selected file in 'file_path' and we have to continue
+        # (the user didn't select cancel button)
+        print 'selected', file_path
+
+
     def _build_GUI(self):
         self._prebuild_window()
         self._build_area()
@@ -201,6 +231,7 @@ class HelloWorld(object):
         self.menu_game = gtk.Menu()
         self.menu_game_item.set_submenu(self.menu_game)
 
+        self._build_new_game_button()
         self._build_quit_button()
         #items = [(gtk.MenuItem("New game"), lambda *args: f(args)),
         #         (gtk.MenuItem("Open game"), lambda *args: f(args)),
@@ -213,6 +244,12 @@ class HelloWorld(object):
         #map(lambda (i, f): i.show(), items)
 
         self.menu_game_item.show()
+
+    def _build_new_game_button(self):
+        new_game_item = gtk.MenuItem("_New game")
+        new_game_item.connect("activate", lambda w: self.create_new_game())
+        self.menu_game.append(new_game_item)
+        new_game_item.show()
 
     def _build_quit_button(self):
         quit_item = gtk.MenuItem("_Quit")
