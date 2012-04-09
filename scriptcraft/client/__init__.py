@@ -189,7 +189,29 @@ class ClientApplication(Frame):
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
+        self._create_menubar()
         self._game_viewer = GameViewer(self)
+
+    def _create_menubar(self):
+        menubar = Menu(self)
+
+        game_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='Game', menu=game_menu)
+        game_menu.add_command(label="Add player",
+                         command=self._add_player_callback)
+        game_menu.add_separator()
+        game_menu.add_command(label="Quit",
+                         command=self._quit_callback)
+
+        global root
+        root.config(menu=menubar)
+
+    def _add_player_callback(self):
+        pass
+
+    def _quit_callback(self):
+        global root
+        root.destroy()
 
 
 if __name__ == "__main__":
