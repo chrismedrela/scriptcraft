@@ -206,6 +206,8 @@ class ClientApplication(Frame):
         menubar.add_cascade(label='Game', menu=game_menu)
         game_menu.add_command(label="Add player",
                               command=self._add_player_callback)
+        game_menu.add_command(label="Tic",
+                              command=self._tic_callback)
         game_menu.add_separator()
         game_menu.add_command(label="Quit",
                               command=self._quit_callback)
@@ -238,6 +240,10 @@ class ClientApplication(Frame):
                 parent=self,
             )
 
+        self.set_game(self._game)
+
+    def _tic_callback(self):
+        self._game.tic('tmp')
         self.set_game(self._game)
 
     def _quit_callback(self):
