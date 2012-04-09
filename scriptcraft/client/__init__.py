@@ -3,6 +3,9 @@
 
 #import time
 from Tkinter import *
+import tkColorChooser
+import tkMessageBox
+import tkSimpleDialog
 from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter import statement
 
 try:
@@ -12,7 +15,7 @@ except:
 
 from scriptcraft.core.Game import Game
 from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
-from scriptcraft.core.GameMap import GameMap
+from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
 from tests.core.Game import BaseGameTestCase
 from scriptcraft.utils import *
 
@@ -33,7 +36,7 @@ class GameViewer(Canvas):
         self.bind('<Button-5>', self._roll_wheel_event)
 
         # own attributes
-        self.zoom = 1.0
+        self.zoom = 0.25
         self.delta = (0.0, 0.0)
         self.game = None
         self._scaled_images_cache = {}
@@ -76,7 +79,7 @@ class GameViewer(Canvas):
 
                     # unit
                     if field.has_unit():
-                        unit = self._game.units_by_IDs[field.get_unit_ID()]
+                        unit = game.units_by_IDs[field.get_unit_ID()]
                         type_name = unit.type.main_name
                         if type_name == '4': # base
                             draw('base')
@@ -185,6 +188,10 @@ class ClientApplication(Frame):
 
         # we will create game
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+        self.set_game(game)
+
+    def set_game(self, game):
+        self._game = game
         self._game_viewer.set_game(game)
 
     def _init_gui(self):
@@ -198,16 +205,40 @@ class ClientApplication(Frame):
         game_menu = Menu(menubar, tearoff=0)
         menubar.add_cascade(label='Game', menu=game_menu)
         game_menu.add_command(label="Add player",
-                         command=self._add_player_callback)
+                              command=self._add_player_callback)
         game_menu.add_separator()
         game_menu.add_command(label="Quit",
-                         command=self._quit_callback)
+                              command=self._quit_callback)
 
         global root
         root.config(menu=menubar)
 
     def _add_player_callback(self):
-        pass
+        name = tkSimpleDialog.askstring(
+            title='Create player',
+            prompt='Enter new player name',
+            parent=self
+        )
+        if name is None:
+            return
+
+        color = tkColorChooser.askcolor(
+            title='Create player - choose color for new player',
+            parent=self
+        )
+        if color is None:
+            return
+
+        try:
+            self._game.new_player_with_units(name, color)
+        except NoFreeStartPosition:
+            tkMessageBox.showwarning(
+                'Create player',
+                'Cannot create player - no free start position on map.',
+                parent=self,
+            )
+
+        self.set_game(self._game)
 
     def _quit_callback(self):
         global root
