@@ -4,6 +4,7 @@
 #import time
 from Tkinter import *
 import tkColorChooser
+import tkFileDialog
 import tkMessageBox
 import tkSimpleDialog
 from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter import statement
@@ -126,17 +127,18 @@ class GameViewer(Canvas):
                 -x/256.0/self.zoom + y/144.0/self.zoom - self.delta[0] + self.delta[1])
 
     def _roll_wheel_event(self, event):
-        # respond to Linux or Windows wheel event
-        delta = 0
-        if event.num == 5 or event.delta == -120:
-            delta -= 1
-        if event.num == 4 or event.delta == 120:
-            delta += 1
+        if self.game:
+            # respond to Linux or Windows wheel event
+            delta = 0
+            if event.num == 5 or event.delta == -120:
+                delta -= 1
+            if event.num == 4 or event.delta == 120:
+                delta += 1
 
-        factor = GameViewer.SCROLLING_SENSITIVITY**delta
-        self._set_zoom(self.zoom*factor, (event.x, event.y))
-        #self._clear_scaled_images_cache()
-        self.scale(ALL, event.x, event.y, factor, factor)
+            factor = GameViewer.SCROLLING_SENSITIVITY**delta
+            self._set_zoom(self.zoom*factor, (event.x, event.y))
+            #self._clear_scaled_images_cache()
+            self.scale(ALL, event.x, event.y, factor, factor)
 
     def _set_zoom(self, zoom, (XS, YS)):
         """ Set zoom. The point (XS, YS) in screen coordinate doesn't move.
@@ -156,15 +158,16 @@ class GameViewer(Canvas):
             self.itemconfigure(name, image=image)
 
     def _move_event(self, event):
-        if not hasattr(self, '_last_pos'):
-            self._last_pos = (event.x, event.y)
-            return
+        if self.game:
+            if not hasattr(self, '_last_pos'):
+                self._last_pos = (event.x, event.y)
+                return
 
-        dx, dy = event.x - self._last_pos[0], event.y - self._last_pos[1]
-        self._last_pos = (event.x, event.y)
-        self.move(ALL, dx, dy)
-        self.delta = (self.delta[0]-dx/256.0/self.zoom,
-                      self.delta[1]-dy/144.0/self.zoom)
+            dx, dy = event.x - self._last_pos[0], event.y - self._last_pos[1]
+            self._last_pos = (event.x, event.y)
+            self.move(ALL, dx, dy)
+            self.delta = (self.delta[0]-dx/256.0/self.zoom,
+                          self.delta[1]-dy/144.0/self.zoom)
 
     def _release_event(self, event):
         if hasattr(self, '_last_pos'):
@@ -176,17 +179,12 @@ class ClientApplication(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         self._init_gui()
+        #self._load_default_map()
 
-        try:
-            stream = open('../maps/default.map', 'r')
-            game_map = pickle.load(stream)
-        except (pickle.UnpicklingError, IOError) as ex:
-            print 'zonk'
-            return
-        finally:
-            stream.close()
-
-        # we will create game
+    def _load_default_map(self):
+        stream = open('../maps/default.map', 'r')
+        game_map = pickle.load(stream)
+        stream.close()
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         self.set_game(game)
 
@@ -204,6 +202,9 @@ class ClientApplication(Frame):
 
         game_menu = Menu(menubar, tearoff=0)
         menubar.add_cascade(label='Game', menu=game_menu)
+        game_menu.add_command(label="New game",
+                              command=self._new_game_callback)
+        game_menu.add_separator()
         game_menu.add_command(label="Add player",
                               command=self._add_player_callback)
         game_menu.add_command(label="Tic",
@@ -214,6 +215,43 @@ class ClientApplication(Frame):
 
         global root
         root.config(menu=menubar)
+
+    def _new_game_callback(self):
+        filetypes = [
+            ('Scriptcraft map', '*.map'),
+            ('All files', '*'),
+        ]
+        stream = tkFileDialog.askopenfile(
+            title='Choose map file',
+            mode='r',
+            filetypes=filetypes,
+            parent=self
+        )
+        if stream is None:
+            return
+
+        try:
+            game_map = pickle.load(stream)
+        except pickle.UnpicklingError as ex:
+            tkMessageBox.showwarning(
+                'Create new game',
+                'Cannot create new game - map file is corrupted.',
+                parent=self
+            )
+            return
+        except IOError as ex:
+            tkMessageBox.showwarning(
+                'Create new game',
+                'Cannot create new game - io error.',
+                parent=self
+            )
+            return
+        finally:
+            stream.close()
+
+        # we will create game
+        game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+        self.set_game(game)
 
     def _add_player_callback(self):
         name = tkSimpleDialog.askstring(
