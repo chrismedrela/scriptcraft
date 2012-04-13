@@ -21,6 +21,7 @@ from tests.core.Game import BaseGameTestCase
 from scriptcraft.utils import *
 
 
+
 class GameViewer(Canvas):
 
     SCROLLING_SENSITIVITY = 1.05 # in (1, +inf); greater means faster scrolling
@@ -35,12 +36,14 @@ class GameViewer(Canvas):
         self.bind('<MouseWheel>', self._roll_wheel_event)
         self.bind('<Button-4>', self._roll_wheel_event)
         self.bind('<Button-5>', self._roll_wheel_event)
+        self.bind('<Button-1>', self._click_event)
 
         # own attributes
         self.zoom = 0.25
         self.delta = (0.0, 0.0)
         self.game = None
         self._scaled_images_cache = {}
+        self.pointer_position = None # None or (x, y)
 
     def set_game(self, game):
         """ In this method game instance passed during previous call
@@ -56,6 +59,8 @@ class GameViewer(Canvas):
             pass
 
         else:
+            self.set_pointer_position(self.pointer_position)
+
             def draw(sprite_name):
                 image = self._get_scaled_sprite(sprite_name)
                 self.create_image(x, y, image=image,
@@ -92,6 +97,30 @@ class GameViewer(Canvas):
                             else:
                                 draw('empty_miner')
 
+    def set_pointer_position(self, new_position):
+        """ Create or move exisitng pointer. Argument new_position can
+        be None if you want to disable the pointer. """
+
+        self.delete('pointer')
+        image = self._get_scaled_sprite('pointer')
+        x, y = self._to_screen_coordinate(new_position or (0, 0))
+        x, y = self._to_image_position((x, y))
+        state = HIDDEN if new_position is None else NORMAL
+        self.create_image(x, y, image=image,
+                          anchor=NW, tags=['pointer'],
+                          state=state)
+        self.pointer_position = new_position
+
+    def print_info_about_field_under_pointer(self):
+        field = self.game.game_map.get_field(self.pointer_position)
+        print "\nField: %s" % str(field)
+        if field.has_unit():
+            unit = self.game.units_by_IDs[field.get_unit_ID()]
+            print "Unit: %s" % unit
+            print "Compilation: %s" % unit.maybe_last_compilation_status
+            print "Executing: %s" % unit.maybe_run_status
+            print "Program: %s" % unit.program
+
     @memoized
     def _get_image(self, name):
         """ Return (PIL.)Image instance. """
@@ -119,12 +148,18 @@ class GameViewer(Canvas):
         return image
 
     def _to_screen_coordinate(self, (x, y)):
+        """ From game coordinates. """
         return (128*self.zoom*(x-y-2*self.delta[0]),
                 72*self.zoom*(x+y-2*self.delta[1]))
 
     def _to_game_coordinate(self, (x, y)):
+        """ From screen coordinates. """
         return (x/256.0/self.zoom + y/144.0/self.zoom + self.delta[0] + self.delta[1],
                 -x/256.0/self.zoom + y/144.0/self.zoom - self.delta[0] + self.delta[1])
+
+    def _to_image_position(self, (x, y)):
+        """ From screen coordinaties. """
+        return x-128*self.zoom, y-144*self.zoom
 
     def _roll_wheel_event(self, event):
         if self.game:
@@ -172,6 +207,25 @@ class GameViewer(Canvas):
     def _release_event(self, event):
         if hasattr(self, '_last_pos'):
             del self._last_pos
+
+        if hasattr(self, '_clicked_position'):
+            release_position = (event.x, event.y)
+            if self._clicked_position == release_position:
+                self._single_click_event(event)
+
+    def _click_event(self, event):
+        if self.game:
+            self._clicked_position = (event.x, event.y)
+
+    def _single_click_event(self, event):
+        if self.game:
+            click_position = self._to_game_coordinate((event.x, event.y))
+            click_position = map(int, click_position)
+            if self.game.game_map.is_valid_position(click_position):
+                self.set_pointer_position(click_position)
+                self.print_info_about_field_under_pointer()
+            else:
+                self.set_pointer_position(None)
 
 
 class ClientApplication(Frame):
