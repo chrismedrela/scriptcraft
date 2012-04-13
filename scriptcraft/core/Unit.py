@@ -32,11 +32,12 @@ class Unit(object):
         self._minerals = value
 
     def __str__(self):
-        return ("<Unit:%d | "
-                "%s of player %d at (%d, %d) "
-                "%s "
-                "with %s doing %s>") \
-                % (self.ID,
-                   self.type.main_name, self.player.ID, self.position[0], self.position[1],
-                   "with %s" % self.program if self.program else "without program",
-                   self.command, self.action)
+        return ("<Unit:%d | " % self.ID) + \
+               ("%s of player %d " % (self.type.main_name, self.player.ID)) + \
+               ("at (%d, %d) " % (self.position[0], self.position[1])) + \
+               ("%s " % (("with %s" % (self.program,))
+                         if self.program else "without program")) + \
+               ("with %s doing %s>" % (self.command, self.action))
+
+
+
