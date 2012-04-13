@@ -14,9 +14,12 @@ try:
 except:
     import pickle
 
+from scriptcraft.core import direction
 from scriptcraft.core.Game import Game
 from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
+from scriptcraft.core.Language import DEFAULT_PYTHON_LANGUAGE
+from scriptcraft.core.Program import Program, STAR_PROGRAM
 from tests.core.Game import BaseGameTestCase
 from scriptcraft.utils import *
 
@@ -116,10 +119,9 @@ class GameViewer(Canvas):
         print "\nField: %s" % str(field)
         if field.has_unit():
             unit = self.game.units_by_IDs[field.get_unit_ID()]
-            print "Unit: %s" % unit
-            print "Compilation: %s" % unit.maybe_last_compilation_status
-            print "Executing: %s" % unit.maybe_run_status
-            print "Program: %s" % unit.program
+            print "Unit: %s" % (unit,)
+            print "Compilation: %s" % (unit.maybe_last_compilation_status,)
+            print "Executing: %s" % (unit.maybe_run_status,)
 
     @memoized
     def _get_image(self, name):
@@ -233,14 +235,21 @@ class ClientApplication(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         self._init_gui()
-        #self._load_default_map()
+        self._prepare_debug_game()
 
-    def _load_default_map(self):
+    def _prepare_debug_game(self):
         stream = open('../maps/default.map', 'r')
         game_map = pickle.load(stream)
         stream.close()
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         self.set_game(game)
+
+        self._game.new_player_with_units('Bob', (255,0,0))
+        self._game.set_program(game.units_by_IDs[6],
+                              Program(language=DEFAULT_PYTHON_LANGUAGE,
+                                      code=open('/home/krzysiumed/tmp.py', 'r').read()))
+
+        self.set_game(self._game)
 
     def set_game(self, game):
         self._game = game
@@ -261,6 +270,12 @@ class ClientApplication(Frame):
         game_menu.add_separator()
         game_menu.add_command(label="Add player",
                               command=self._add_player_callback)
+        game_menu.add_command(label="Delete program",
+                              command=self._delete_program_callback)
+        game_menu.add_command(label="Set program",
+                              command=self._set_program_callback)
+        game_menu.add_command(label="Set star program",
+                              command=self._set_star_program_callback)
         game_menu.add_command(label="Tic",
                               command=self._tic_callback)
         game_menu.add_separator()
@@ -333,6 +348,43 @@ class ClientApplication(Frame):
             )
 
         self.set_game(self._game)
+
+    def _delete_program_callback(self):
+        field = self._game.game_map.get_field(self._game_viewer.pointer_position)
+        unit = self._game.units_by_IDs[field.get_unit_ID()]
+        self._game.set_program(unit, None)
+
+    def _set_program_callback(self):
+        stream = tkFileDialog.askopenfile(
+            title='Choose source file',
+            mode='r',
+            parent=self
+        )
+        if stream is None:
+            return
+        filename = stream.name
+
+        languages = self._game.configuration.languages_by_names.values()
+        languages = filter(lambda l: filename.endswith(l.source_extension),
+                           languages)
+        if not languages:
+            tkMessageBox.showwarning(
+                'Set program',
+                'Cannot set program - unknown source file extension.',
+                parent=self
+            )
+
+        language = languages[0]
+        field = self._game.game_map.get_field(self._game_viewer.pointer_position)
+        unit = self._game.units_by_IDs[field.get_unit_ID()]
+        program = Program(language=language, code=stream.read())
+        self._game.set_program(unit, program)
+
+    def _set_star_program_callback(self):
+        field = self._game.game_map.get_field(self._game_viewer.pointer_position)
+        unit = self._game.units_by_IDs[field.get_unit_ID()]
+        self._game.set_program(unit, STAR_PROGRAM)
+
 
     def _tic_callback(self):
         self._game.tic('tmp')
