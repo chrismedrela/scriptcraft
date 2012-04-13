@@ -19,7 +19,7 @@ haven't be sensible (for example every string is valid value for unit_type_name)
 
 from collections import namedtuple
 
-import scriptcraft.core.direction
+from scriptcraft.core import direction
 
 
 
@@ -36,13 +36,14 @@ class MoveCommand(namedtuple('MoveCommand',
     __slots__ = ()
 
     def __str__(self):
-        return '<Command move to %d>' \
+        return '<Command move to %s>' \
                % direction.TO_FULL_NAME[self.direction]
 
 
 class ComplexMoveCommand(namedtuple('ComplexMoveCommand',
                                     ('destination',))):
     __slots__ = ()
+
 
     def __str__(self):
         return '<Command move at (%d, %d)>' \
