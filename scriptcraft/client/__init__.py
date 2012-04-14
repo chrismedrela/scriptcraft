@@ -59,11 +59,10 @@ class GameViewer(Canvas):
             self.delete(ALL)
 
         if not game:
+            self.set_pointer_position(None)
             pass
 
         else:
-            self.set_pointer_position(self.pointer_position)
-
             def draw(sprite_name):
                 image = self._get_scaled_sprite(sprite_name)
                 self.create_image(x, y, image=image,
@@ -100,6 +99,8 @@ class GameViewer(Canvas):
                             else:
                                 draw('empty_miner')
 
+            self.set_pointer_position(self.pointer_position)
+
     def set_pointer_position(self, new_position):
         """ Create or move exisitng pointer. Argument new_position can
         be None if you want to disable the pointer. """
@@ -113,15 +114,6 @@ class GameViewer(Canvas):
                           anchor=NW, tags=['pointer'],
                           state=state)
         self.pointer_position = new_position
-
-    def print_info_about_field_under_pointer(self):
-        field = self.game.game_map.get_field(self.pointer_position)
-        print "\nField: %s" % str(field)
-        if field.has_unit():
-            unit = self.game.units_by_IDs[field.get_unit_ID()]
-            print "Unit: %s" % (unit,)
-            print "Compilation: %s" % (unit.maybe_last_compilation_status,)
-            print "Executing: %s" % (unit.maybe_run_status,)
 
     @memoized
     def _get_image(self, name):
@@ -225,12 +217,24 @@ class GameViewer(Canvas):
             click_position = map(int, click_position)
             if self.game.game_map.is_valid_position(click_position):
                 self.set_pointer_position(click_position)
-                self.print_info_about_field_under_pointer()
+                self.event_generate("<<field-selected>>",
+                                    x=click_position[0], y=click_position[1])
             else:
                 self.set_pointer_position(None)
+                self.event_generate("<<pointer-erased>>")
+
 
 
 class ClientApplication(Frame):
+
+    MENU_GAME_LABEL = "Game"
+    NEW_GAME_LABEL = "New game"
+    ADD_PLAYER_LABEL = "Add player"
+    SET_PROGRAM_LABEL = "Set program"
+    SET_STAR_PROGRAM_LABEL = "Set star program"
+    DELETE_PROGRAM_LABEL = "Delete program"
+    TIC_LABEL = "Tic"
+    QUIT_LABEL = "Quit"
 
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -254,36 +258,53 @@ class ClientApplication(Frame):
     def set_game(self, game):
         self._game = game
         self._game_viewer.set_game(game)
+        self._toggle_game_menu_state()
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
         self._create_menubar()
+        self._create_keyboard_shortcuts()
         self._game_viewer = GameViewer(self)
+        self._game_viewer.bind('<<field-selected>>',
+                               self._field_selected_event)
+        self._game_viewer.bind('<<pointer-erased>>',
+                               self._field_deselected_event)
 
     def _create_menubar(self):
         menubar = Menu(self)
 
-        game_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label='Game', menu=game_menu)
-        game_menu.add_command(label="New game",
-                              command=self._new_game_callback)
-        game_menu.add_separator()
-        game_menu.add_command(label="Add player",
-                              command=self._add_player_callback)
-        game_menu.add_command(label="Delete program",
-                              command=self._delete_program_callback)
-        game_menu.add_command(label="Set program",
-                              command=self._set_program_callback)
-        game_menu.add_command(label="Set star program",
-                              command=self._set_star_program_callback)
-        game_menu.add_command(label="Tic",
-                              command=self._tic_callback)
-        game_menu.add_separator()
-        game_menu.add_command(label="Quit",
-                              command=self._quit_callback)
+        self._game_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label=ClientApplication.MENU_GAME_LABEL,
+                            menu=self._game_menu)
+        self._game_menu.add_command(label=ClientApplication.NEW_GAME_LABEL,
+                                    command=self._new_game_callback)
+        self._game_menu.add_separator()
+        self._game_menu.add_command(label=ClientApplication.ADD_PLAYER_LABEL,
+                                    command=self._add_player_callback,
+                                    state=DISABLED)
+        self._game_menu.add_command(label=ClientApplication.DELETE_PROGRAM_LABEL,
+                                    command=self._delete_program_callback,
+                                    state=DISABLED)
+        self._game_menu.add_command(label=ClientApplication.SET_PROGRAM_LABEL,
+                                    command=self._set_program_callback,
+                                    state=DISABLED)
+        self._game_menu.add_command(label=ClientApplication.SET_STAR_PROGRAM_LABEL,
+                                    command=self._set_star_program_callback,
+                                    state=DISABLED)
+        self._game_menu.add_command(label=ClientApplication.TIC_LABEL,
+                                    command=self._tic_callback,
+                                    state=DISABLED)
+        self._game_menu.add_separator()
+        self._game_menu.add_command(label=ClientApplication.QUIT_LABEL,
+                                    command=self._quit_callback)
 
         global root
         root.config(menu=menubar)
+
+    def _create_keyboard_shortcuts(self):
+        self._game_menu.entryconfigure(ClientApplication.TIC_LABEL,
+                                       accelerator="t")
+        self.bind_all("<t>", lambda w: self._tic_callback())
 
     def _new_game_callback(self):
         filetypes = [
@@ -393,6 +414,43 @@ class ClientApplication(Frame):
     def _quit_callback(self):
         global root
         root.destroy()
+
+    def _field_selected_event(self, event):
+        self._print_info_about_field_at((event.x, event.y))
+        self._toggle_game_menu_state()
+
+    def _field_deselected_event(self, event):
+        self._toggle_game_menu_state()
+
+    def _print_info_about_field_at(self, position):
+        field = self._game.game_map.get_field(position)
+        print "\nField: %s" % str(field)
+        if field.has_unit():
+            unit = self._game.units_by_IDs[field.get_unit_ID()]
+            print "Unit: %s" % (unit,)
+            print "Compilation: %s" % (unit.maybe_last_compilation_status,)
+            print "Executing: %s" % (unit.maybe_run_status,)
+
+    def _toggle_game_menu_state(self):
+        has_game = self._game is not None
+        has_unit = (self._game is not None and
+                    self._game_viewer.pointer_position is not None and
+                    self._game.game_map.get_field(
+                        self._game_viewer.pointer_position
+                    ).has_unit())
+
+        state = NORMAL if has_game else DISABLED
+        entries = [ClientApplication.ADD_PLAYER_LABEL,
+                   ClientApplication.TIC_LABEL]
+        for entry in entries:
+            self._game_menu.entryconfigure(entry, state=state)
+
+        state = NORMAL if has_unit else DISABLED
+        entries = [ClientApplication.SET_PROGRAM_LABEL,
+                   ClientApplication.SET_STAR_PROGRAM_LABEL,
+                   ClientApplication.DELETE_PROGRAM_LABEL]
+        for entry in entries:
+            self._game_menu.entryconfigure(entry, state=state)
 
 
 if __name__ == "__main__":
