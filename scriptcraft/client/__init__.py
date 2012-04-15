@@ -122,6 +122,9 @@ class GameViewer(Canvas):
                             draw('arrow-%s' % direction_name, source_position,
                                  tags=['layer-1'])
 
+                        if isinstance(unit.action, actions.FireAction):
+                            draw('fire', unit.action.destination, tags=['layer-1'])
+
 
             self.set_pointer_position(self.pointer_position)
             self.tag_raise('layer-1')
