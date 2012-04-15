@@ -585,7 +585,7 @@ class Game(object):
                 lambda: self.store_minerals_from_unit_to_unit(unit,
                                                               self.units_by_IDs[unit.action.storage_ID]),
             actions.FireAction : \
-                lambda: self.fire_at(unit.action.position),
+                lambda: self.fire_at(unit.action.destination),
             actions.BuildAction : \
                 lambda: self.new_unit(unit.player,
                                       unit.action.destination,
