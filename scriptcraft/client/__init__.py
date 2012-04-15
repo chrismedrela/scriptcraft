@@ -230,6 +230,7 @@ class ClientApplication(Frame):
     MENU_GAME_LABEL = "Game"
     NEW_GAME_LABEL = "New game"
     SAVE_GAME_LABEL = "Save game"
+    LOAD_GAME_LABEL = "Load game"
     ADD_PLAYER_LABEL = "Add player"
     SET_PROGRAM_LABEL = "Set program"
     SET_STAR_PROGRAM_LABEL = "Set star program"
@@ -281,6 +282,8 @@ class ClientApplication(Frame):
                                     command=self._new_game_callback)
         self._game_menu.add_command(label=ClientApplication.SAVE_GAME_LABEL,
                                     command=self._save_game_callback)
+        self._game_menu.add_command(label=ClientApplication.LOAD_GAME_LABEL,
+                                    command=self._load_game_callback)
         self._game_menu.add_separator()
         self._game_menu.add_command(label=ClientApplication.ADD_PLAYER_LABEL,
                                     command=self._add_player_callback,
@@ -370,6 +373,42 @@ class ClientApplication(Frame):
                 'Cannot save game - io error.',
                 parent=self
             )
+        finally:
+            stream.close()
+
+    def _load_game_callback(self):
+        filetypes = [
+            ('Scriptcraft game', '*.game'),
+            ('All files', '*'),
+        ]
+        stream = tkFileDialog.askopenfile(
+            title='Save game',
+            mode='r',
+            filetypes=filetypes,
+            parent=self
+        )
+        if stream is None:
+            return
+
+        try:
+            pickled = stream.read()
+            game = pickle.loads(pickled)
+
+        except IOError as ex:
+            tkMessageBox.showwarning(
+                'Load game',
+                'Cannot load game - io error.',
+                parent=self
+            )
+        except pickle.UnpicklingError as ex:
+            tkMessageBox.showwarning(
+                'Load game',
+                'Cannot load game - corrupted game file.',
+                parent=self
+            )
+        else:
+            self.set_game(None)
+            self.set_game(game)
         finally:
             stream.close()
 
