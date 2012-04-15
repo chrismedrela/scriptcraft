@@ -281,7 +281,10 @@ class ClientApplication(Frame):
         self._game.new_player_with_units('Bob', (255,0,0))
         self._game.set_program(game.units_by_IDs[6],
                               Program(language=DEFAULT_PYTHON_LANGUAGE,
-                                      code=open('/home/krzysiumed/tmp.py', 'r').read()))
+                                      code=open('./tmp/gather.py', 'r').read()))
+        self._game.set_program(game.units_by_IDs[2],
+                              Program(language=DEFAULT_PYTHON_LANGUAGE,
+                                      code=open('./tmp/build_tank.py', 'r').read()))
 
         self.set_game(self._game)
 
