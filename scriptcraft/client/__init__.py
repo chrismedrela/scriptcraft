@@ -281,7 +281,8 @@ class ClientApplication(Frame):
         self._game_menu.add_command(label=ClientApplication.NEW_GAME_LABEL,
                                     command=self._new_game_callback)
         self._game_menu.add_command(label=ClientApplication.SAVE_GAME_LABEL,
-                                    command=self._save_game_callback)
+                                    command=self._save_game_callback,
+                                    state=DISABLED)
         self._game_menu.add_command(label=ClientApplication.LOAD_GAME_LABEL,
                                     command=self._load_game_callback)
         self._game_menu.add_separator()
