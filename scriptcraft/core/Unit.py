@@ -35,6 +35,7 @@ class Unit(object):
         return ("<Unit:%d | " % self.ID) + \
                ("%s of player %d " % (self.type.main_name, self.player.ID)) + \
                ("at (%d, %d) " % (self.position[0], self.position[1])) + \
+               ("with %d minerals " % self.minerals if self.type.has_storage else "") + \
                ("%s " % (("with %s" % (self.program,))
                          if self.program else "without program")) + \
                ("with %s doing %s>" % (self.command, self.action))
