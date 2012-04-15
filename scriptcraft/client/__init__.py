@@ -14,7 +14,7 @@ try:
 except:
     import pickle
 
-from scriptcraft.core import direction
+from scriptcraft.core import direction, actions
 from scriptcraft.core.Game import Game
 from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
@@ -63,43 +63,68 @@ class GameViewer(Canvas):
             pass
 
         else:
-            def draw(sprite_name):
+            def draw(sprite_name, position, tags=None):
+                tags = tags or []
+                position = self._to_screen_coordinate(position)
+                x, y = self._to_image_position(position)
                 image = self._get_scaled_sprite(sprite_name)
                 self.create_image(x, y, image=image,
-                                  anchor=NW, tags=[sprite_name])
+                                  anchor=NW, tags=[sprite_name]+tags)
 
             for i in xrange(0, game.game_map.size[0]):
                 for j in xrange(0, game.game_map.size[1]):
                     field = game.game_map.get_field((i, j))
-                    x, y = self._to_screen_coordinate((i, j))
-                    x, y = x-128*self.zoom, y-144*self.zoom
+                    position = i, j
 
                     # ground
-                    draw('flat_field')
+                    draw('flat_field', position)
 
                     # minerals
                     if field.has_mineral_deposit():
-                        draw('minerals')
+                        draw('minerals', position)
 
                     # trees
                     if field.has_trees():
-                        draw('tree')
+                        draw('tree', position)
 
                     # unit
                     if field.has_unit():
                         unit = game.units_by_IDs[field.get_unit_ID()]
                         type_name = unit.type.main_name
                         if type_name == '4': # base
-                            draw('base')
+                            draw('base', position)
                         elif type_name == '6': # tank
-                            draw('tank')
+                            draw('tank', position)
                         elif type_name == '5': # miner
                             if unit.minerals:
-                                draw('full_miner')
+                                draw('full_miner', position)
                             else:
-                                draw('empty_miner')
+                                draw('empty_miner', position)
+
+                        if (isinstance(unit.action, actions.StoreAction) or
+                            isinstance(unit.action, actions.GatherAction) or
+                            isinstance(unit.action, actions.MoveAction)):
+                            if isinstance(unit.action, actions.GatherAction):
+                                source_position = unit.position
+                                destination_position = unit.action.source
+                            elif isinstance(unit.action, actions.StoreAction):
+                                source_position = unit.position
+                                destination_unit = self.game.units_by_IDs[
+                                    unit.action.storage_ID]
+                                destination_position = destination_unit.position
+                            elif isinstance(unit.action, actions.MoveAction):
+                                source_position = unit.action.source
+                                destination_position = unit.action.destination
+                            delta = map(lambda (a, b): a-b, zip(destination_position,
+                                                                source_position))
+                            d = direction.FROM_RAY[tuple(delta)]
+                            direction_name = direction.TO_FULL_NAME[d]
+                            draw('arrow-%s' % direction_name, source_position,
+                                 tags=['layer-1'])
+
 
             self.set_pointer_position(self.pointer_position)
+            self.tag_raise('layer-1')
 
     def set_pointer_position(self, new_position):
         """ Create or move exisitng pointer. Argument new_position can
