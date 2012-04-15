@@ -6,8 +6,6 @@ __all__ = [
     'Const',
     'copy_if_an_instance_given',
     'distance',
-    'Enum',
-    'make_enum',
     'max_time',
     'memoized',
     'on_error_do',
@@ -19,8 +17,6 @@ __all__ = [
 from functools import partial, wraps
 import os, shutil
 import time
-
-from enum import Enum, make_enum
 
 
 

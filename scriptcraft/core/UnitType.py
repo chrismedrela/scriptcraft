@@ -7,8 +7,12 @@ from scriptcraft.utils import *
 
 
 
-BEHAVIOUR_WHEN_ATTACKED = make_enum("BEHAVIOUR_WHEN_ATTACKED",
-                                    "DESTROY GET_MINERAL_OR_DESTROY")
+class BEHAVIOUR_WHEN_ATTACKED(object):
+    DESTROY = '<Enum: destroy>'
+    GET_MINERAL_OR_DESTROY = '<Enum: get mineral or destroy>'
+
+#BEHAVIOUR_WHEN_ATTACKED = make_enum("BEHAVIOUR_WHEN_ATTACKED",
+#                                "DESTROY GET_MINERAL_OR_DESTROY")
 
 
 def _use_default_value_if_flag_is_False(kwargs, flag_name, attribute_name, default_value):
