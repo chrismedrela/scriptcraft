@@ -229,6 +229,7 @@ class ClientApplication(Frame):
 
     MENU_GAME_LABEL = "Game"
     NEW_GAME_LABEL = "New game"
+    SAVE_GAME_LABEL = "Save game"
     ADD_PLAYER_LABEL = "Add player"
     SET_PROGRAM_LABEL = "Set program"
     SET_STAR_PROGRAM_LABEL = "Set star program"
@@ -278,6 +279,8 @@ class ClientApplication(Frame):
                             menu=self._game_menu)
         self._game_menu.add_command(label=ClientApplication.NEW_GAME_LABEL,
                                     command=self._new_game_callback)
+        self._game_menu.add_command(label=ClientApplication.SAVE_GAME_LABEL,
+                                    command=self._save_game_callback)
         self._game_menu.add_separator()
         self._game_menu.add_command(label=ClientApplication.ADD_PLAYER_LABEL,
                                     command=self._add_player_callback,
@@ -342,6 +345,33 @@ class ClientApplication(Frame):
         # we will create game
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         self.set_game(game)
+
+    def _save_game_callback(self):
+        filetypes = [
+            ('Scriptcraft game', '*.game'),
+            ('All files', '*'),
+        ]
+        stream = tkFileDialog.asksaveasfile(
+            title='Save game',
+            mode='w',
+            filetypes=filetypes,
+            parent=self
+        )
+        if stream is None:
+            return
+
+        try:
+            pickled = pickle.dumps(self._game)
+            stream.write(pickled)
+
+        except IOError as ex:
+            tkMessageBox.showwarning(
+                'Save game',
+                'Cannot save game - io error.',
+                parent=self
+            )
+        finally:
+            stream.close()
 
     def _add_player_callback(self):
         name = tkSimpleDialog.askstring(
@@ -441,6 +471,7 @@ class ClientApplication(Frame):
 
         state = NORMAL if has_game else DISABLED
         entries = [ClientApplication.ADD_PLAYER_LABEL,
+                   ClientApplication.SAVE_GAME_LABEL,
                    ClientApplication.TIC_LABEL]
         for entry in entries:
             self._game_menu.entryconfigure(entry, state=state)
