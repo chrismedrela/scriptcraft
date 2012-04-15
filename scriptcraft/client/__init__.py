@@ -536,7 +536,8 @@ class ClientApplication(Frame):
 
     def _print_info_about_field_at(self, position):
         field = self._game.game_map.get_field(position)
-        print "\nField: %s" % str(field)
+        print "\nSelected position: (%d, %d)" % position
+        print "Field: %s" % str(field)
         if field.has_unit():
             unit = self._game.units_by_IDs[field.get_unit_ID()]
             print "Unit: %s" % (unit,)
