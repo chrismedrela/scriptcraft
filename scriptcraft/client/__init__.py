@@ -264,6 +264,8 @@ class ClientApplication(Frame):
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
+        global root
+        root.protocol("WM_DELETE_WINDOW", self._quit_callback)
         self._create_menubar()
         self._create_keyboard_shortcuts()
         self._game_viewer = GameViewer(self)
@@ -314,6 +316,9 @@ class ClientApplication(Frame):
         self.bind_all("<t>", lambda w: self._tic_callback())
 
     def _new_game_callback(self):
+        if not self._ask_if_delete_current_game_if_exists():
+            return
+
         filetypes = [
             ('Scriptcraft map', '*.map'),
             ('All files', '*'),
@@ -378,6 +383,9 @@ class ClientApplication(Frame):
             stream.close()
 
     def _load_game_callback(self):
+        if not self._ask_if_delete_current_game_if_exists():
+            return
+
         filetypes = [
             ('Scriptcraft game', '*.game'),
             ('All files', '*'),
@@ -482,6 +490,9 @@ class ClientApplication(Frame):
         self.set_game(self._game)
 
     def _quit_callback(self):
+        if not self._ask_if_quit_program():
+            return
+
         global root
         root.destroy()
 
@@ -522,6 +533,25 @@ class ClientApplication(Frame):
                    ClientApplication.DELETE_PROGRAM_LABEL]
         for entry in entries:
             self._game_menu.entryconfigure(entry, state=state)
+
+    def _ask_if_delete_current_game_if_exists(self):
+        if self._game:
+            return tkMessageBox.askyesno(
+                'Are you sure?',
+                'Are you sure? Current game will be lost.',
+                icon=tkMessageBox.WARNING,
+                parent=self
+            )
+        else:
+            return True
+
+    def _ask_if_quit_program(self):
+        return tkMessageBox.askyesno(
+            'Quit program.',
+            'Do you really want quit the program?',
+            icon=tkMessageBox.WARNING,
+            parent=self
+        )
 
 
 if __name__ == "__main__":
