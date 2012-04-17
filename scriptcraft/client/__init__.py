@@ -269,6 +269,7 @@ class ClientApplication(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         self._init_gui()
+        self._game = None
         self._prepare_debug_game()
 
     def _prepare_debug_game(self):
