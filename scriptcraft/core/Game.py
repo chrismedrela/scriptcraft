@@ -450,7 +450,7 @@ class Game(object):
 
             if distance(unit.position, base.position) == 1:
                 # store
-                if base.minerals == unit.type.storage_size:
+                if base.minerals == base.type.storage_size:
                     return actions.StopAction()
 
                 else:
