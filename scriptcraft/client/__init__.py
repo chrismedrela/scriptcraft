@@ -587,8 +587,12 @@ class ClientApplication(Frame):
         )
 
 
-if __name__ == "__main__":
+def run():
+    global root, app
     root = Tk()
     app = ClientApplication(master=root)
     app.mainloop()
     root.destroy()
+
+if __name__ == "__main__":
+    run()
