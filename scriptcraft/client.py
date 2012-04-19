@@ -10,6 +10,7 @@ import math
 from Tkinter import *
 import tkColorChooser
 import tkFileDialog
+import tkFont
 import tkMessageBox
 import tkSimpleDialog
 from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter import statement
@@ -119,6 +120,13 @@ class GameViewer(Canvas):
                 sprite_name = switch[unit.type.main_name](unit)
                 self._draw(sprite_name, position)
 
+                x, y = self._to_screen_coordinate(position)
+                color = '#' + "%02x%02x%02x" % unit.player.color
+                font = self._get_font_for_current_zoom()
+                self.create_text(x, y, fill=color, text=unit.player.name,
+                                 font=font, tags=['text'],
+                                 state=NORMAL if font else HIDDEN)
+
                 if isinstance(unit.action, actions.GatherAction):
                     draw_arrow_from_to(unit.position, unit.action.source)
                 elif isinstance(unit.action, actions.StoreAction):
@@ -155,6 +163,16 @@ class GameViewer(Canvas):
         image = self._get_scaled_sprite(name)
         self.create_image(x, y, image=image, anchor=NW,
                           state=state, tags=[name]+extra_tags)
+
+    def _get_font_for_current_zoom(self):
+        size = int(40*self._zoom)
+        if size < 10:
+            if size >= 6:
+                return tkFont.Font(size=10)
+            else:
+                return None
+        else:
+            return tkFont.Font(size=size)
 
     @memoized
     def _get_image(self, name):
@@ -219,6 +237,11 @@ class GameViewer(Canvas):
         for name in names:
             image = self._get_scaled_sprite(name)
             self.itemconfigure(name, image=image)
+
+        # scale all texts
+        font = self._get_font_for_current_zoom()
+        self.itemconfigure('text', font=font,
+                           state = NORMAL if font else HIDDEN)
 
         # move all images
         factor = zoom/old_zoom
