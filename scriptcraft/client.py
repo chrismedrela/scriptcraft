@@ -47,6 +47,10 @@ class GameViewer(Canvas):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
         self.pack(expand=YES, fill=BOTH)
 
+        # To enable receiving wheel rolling events under windows, we
+        # need this action before bindings:
+        self.focus_set()
+
         # bindings
         self.bind('<B1-Motion>', self._mouse_motion_callback)
         self.bind('<ButtonRelease-1>', self._release_callback)
@@ -221,12 +225,13 @@ class GameViewer(Canvas):
 
     def _roll_wheel_callback(self, event):
         if self._game:
-            # respond to Linux or Windows wheel event
             delta = 0
-            if event.num == 5 or event.delta == -120:
+            if event.num == 5: # respond Linux wheel event
                 delta -= 1
-            if event.num == 4 or event.delta == 120:
+            elif event.num == 4: # -//-
                 delta += 1
+            else: # respond Windows wheel event
+                delta += event.delta // 120
 
             factor = GameViewer.SCROLLING_SENSITIVITY**delta
             self._set_zoom(self._zoom*factor, (event.x, event.y))
