@@ -174,7 +174,8 @@ class GameViewer(Canvas):
         # otherwise compute, cache and return
         image = self._get_image(name)
         width, height = 256, 288
-        new_width, new_height = width*self._zoom+2, height*self._zoom+2
+        new_width, new_height = (int(width*self._zoom+2),
+                                 int(height*self._zoom+2))
         image = image.resize((new_width, new_height), Image.NEAREST)
         image = ImageTk.PhotoImage(image)
 
