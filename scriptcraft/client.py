@@ -20,7 +20,6 @@ from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
 from scriptcraft.core.Language import DEFAULT_PYTHON_LANGUAGE
 from scriptcraft.core.Program import Program, STAR_PROGRAM
-from tests.core.Game import BaseGameTestCase
 from scriptcraft.utils import *
 
 
