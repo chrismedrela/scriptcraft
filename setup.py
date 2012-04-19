@@ -36,23 +36,21 @@ if __name__ == "__main__":
     packages, _ = _find_packages_and_data_files()
     setup(
         name=PROJECT_NAME,
-        version='0.1',
+        version='0.1.19',
         install_requires = [
-            'PIL[tkinter]==1.1.7', # TODO
+            'PIL==1.1.7',
         ],
         packages = packages,
-        package_data = {
-            PROJECT_NAME : ['LICENSE.txt', 'maps/*.map', 'graphic/*.png'],
-        },
+        include_package_data = True,
         author = "Krzysztof Medrela",
         author_email = "krzysiumed@gmail.com",
         description = "scriptcraft game",
         license = "GPLv3",
         keywords = [PROJECT_NAME, 'game'],
-        url = "https://github.com/krzysiumed/scriptcraft", # TODO
+        url = "http://github.com/krzysiumed/scriptcraft",
         entry_points = {
-            'setuptools.installation': [
-                'eggsecutable = scriptcraft.client.__init__:run',
-            ]
-        }
+            'gui_scripts': [
+                'scriptcraft = scriptcraft.client:run',
+            ],
+        },
     )
