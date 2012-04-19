@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-import aima
-
+from scriptcraft import aima
 from scriptcraft.core import direction
 from scriptcraft.utils import *
 

@@ -3,8 +3,7 @@
 
 import copy
 
-import aima
-
+from scriptcraft import aima
 from scriptcraft.core import direction
 from scriptcraft.core.Field import Field
 from scriptcraft.core.FindPathProblem import FindPathProblem, TooLongSearchingTime
