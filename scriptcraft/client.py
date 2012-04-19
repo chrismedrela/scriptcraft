@@ -159,8 +159,8 @@ class GameViewer(Canvas):
     @memoized
     def _get_image(self, name):
         """ Return (PIL.)Image instance. """
-        path = '../graphic/%s.png' % name
-        image = Image.open(path)
+        path = 'graphic/%s.png' % name
+        image = Image.open(datafile_path(path))
         return image
 
     def _get_scaled_sprite(self, name):
@@ -303,7 +303,7 @@ class ClientApplication(Frame):
 
     def _prepare_debug_game(self):
         # load game and add player
-        stream = open('../maps/default.map', 'r')
+        stream = open(datafile_path('maps/default.map'), 'r')
         game_map = pickle.load(stream)
         stream.close()
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
@@ -311,7 +311,7 @@ class ClientApplication(Frame):
 
         # set programs
         def set_program(id, filename):
-            code = open('./.tmp/'+filename, 'r').read()
+            code = open(datafile_path('.tmp/'+filename), 'r').read()
             program = Program(language=DEFAULT_PYTHON_LANGUAGE,
                               code=code)
             game.set_program(game.units_by_IDs[id], program)

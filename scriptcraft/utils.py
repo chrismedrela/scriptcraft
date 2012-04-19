@@ -10,12 +10,14 @@ __all__ = [
     'memoized',
     'on_error_do',
     'on_error_return',
+    'datafile_path',
     'skip',
     'TemporaryFileSystem',
 ]
 
 from functools import partial, wraps
 import os, shutil
+import pkg_resources
 import time
 
 
@@ -68,6 +70,14 @@ def on_error_do(errors, function):
         return wraper
     return inner
 
+
+def datafile_path(relative_path):
+    """ Return absolute path to datafile. The root directory for given
+    relative path is scriptcraft directory. An example of valid
+    filename: "graphic/base.png"."""
+    #relative_path = os.path.join('scriptcraft', relative_path)
+    absolute_path = pkg_resources.resource_filename('scriptcraft', relative_path)
+    return absolute_path
 
 def copy_if_an_instance_given(f):
     """ Decorator. Use with method __new__ of classes inheriting namedtuple.
