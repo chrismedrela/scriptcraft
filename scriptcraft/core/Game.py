@@ -572,6 +572,12 @@ class Game(object):
     def _execute_action_for(self, unit):
         action_type = type(unit.action)
 
+        def build_unit():
+            new_unit = self.new_unit(unit.player,
+                                 unit.action.destination,
+                                 unit.action.unit_type)
+            self.set_program(new_unit, unit.program)
+
         switch = {
             actions.StopAction : \
                 lambda: None,
@@ -587,9 +593,8 @@ class Game(object):
             actions.FireAction : \
                 lambda: self.fire_at(unit.action.destination),
             actions.BuildAction : \
-                lambda: self.new_unit(unit.player,
-                                      unit.action.destination,
-                                      unit.action.unit_type)}
+                build_unit
+        }
 
         case = switch[action_type]
         case()
