@@ -40,7 +40,7 @@ if __name__ == "__main__":
     packages, _ = _find_packages_and_data_files()
     setup(
         name=PROJECT_NAME,
-        version='0.1.19',
+        version='0.1.23',
         author = "Krzysztof Medrela",
         author_email = "krzysiumed@gmail.com",
         description = "Scriptcraft programming game - program your units to fight against other players.",
@@ -51,7 +51,6 @@ if __name__ == "__main__":
         classifiers = [
             "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
             "Natural Language :: Polish",
-            "Operating System :: Microsoft",
             "Operating System :: Unix",
             "Programming Language :: Python :: 2.6",
             "Programming Language :: Python :: 2.7",

@@ -28,59 +28,37 @@ udostępnia on najbardziej podstawowe funkcje i możliwości.
 - Wszystkie polecenia wydawane jednostkom przez Twoje programy są
   interpretowane tak samo jak w wersji internetowej **z wyjątkiem**
   polecenia ``PROGRAM``, które w chwili obecnej nie jest
-  zaimplementowane.
+  zaimplementowane. W zamian za to nowo produkowane jednostki
+  otrzymują taki sam program jaki ma baza.
 
 .. _`dokumentację gry`: http://informatyka.wroc.pl/node/714
 
-Scriptcraft działa pod Pythonem 2.6 i 2.7 pod Windowsem i Linuxem. Nie
-był testowany pod innymi systemami operacyjnymi, ale jest całkiem
-prawdopodobne, że zadziała.
+Scriptcraft działa pod Pythonem 2.6 i 2.7 pod Linuxem. Planowana jest
+obsługa także systemu Windows.
 
 ==========
 Instalacja
 ==========
 
-Scriptcraft można ściągnąć z `pypi`_
+Scriptcraft można zainstalować na dwa sposoby. Prostszy sposób polega
+na wpisaniu w bashu:
+
+  pip install scriptcraft
+
+Drugim sposobem jest pobranie źródeł z `pypi`_ lub z `githuba`_. Po
+ściągnięciu i rozpakowaniu paczki należy wpisać w bashu:
+
+  python setup.py install
 
 .. _`pypi`: http://pypi.python.org/pypi/scriptcraft/
+.. _`githuba`: https://github.com/krzysiumed/scriptcraft
 
--------------------------
-Instalacja pod Windowsem.
--------------------------
+============
+Uruchomienie
+============
+W bashu wpisujemy:
 
-Ściągnij z pypi wersję odpowiadającą zainstalowanej u Ciebie wersji
-Pythona, a następnie kliknij dwukrotnie na ściągniętym pliku .exe i
-postępuj zgodnie z krokami instalacji.
+  scriptcraft
 
-Jaką wersję Pythona mam zainstalowaną?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Python powinien być u Ciebie zainstalowany w folderze ``C:\Python26``
-lub ``C:\Python27`` w zależności od posiadanej przez Ciebie wersji:
-odpowiednio 2.6 i 2.7. Jeżeli nie masz na dysku ``C:`` żadnego folderu
-o podobnej nazwie, to znaczy, że musisz zainstalować `Pythona`_
-(najlepiej najnowszą wersję z gałęzi 2.7.x, w chwili obecnej jest to
-2.7.3). Jeżeli posiadasz folder o podobnej nazwie
-(np. ``C:\Python30``), to znaczy że masz zainstalowanego Pythona, ale
-w wersji, z którą Scriptcraft może nie działać. Dlatego w takim
-przypadku również zalecane jest zainstalowanie Pythona 2.7.x.
-
-.. _`Pythona`: http://www.python.org/download/
-
--------------------------------------------------
-Instalacja ze źródeł (dowolny system operacyjny).
--------------------------------------------------
-Pobieramy z pypi wersję z kodem źródłowym i rozpakowujemy. Następnie
-należy uruchomić plik ``setup.py`` z argumentem ``install`` - pod Linuxem
-trzeba wpisać w bashu:
-
-  sudo python setup.py install
-
-natomiast pod Windowsem:
-
-  C:\\Python2x\\python.exe setup.py install
-
-gdzie zamiast ``Python2x`` należy wpisać ``Python26`` lub ``Python27`` w
-zależności od tego, którą wersję Pythona posiadasz.
-
-
+Aby móc programować jednostki w języku C++, potrzebny jest kompilator
+``g++``.

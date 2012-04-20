@@ -13,6 +13,7 @@ cd "$TMP/scriptcraft"
 printf "OK\n"
 
 python setup.py register sdist upload
-# wine C:\\Python25\\python.exe setup.py register bdist_wininst --target-version=2.5 upload
-wine C:\\Python26\\python.exe setup.py register bdist_wininst --target-version=2.6 upload
-wine C:\\Python27\\python.exe setup.py register bdist_wininst --target-version=2.7 upload
+
+# we dropped windows support
+#wine C:\\Python26\\python.exe setup.py register bdist_wininst --target-version=2.6 upload
+#wine C:\\Python27\\python.exe setup.py register bdist_wininst --target-version=2.7 upload
