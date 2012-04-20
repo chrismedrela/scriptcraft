@@ -25,10 +25,10 @@ class CompileAndRunProgram(object):
     def _compile(self):
         if not self._is_compilation_necessary():
             return None
+        self._clear_environment()
         self._create_source_file()
         compilation_status = self._execute_compilation_command()
         self._copy_binary_if_exists()
-        self._clear_environment()
         return compilation_status
 
     def _is_compilation_necessary(self):
@@ -60,10 +60,10 @@ class CompileAndRunProgram(object):
     def _run(self):
         if not self._is_compilation_successful():
             return None
+        self._clear_environment()
         self._copy_binary()
         self._create_source_file()
         running_status = self._execute_run_command()
-        self._clear_environment()
         return running_status
 
     def _is_compilation_successful(self):
