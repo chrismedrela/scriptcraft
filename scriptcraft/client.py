@@ -19,7 +19,7 @@ from scriptcraft.core import direction, actions
 from scriptcraft.core.Game import Game
 from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
-from scriptcraft.core.Language import DEFAULT_PYTHON_LANGUAGE
+from scriptcraft.core.Language import DEFAULT_PYTHON_LANGUAGE, DEFAULT_CPP_LANGUAGE
 from scriptcraft.core.Program import Program, STAR_PROGRAM
 from scriptcraft.utils import *
 
@@ -334,16 +334,20 @@ class ClientApplication(Frame):
         game.new_player_with_units('Bob', (255,0,0))
 
         # set programs
-        def set_program(id, filename):
+        def set_program(id, filename, language='py'):
+            languages = {'py':DEFAULT_PYTHON_LANGUAGE,
+                         'cpp':DEFAULT_CPP_LANGUAGE}
+            language = languages[language]
             code = open(datafile_path('.tmp/'+filename), 'r').read()
-            program = Program(language=DEFAULT_PYTHON_LANGUAGE,
+            program = Program(language=language,
                               code=code)
             game.set_program(game.units_by_IDs[id], program)
 
-        set_program(6, 'gather.py')
-        set_program(2, 'build_tank.py')
-        for i in xrange(3, 6):
-            set_program(i, 'move_randomly.py')
+        set_program(6, 'gather.py', 'py')
+        set_program(2, 'build_tank.py', 'py')
+        set_program(3, 'move_randomly.py', 'py')
+        set_program(4, 'move_randomly.py', 'py')
+        set_program(5, 'move.cpp', 'cpp')
 
         # set game
         self.set_game(game)
