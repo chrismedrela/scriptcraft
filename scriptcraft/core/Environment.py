@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-import os, shutil
+import os
+import shutil
+import stat
 import subprocess
 
 
@@ -38,6 +40,10 @@ class Environment(object):
         if os.path.exists(destination_path):
             raise IOError("File with destination name exists")
         shutil.copyfile(source_path, destination_path)
+        try:
+            os.chmod(destination_path, stat.S_IRWXU)
+        except OSError:
+            pass
 
     def execute_bash_command(self, command, input_data, dirty_folder_path):
         iterable_folder_path, folder = self._cleaned_path(dirty_folder_path)
