@@ -47,8 +47,10 @@ class Environment(object):
                                    stderr=subprocess.PIPE,
                                    shell=True,
                                    cwd=folder)
-        output, errors_output = process.communicate(input=input_data)
+
         exit_code = process.wait()
+        output = process.stdout.read()
+        errors_output = process.stderr.read()
         return output, errors_output, exit_code
 
     def _cleaned_path(self, dirty_path):
