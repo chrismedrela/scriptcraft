@@ -37,17 +37,29 @@ if __name__ == "__main__":
     setup(
         name=PROJECT_NAME,
         version='0.1.19',
+        author = "Krzysztof Medrela",
+        author_email = "krzysiumed@gmail.com",
+        description = "Scriptcraft programming game - program your units to fight against other players.",
+        long_description = open('README.rst', 'r').read(),
+        license = "GPLv3",
+        keywords = [PROJECT_NAME, 'programming game', 'game'],
+        url = "http://github.com/krzysiumed/scriptcraft",
+        classifiers = [
+            "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+            "Natural Language :: Polish",
+            "Operating System :: Microsoft",
+            "Operating System :: Unix",
+            "Programming Language :: Python :: 2.6",
+            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 2 :: Only",
+            "Topic :: Games/Entertainment",
+        ],
+
         install_requires = [
             'PIL==1.1.7',
         ],
         packages = packages,
         include_package_data = True,
-        author = "Krzysztof Medrela",
-        author_email = "krzysiumed@gmail.com",
-        description = "scriptcraft game",
-        license = "GPLv3",
-        keywords = [PROJECT_NAME, 'game'],
-        url = "http://github.com/krzysiumed/scriptcraft",
         entry_points = {
             'gui_scripts': [
                 'scriptcraft = scriptcraft.client:run',
