@@ -4,6 +4,10 @@
 from setuptools import setup, find_packages
 import os
 
+# that ugly trick solve problem with encoding of README file
+import sys
+reload(sys).setdefaultencoding("UTF-8")
+
 PROJECT_NAME = 'scriptcraft'
 
 def _fullsplit(path, result=None):
