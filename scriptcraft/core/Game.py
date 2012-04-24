@@ -288,7 +288,7 @@ class Game(object):
 
         if split_text == ('list', 'units') or split_text == ('lu',):
             case = list_units
-        elif split_text[0] in ('unit', 'u') and len(split_text)==2:
+        elif len(split_text)==2 and split_text[0] in ('unit', 'u'):
             case = unit_info
         else:
             return None
