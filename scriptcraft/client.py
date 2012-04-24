@@ -323,7 +323,7 @@ class ClientApplication(Frame):
         Frame.__init__(self, master)
         self._init_gui()
         self._game = None
-        self._prepare_debug_game()
+        #self._prepare_debug_game() # uncomment it to make testing easier
 
     def _prepare_debug_game(self):
         # load game and add player
