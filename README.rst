@@ -37,6 +37,14 @@ Scriptcraft działa pod Pythonem 2.6 i 2.7 pod Linuxem. Planowana jest
 obsługa także systemu Windows.
 
 ==========
+Screenshot
+==========
+
+.. image:: screenshot.png
+   :alt: Screenshot not available.
+   :align: center
+
+==========
 Instalacja
 ==========
 
