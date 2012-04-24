@@ -7,6 +7,7 @@ except:
     import pickle
 import itertools
 import math
+import os.path
 from Tkinter import *
 import tkColorChooser
 import tkFileDialog
@@ -535,7 +536,12 @@ class ClientApplication(Frame):
         self._game.set_program(unit, None)
 
     def _tic_callback(self):
-        self._game.tic('.tmp')
+        tmp_directory = '~/.scriptcraft'
+        tmp_directory = os.path.expanduser(tmp_directory)
+        # os.path.expanduser return unchanged path if the expansion
+        # fails so we have to check if expansion was sucessful
+        assert not tmp_directory.startswith('~')
+        self._game.tic(tmp_directory)
         self.set_game(self._game)
 
     def _quit_callback(self):
