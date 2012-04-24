@@ -420,14 +420,9 @@ class ClientApplication(Frame):
         if not self._ask_if_delete_current_game_if_exists():
             return
 
-        stream = tkFileDialog.askopenfile(
-            title='Choose map file',
-            filetypes=ClientApplication.MAP_FILETYPES,
-            parent=self)
-        if stream is None:
-            return
-
         try:
+            filename = datafile_path('maps/default.map')
+            stream = open(filename, 'r')
             game_map = pickle.load(stream)
         except pickle.UnpicklingError as ex:
             self._warning('Create new game',
