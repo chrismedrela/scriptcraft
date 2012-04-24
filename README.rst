@@ -53,12 +53,12 @@ Instalacja
 Scriptcraft można zainstalować na dwa sposoby. Prostszy sposób polega
 na wpisaniu w bashu:
 
-  pip install scriptcraft
+  sudo pip install scriptcraft
 
 Drugim sposobem jest pobranie źródeł z `pypi`_ lub z `githuba`_. Po
 ściągnięciu i rozpakowaniu paczki należy wpisać w bashu:
 
-  python setup.py install
+  sudo python setup.py install
 
 .. _`pypi`: http://pypi.python.org/pypi/scriptcraft/
 .. _`githuba`: https://github.com/krzysiumed/scriptcraft
