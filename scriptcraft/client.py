@@ -498,6 +498,7 @@ class ClientApplication(Frame):
             parent=self)
         if color is None:
             return
+        color = color[0] # original color was ((r, g, b), "#rrggbb")
 
         try:
             self._game.new_player_with_units(name, color)
