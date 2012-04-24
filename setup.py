@@ -41,7 +41,7 @@ if __name__ == "__main__":
     packages, _ = _find_packages_and_data_files()
     setup(
         name=PROJECT_NAME,
-        version='0.1.23',
+        version='0.1.27',
         author = "Krzysztof Medrela",
         author_email = "krzysiumed@gmail.com",
         description = "Scriptcraft programming game - program your units to fight against other players.",
