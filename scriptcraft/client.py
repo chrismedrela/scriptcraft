@@ -615,7 +615,7 @@ class ClientApplication(Frame):
     def _ask_if_quit_program(self):
         return tkMessageBox.askyesno(
             'Quit program.',
-            'Do you really want quit the program?',
+            'Do you really want to quit the program?',
             icon=tkMessageBox.WARNING,
             parent=self
         )
