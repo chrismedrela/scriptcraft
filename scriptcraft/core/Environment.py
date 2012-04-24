@@ -54,6 +54,16 @@ class Environment(object):
                                    shell=True,
                                    cwd=folder)
 
+        # pass input data to the process
+        try:
+            process.stdin.write(input_data)
+        except IOError as ex:
+            if ex.errno != 32: # not broken pipe error
+                raise
+        finally:
+            process.stdin.close()
+
+        # read output and finish
         exit_code = process.wait()
         output = process.stdout.read()
         errors_output = process.stderr.read()
