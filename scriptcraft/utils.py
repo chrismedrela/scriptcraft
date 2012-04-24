@@ -19,6 +19,7 @@ from functools import partial, wraps
 import os, shutil
 import pkg_resources
 import time
+import traceback
 
 
 
@@ -39,7 +40,8 @@ def on_error_return(errors, return_value):
         def wraper(*args, **kwargs):
             try:
                 return f(*args, **kwargs)
-            except errors:
+            except errors as ex:
+                traceback.print_exc(ex)
                 return return_value
 
         return wraper
