@@ -2,6 +2,7 @@
 #-*- coding:utf-8 -*-
 
 from setuptools import setup, find_packages
+from scriptcraft.utils import datafile_path
 import os
 
 # that ugly trick solve problem with encoding of README file
@@ -44,7 +45,7 @@ if __name__ == "__main__":
         author = "Krzysztof Medrela",
         author_email = "krzysiumed@gmail.com",
         description = "Scriptcraft programming game - program your units to fight against other players.",
-        long_description = open('README.rst', 'r').read(),
+        long_description = open(datafile_path('../README.rst'), 'r').read(),
         license = "GPLv3",
         keywords = [PROJECT_NAME, 'programming game', 'game'],
         url = "http://github.com/krzysiumed/scriptcraft",
