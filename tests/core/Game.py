@@ -7,6 +7,7 @@ import unittest
 import shutil
 
 from scriptcraft.core import actions, cmds, direction
+from scriptcraft.core.CompileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.Game import (Game, InvalidReceiver, CannotStoreMinerals,
                                    InvalidSender)
 from scriptcraft.core.GameConfiguration import GameConfiguration
@@ -61,26 +62,13 @@ class BaseGameTestCase(unittest.TestCase):
         self.unit_types = [self.miner_type, self.base_type, self.tank_type]
 
     def _create_map_and_game(self):
-        self.simple_language = Language(ID='sl',
-                                        name='simplelang',
-                                        source_extension='sl',
-                                        binary_extension='slbin',
-                                        compilation_command='simplelang compile %s',
-                                        running_command='simplelang run %s')
-        self.python_language = Language(ID='py',
-                                        name='Python',
-                                        source_extension='.py',
-                                        binary_extension='.py',
-                                        compilation_command='cp src.py bin.py',
-                                        running_command='python bin.py')
-        languages = [self.simple_language, self.python_language]
-
-        game_configuration = GameConfiguration(units_types=self.unit_types,
-                                               main_base_type=self.base_type,
-                                               main_miner_type=self.miner_type,
-                                               minerals_for_main_unit_at_start=1,
-                                               probability_of_mineral_deposit_growing=1.0,
-                                               languages=languages)
+        game_configuration = GameConfiguration(
+            units_types=self.unit_types,
+            main_base_type=self.base_type,
+            main_miner_type=self.miner_type,
+            minerals_for_main_unit_at_start=1,
+            probability_of_mineral_deposit_growing=1.0,
+        )
 
         self.start_positions = [(16, 16), (48, 48), (16, 48), (48, 16)]
         self.map_size = 64, 64
@@ -88,7 +76,8 @@ class BaseGameTestCase(unittest.TestCase):
         self.game = Game(game_map, game_configuration)
 
     def _create_player_Bob(self):
-        self.player, self.base, self.miners = self.game.new_player_with_units('Bob', (255, 0, 0))
+        self.player, self.base, self.miners = \
+            self.game.new_player_with_units('Bob', (255, 0, 0))
         self.miner = self.miners[0]
         self.tank = self.game.new_unit(self.player, (0,63), self.tank_type)
 
@@ -105,9 +94,6 @@ class BaseGameTestCase(unittest.TestCase):
         assert all(self.game.game_map.get_field(free_position).is_empty()
                    for free_position in self.free_positions)
 
-        #self.upland_position = (1, 63)
-        # self.game.game_map.
-        # TODO
 
 
 class TestBasic(BaseGameTestCase):
@@ -151,7 +137,7 @@ class TestBasic(BaseGameTestCase):
         self.assertTrue(self.base not in self.player.units)
 
     def test_set_program(self):
-        program = Program(language=self.simple_language, code='// simple code')
+        program = Program(Language.PYTHON, code='# simple code')
         self.game.set_program(self.base, program)
 
         self.assertEqual(self.base.program, program)
@@ -655,10 +641,22 @@ class TestEfficiency(BaseGameTestCase):
 
 
 class TestGameTic(BaseGameTestCase):
-    def test_tic(self):
-        folder = 'tmp_unittest'
-        file_system = TemporaryFileSystem(folder)
+    def setUp(self):
+        super(TestGameTic, self).setUp()
+        self.directory = 'tmp_unittest'
+        self.file_system = TemporaryFileSystem(self.directory)
+        self._create_compile_and_run_function()
 
+    def _create_compile_and_run_function(self):
+        self.compile_and_run = CompileAndRunProgram(
+            self.directory,
+            {Language.PYTHON:'src.py'},
+            {Language.PYTHON:'bin.py'},
+            {Language.PYTHON:'cp src.py bin.py'},
+            {Language.PYTHON:'python bin.py'}
+        )
+
+    def test_tic(self):
         try:
             assert self.tank.position == (0, 63)
 
@@ -674,15 +672,15 @@ print "%d MOVE 5 63" # command for tank
 print "MOVE 15 15"
             """
 
-            program_for_base = Program(self.python_language, code_source_for_base)
-            program_for_miner = Program(self.python_language, code_source_for_miner)
+            program_for_base = Program(Language.PYTHON, code_source_for_base)
+            program_for_miner = Program(Language.PYTHON, code_source_for_miner)
             program_for_tank = STAR_PROGRAM
             self.game.set_program(self.base, program_for_base)
             self.game.set_program(self.miner, program_for_miner)
             self.game.set_program(self.tank, program_for_tank)
 
-            self.game.tic(folder)
-            self.game.tic(folder)
+            self.game.tic(self.compile_and_run)
+            self.game.tic(self.compile_and_run)
 
             self.assertTrue(self.base.maybe_run_status != None)
             self.assertTrue(self.miner.maybe_run_status != None)
@@ -690,7 +688,7 @@ print "MOVE 15 15"
             self.assertEqual(self.tank.position, (1, 63))
 
         finally:
-            file_system.delete_files_and_folders()
+            self.file_system.delete_files_and_folders()
 
     def test_tic_for_world(self):
         assert self.game.configuration.probability_of_mineral_deposit_growing == 1.0

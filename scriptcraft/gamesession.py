@@ -8,6 +8,8 @@ except:
     import pickle
 import os
 
+from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
+from scriptcraft.core.Language import Language
 
 
 class SystemConfiguration(object):
@@ -31,7 +33,18 @@ class GameSession(object):
         pickle.dump(self.game, open(self._game_file, 'w'))
 
     def tic(self):
-        self.game.tic(self._directory)
+        compile_and_run = CompileAndRunProgram(
+            self._directory,
+            {Language.CPP:'src.cpp',
+             Language.PYTHON:'src.py'},
+            {Language.CPP:'bin.exe',
+             Language.PYTHON:'bin.py'},
+            {Language.CPP:'g++ src.cpp -o bin.exe',
+             Language.PYTHON:'cp src.py bin.py'},
+            {Language.CPP:'./bin.exe',
+             Language.PYTHON:'python bin.py'}
+        )
+        self.game.tic(compile_and_run)
 
     def __getattr__(self, name):
         return getattr(self.game, name)

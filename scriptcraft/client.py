@@ -20,7 +20,7 @@ from scriptcraft.core import direction, actions
 from scriptcraft.core.Game import Game
 from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
-from scriptcraft.core.Language import DEFAULT_PYTHON_LANGUAGE, DEFAULT_CPP_LANGUAGE
+from scriptcraft.core.Language import Language
 from scriptcraft.core.Program import Program, STAR_PROGRAM
 from scriptcraft.gamesession import GameSession, SystemConfiguration
 from scriptcraft.utils import *
@@ -487,13 +487,14 @@ class ClientApplication(Frame):
             return
 
         filename = stream.name
-        languages = self._game.configuration.languages_by_names.values()
-        languages = filter(lambda l: filename.endswith(l.source_extension),
-                           languages)
-        if not languages:
+        if filename.endswith('.cpp'):
+            language = Language.CPP
+        elif filename.endswith('.py'):
+            language = Language.PYTHON
+        else:
             self._warning('Set program',
                 'Cannot set program - unknown source file extension.')
-        language = languages[0]
+            return
         field = self._game.game_map.get_field(self._game_viewer.selection_position)
         unit = self._game.units_by_IDs[field.get_unit_ID()]
         program = Program(language=language, code=stream.read())

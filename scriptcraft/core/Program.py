@@ -53,12 +53,12 @@ class Program(namedtuple("Program", ('language',
     __slots__ = ()
 
     @ property
-    def sha(self):
+    def _code_sha(self):
         sha = hashlib.sha1()
         sha.update(self.code)
         sha = sha.hexdigest()
         return sha
 
     def __str__(self):
-        return "<Program %s in %s>" \
-               % (self.sha, self.language.name)
+        return "<Program in %s with code sha = %s>" \
+               % (self.language, self._code_sha)

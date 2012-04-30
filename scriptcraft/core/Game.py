@@ -5,6 +5,7 @@ import random
 
 from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
+from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.FindPathProblem import FindPathProblem
 from scriptcraft.core.GameMap import FieldIsOccupied
@@ -12,6 +13,7 @@ from scriptcraft.core.Message import Message
 from scriptcraft.core.parse import Parse
 from scriptcraft.core.Player import Player
 from scriptcraft.core.Program import Program, STAR_PROGRAM, run_star_program
+from scriptcraft.core.RunStatus import RunStatus
 from scriptcraft.core.Unit import Unit
 from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
 from scriptcraft.utils import *
@@ -160,24 +162,34 @@ class Game(object):
         source.minerals -= 1
         destination.minerals += 1
 
-    def tic(self, folder):
+    def tic(self, compile_and_run_function):
         self._tic_for_world()
-        self._compile_and_run_programs(folder)
+        self._compile_and_run_programs(compile_and_run_function)
         self._clear_mailboxes()
         self._analise_outputs()
         self._validate_and_send_messages()
         self._reply_system_messages()
         self._execute_commands()
 
-    def _compile_and_run_programs(self, folder):
+    def _compile_and_run_programs(self, compile_and_run_function):
         for unit in self.units_by_IDs.itervalues():
             input = self._generate_input_for(unit)
 
             if isinstance(unit.program, Program):
-                e = CompileAndRunProgram(unit.program, input, folder)
-                if e.maybe_compilation_status:
-                    unit.maybe_last_compilation_status = e.maybe_compilation_status
-                unit.maybe_run_status = e.maybe_running_status
+                status = compile_and_run_function(unit.program.language,
+                                                  unit.program.code,
+                                                  input)
+                maybe_compilation_status, maybe_running_status = status
+                if maybe_compilation_status:
+                    output, error_output = maybe_compilation_status
+                    compilation_status = CompilationStatus(output, error_output)
+                    unit.maybe_last_compilation_status = compilation_status
+                if maybe_running_status:
+                    output, error_output = maybe_running_status
+                    running_status = RunStatus(input, output, error_output)
+                    unit.maybe_run_status = running_status
+                else:
+                    unit.maybe_run_status = None
 
             elif unit.program == STAR_PROGRAM:
                 unit.maybe_run_status = run_star_program(input)
