@@ -7,8 +7,6 @@ from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
 from scriptcraft.core.CompilationStatus import CompilationStatus
 from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
-from scriptcraft.core.FindPathProblem import FindPathProblem
-from scriptcraft.core.GameMap import FieldIsOccupied
 from scriptcraft.core.Message import Message
 from scriptcraft.core.parse import Parse
 from scriptcraft.core.Player import Player
@@ -16,6 +14,7 @@ from scriptcraft.core.Program import Program, STAR_PROGRAM, run_star_program
 from scriptcraft.core.RunStatus import RunStatus
 from scriptcraft.core.Unit import Unit
 from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
+from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
 from scriptcraft.utils import *
 
 

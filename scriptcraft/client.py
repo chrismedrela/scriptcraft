@@ -19,9 +19,9 @@ from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after 
 from scriptcraft.core import direction, actions
 from scriptcraft.core.Game import Game
 from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
-from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
 from scriptcraft.core.Language import Language
 from scriptcraft.core.Program import Program, STAR_PROGRAM
+from scriptcraft.gamemap import GameMap, NoFreeStartPosition
 from scriptcraft.gamesession import GameSession, SystemConfiguration
 from scriptcraft.utils import *
 

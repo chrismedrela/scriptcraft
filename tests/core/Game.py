@@ -11,11 +11,11 @@ from scriptcraft.core.CompileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.Game import (Game, InvalidReceiver, CannotStoreMinerals,
                                    InvalidSender)
 from scriptcraft.core.GameConfiguration import GameConfiguration
-from scriptcraft.core.GameMap import GameMap, PositionOutOfMap, FieldIsOccupied
 from scriptcraft.core.Language import Language
 from scriptcraft.core.Message import Message
 from scriptcraft.core.Program import Program, STAR_PROGRAM
 from scriptcraft.core.UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
+from scriptcraft.gamemap import GameMap, PositionOutOfMap, FieldIsOccupied
 from scriptcraft.utils import *
 
 
@@ -82,7 +82,7 @@ class BaseGameTestCase(unittest.TestCase):
         self.tank = self.game.new_unit(self.player, (0,63), self.tank_type)
 
     def _modify_world(self):
-        self.trees_position = (2, 63)
+        self.trees_position = (2, 62)
         self.game.game_map.place_trees_at(self.trees_position)
 
         self.minerals_position = (22, 16)
@@ -157,8 +157,7 @@ class TestUtils(BaseGameTestCase):
         self.assertEqual(found_unit, expected_unit)
 
     def test_generate_input(self):
-        assert self.trees_position == (2, 63)
-        #assert self.upland_position == (1, 63)
+        assert self.trees_position == (2, 62)
         assert self.tank.type.vision_radius == 2
 
         message = Message(sender_ID=self.miner.ID,
@@ -170,10 +169,10 @@ class TestUtils(BaseGameTestCase):
         surroundings_dict = {'tank_type_name':self.tank.type.main_name,
                              'tank_ID':self.tank.ID,
                              'player_ID':self.player.ID}
-        field_with_trees = '3 0 0\n'
+        field_with_trees = '3 0 0'
         surroundings = ("1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
-                        "1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " "0 0 0\n" \
-                        "1 0 0 " "1 0 0 " "%(tank_type_name)s %(tank_ID)d %(player_ID)d " "0 0 0 " + field_with_trees + \
+                        "1 0 0 " "1 0 0 " "0 0 0 " "0 0 0 " +field_with_trees+ "\n" \
+                        "1 0 0 " "1 0 0 " "%(tank_type_name)s %(tank_ID)d %(player_ID)d " "0 0 0 " "0 0 0\n" \
                         "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0\n" \
                         "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0 " "1 0 0") % surroundings_dict
 
@@ -685,6 +684,7 @@ print "MOVE 15 15"
             self.assertTrue(self.base.maybe_run_status != None)
             self.assertTrue(self.miner.maybe_run_status != None)
             self.assertTrue(self.tank.maybe_run_status != None)
+            print self.tank.__dict__
             self.assertEqual(self.tank.position, (1, 63))
 
         finally:
