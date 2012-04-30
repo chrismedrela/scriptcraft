@@ -22,6 +22,7 @@ from scriptcraft.core.GameConfiguration import DEFAULT_GAME_CONFIGURATION
 from scriptcraft.core.GameMap import GameMap, NoFreeStartPosition
 from scriptcraft.core.Language import DEFAULT_PYTHON_LANGUAGE, DEFAULT_CPP_LANGUAGE
 from scriptcraft.core.Program import Program, STAR_PROGRAM
+from scriptcraft.gamesession import GameSession, SystemConfiguration
 from scriptcraft.utils import *
 
 
@@ -298,6 +299,9 @@ class GameViewer(Canvas):
 
 
 
+DEFAULT_SYSTEM_CONFIGURATION = SystemConfiguration()
+
+
 class ClientApplication(Frame):
 
     MENU_GAME_LABEL = "Game"
@@ -324,34 +328,7 @@ class ClientApplication(Frame):
         Frame.__init__(self, master)
         self._init_gui()
         self._game = None
-        #self._prepare_debug_game() # uncomment it to make testing easier
-
-    def _prepare_debug_game(self):
-        # load game and add player
-        stream = open(datafile_path('maps/default.map'), 'r')
-        game_map = pickle.load(stream)
-        stream.close()
-        game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
-        game.new_player_with_units('Bob', (255,0,0))
-
-        # set programs
-        def set_program(id, filename, language='py'):
-            languages = {'py':DEFAULT_PYTHON_LANGUAGE,
-                         'cpp':DEFAULT_CPP_LANGUAGE}
-            language = languages[language]
-            code = open(datafile_path('.tmp/'+filename), 'r').read()
-            program = Program(language=language,
-                              code=code)
-            game.set_program(game.units_by_IDs[id], program)
-
-        set_program(6, 'gather.py', 'py')
-        set_program(2, 'build_tank.py', 'py')
-        set_program(3, 'move_randomly.py', 'py')
-        set_program(4, 'move_randomly.py', 'py')
-        set_program(5, 'move.cpp', 'cpp')
-
-        # set game
-        self.set_game(game)
+        self._game_session = None
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
@@ -421,6 +398,14 @@ class ClientApplication(Frame):
         if not self._ask_if_delete_current_game_if_exists():
             return
 
+        directory = tkFileDialog.askdirectory(
+            title="Choose directory for new game",
+            mustexist=True,
+            parent=self,
+        )
+        if not directory:
+            return
+
         try:
             filename = datafile_path('maps/default.map')
             stream = open(filename, 'r')
@@ -433,42 +418,34 @@ class ClientApplication(Frame):
                 'Cannot create new game - io error.')
         else:
             game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
-            self.set_game(game)
+            system_configuration = DEFAULT_SYSTEM_CONFIGURATION
+            game_session = GameSession(directory, system_configuration,
+                                       game=game)
+            self.set_game_session(game_session)
         finally:
             stream.close()
 
     def _save_game_callback(self):
-
-        stream = tkFileDialog.asksaveasfile(
-            title='Save game',
-            filetypes=ClientApplication.GAME_FILETYPES,
-            parent=self)
-        if stream is None:
-            return
-
         try:
-            pickled = pickle.dumps(self._game)
-            stream.write(pickled)
+            self._game_session.save()
         except IOError as ex:
             self._warning('Save game',
                 'Cannot save game - io error.')
-        finally:
-            stream.close()
 
     def _load_game_callback(self):
         if not self._ask_if_delete_current_game_if_exists():
             return
 
-        stream = tkFileDialog.askopenfile(
-            title='Save game',
-            filetypes=ClientApplication.GAME_FILETYPES,
-            parent=self)
-        if stream is None:
+        directory = tkFileDialog.askdirectory(
+            title='Load game',
+            mustexist=True,
+            parent=self,
+        )
+        if directory is None:
             return
 
         try:
-            pickled = stream.read()
-            game = pickle.loads(pickled)
+            game_session = GameSession(directory, DEFAULT_SYSTEM_CONFIGURATION)
         except IOError as ex:
             self._warning('Load game',
                 'Cannot load game - io error.')
@@ -476,10 +453,7 @@ class ClientApplication(Frame):
             self._warning('Load game',
                 'Cannot load game - corrupted game file.')
         else:
-            self.set_game(None) # we want to delete selection if it exists
-            self.set_game(game)
-        finally:
-            stream.close()
+            self.set_game_session(game_session)
 
     def _add_player_callback(self):
         name = tkSimpleDialog.askstring(
@@ -502,7 +476,7 @@ class ClientApplication(Frame):
             self._warning('Create player',
                 'Cannot create player - no free start position on map.')
         else:
-            self.set_game(self._game)
+            self._set_game(self._game)
 
     def _set_program_callback(self):
         stream = tkFileDialog.askopenfile(
@@ -536,13 +510,8 @@ class ClientApplication(Frame):
         self._game.set_program(unit, None)
 
     def _tic_callback(self):
-        tmp_directory = '~/.scriptcraft'
-        tmp_directory = os.path.expanduser(tmp_directory)
-        # os.path.expanduser return unchanged path if the expansion
-        # fails so we have to check if expansion was sucessful
-        assert not tmp_directory.startswith('~')
-        self._game.tic(tmp_directory)
-        self.set_game(self._game)
+        self._game_session.tic()
+        self._set_game(self._game_session.game)
 
     def _quit_callback(self):
         if not self._ask_if_quit_program():
@@ -561,7 +530,15 @@ class ClientApplication(Frame):
 
     # other methods -------------------------------------------------------
 
-    def set_game(self, game):
+    def set_game_session(self, game_session):
+        self._game_session = game_session
+        self._set_game(None)
+        if game_session:
+            self._set_game(game_session.game)
+
+    def _set_game(self, game):
+        """ Call it if game instance was changed and you want to make
+        the application up to date."""
         self._game = game
         self._game_viewer.set_game(game)
         self._refresh_game_menu_items_state()
