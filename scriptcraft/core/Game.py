@@ -3,10 +3,10 @@
 
 import random
 
+from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.core import actions, cmds, direction
 from scriptcraft.core import parse
 from scriptcraft.core.CompilationStatus import CompilationStatus
-from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.Message import Message
 from scriptcraft.core.parse import Parse
 from scriptcraft.core.Player import Player

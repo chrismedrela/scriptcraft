@@ -6,8 +6,8 @@ import os
 import unittest
 import shutil
 
+from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.core import actions, cmds, direction
-from scriptcraft.core.CompileAndRunProgram import CompileAndRunProgram
 from scriptcraft.core.Game import (Game, InvalidReceiver, CannotStoreMinerals,
                                    InvalidSender)
 from scriptcraft.core.GameConfiguration import GameConfiguration

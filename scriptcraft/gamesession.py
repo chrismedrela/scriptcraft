@@ -8,7 +8,7 @@ except:
     import pickle
 import os
 
-from scriptcraft.core.compileAndRunProgram import CompileAndRunProgram
+from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.core.Language import Language
 
 
