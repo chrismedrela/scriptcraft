@@ -30,7 +30,6 @@ haven't be sensible (for example every string is valid value for unit_type_name)
 
 
 from collections import namedtuple
-import hashlib
 import random
 
 from scriptcraft import direction
