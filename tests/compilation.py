@@ -5,8 +5,7 @@ import os
 import unittest
 
 from scriptcraft.compilation import Environment, CompileAndRunProgram
-from scriptcraft.core.Language import Language
-from scriptcraft.core.Program import Program
+from scriptcraft.gamestate import Language
 from scriptcraft.utils import *
 
 

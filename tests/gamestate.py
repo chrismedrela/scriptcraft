@@ -6,16 +6,10 @@ import os
 import unittest
 import shutil
 
+from scriptcraft.core import direction
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.core import actions, cmds, direction
-from scriptcraft.core.Game import (Game, InvalidReceiver, CannotStoreMinerals,
-                                   InvalidSender)
-from scriptcraft.core.GameConfiguration import GameConfiguration
-from scriptcraft.core.Language import Language
-from scriptcraft.core.Message import Message
-from scriptcraft.core.Program import Program, STAR_PROGRAM
-from scriptcraft.core.UnitType import UnitType, BEHAVIOUR_WHEN_ATTACKED
-from scriptcraft.gamemap import GameMap, PositionOutOfMap, FieldIsOccupied
+from scriptcraft.gamemap import GameMap, PositionOutOfMap
+from scriptcraft.gamestate import *
 from scriptcraft.utils import *
 
 
@@ -698,3 +692,326 @@ print "MOVE 15 15"
 
         new_minerals_amount = self.game.game_map.get_field(self.minerals_position).get_minerals()
         self.assertEqual(new_minerals_amount, old_minerals_amount+1)
+
+
+class TestGameConfiguration(unittest.TestCase):
+    def setUp(self):
+        self._create_unit_types()
+
+        self.kwargs = {'units_types':self.unit_types,
+                       'main_base_type':self.miner_type,
+                       'main_miner_type':self.miner_type,
+                       'minerals_for_main_unit_at_start':10,
+                       'probability_of_mineral_deposit_growing':0.1}
+
+    def _create_unit_types(self):
+        kwargs = {'attack_range':0,
+                  'vision_radius':7,
+                  'storage_size':1,
+                  'build_cost':3,
+                  'can_build':False,
+                  'movable':True,
+                  'behaviour_when_attacked':BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                  'names':('5', 'miner', 'm')}
+        self.miner_type = UnitType(**kwargs)
+
+        kwargs['names'] = ('7', 'superminer', 'm')
+        self.second_miner_type = UnitType(**kwargs)
+
+        self.unit_types = [self.miner_type]
+
+    def test_unit_types_must_have_unique_names(self):
+        self.kwargs['units_types'] = [self.miner_type,
+                                      self.second_miner_type]
+
+        self._test_game_configuration_cannot_be_created()
+
+    def test_main_base_type_must_be_in_units_types(self):
+        self.kwargs['units_types'] = [self.second_miner_type]
+        self.kwargs['main_base_type'] = self.miner_type
+
+        self._test_game_configuration_cannot_be_created()
+
+    def test_deep_copy(self):
+        configuration = GameConfiguration(**self.kwargs)
+        configuration_copy = copy.deepcopy(configuration)
+        self.assertEqual(configuration, configuration_copy)
+
+    def _test_game_configuration_cannot_be_created(self):
+        illegal_operation = lambda: GameConfiguration(**self.kwargs)
+        self.assertRaises(ValueError, illegal_operation)
+
+
+class TestPlayer(unittest.TestCase):
+    def test_add_base_and_remove_it(self):
+        player = self._build_simple_player()
+        unit = self._build_simple_unit(player)
+
+        player.add_unit(unit)
+        player.set_base(unit)
+        self.assertEqual(unit.player, player)
+        self.assertEqual(player.units, [unit])
+        self.assertEqual(player.maybe_base, unit)
+
+        player.remove_unit(unit)
+        self.assertEqual(player.units, [])
+        self.assertEqual(player.maybe_base, None)
+        self.assertEqual(unit.player, None)
+
+    def test_to_str(self):
+        player = self._build_simple_player()
+        unit = self._build_simple_unit(player)
+        player.add_unit(unit)
+
+        expected = ("<Player:14 | color (255, 0, 0) started at (3, 4) "
+                    "with units {7}")
+        self.assertEqual(expected, str(player))
+
+    def _build_simple_player(self):
+        color = (255, 0, 0)
+        ID = 14
+        start_position = (3, 4)
+        result = Player("name", color, ID, start_position)
+        return result
+
+    def _build_simple_unit(self, player):
+        unit_type = UnitType(attack_range=5,
+                             vision_radius=10,
+                             storage_size=0,
+                             build_cost=5,
+                             can_build=False,
+                             movable=True,
+                             behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                             names=['tank', 't'])
+        unit = Unit(player=player, type=unit_type, position=(2, 3), ID=7)
+        return unit
+
+
+
+class TestUnit(unittest.TestCase):
+    def test_to_str(self):
+        unit_type = self._build_simple_unit_type()
+        player = self._build_simple_player()
+        unit = Unit(player=player, type=unit_type, position=(2, 3), ID=7)
+        unit.program = STAR_PROGRAM
+
+        expected = ("<Unit:7 | tank of player 14 at (2, 3) "
+                    "with star program with <Command stop> "
+                    "doing <Action stop>>")
+        self.assertEqual(str(unit), expected)
+
+    def _build_simple_unit_type(self):
+        return UnitType(attack_range=5,
+                        vision_radius=10,
+                        storage_size=0,
+                        build_cost=5,
+                        can_build=False,
+                        movable=True,
+                        behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                        names=['tank', 't'])
+
+    def _build_simple_player(self):
+        color = (255, 0, 0)
+        ID = 14
+        start_position = (3, 4)
+        result = Player("name", color, ID, start_position)
+        return result
+
+
+class TestRunStarProgram(unittest.TestCase):
+    def test_basic(self):
+        input = """4 2 1 3 7 7 1
+                   10
+                   4 2 1
+                   3 message
+                   423\t message message
+                   12"""
+        excepted_output = ('message\n'
+                           ' message message')
+        excepted_error_output = ''
+
+        run_status = run_star_program(input)
+        excepted_run_status = RunStatus(input=input,
+                                        output=excepted_output,
+                                        error_output=excepted_error_output)
+        self.assertEqual(run_status, excepted_run_status)
+
+
+class TestUnitType(unittest.TestCase):
+    def setUp(self):
+        self.kwargs = self._build_simple_arguments_for_unit_type_constructor()
+
+    def _build_simple_arguments_for_unit_type_constructor(self):
+        return {'can_attack':False,
+                'vision_radius':2,
+                'has_storage':True,
+                'storage_size':5,
+                'build_cost':2,
+                'can_build':False,
+                'movable':False,
+                'behaviour_when_attacked':BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+                'names':['MyUnitType', 'mut']}
+
+    def test_upper_cases_names(self):
+        unit_type = UnitType(**self.kwargs)
+        self.assertEqual(unit_type.main_name, 'myunittype')
+
+    def test_deep_copy(self):
+        unit_type = UnitType(**self.kwargs)
+        unit_type_copy = copy.deepcopy(unit_type)
+        self.assertEqual(unit_type, unit_type_copy)
+
+    def test_unit_type_must_have_names(self):
+        self.kwargs['names'] = []
+        illegal_operation = lambda: UnitType(**self.kwargs)
+        self.assertRaises(ValueError, illegal_operation)
+
+
+class TestBasicParsing(unittest.TestCase):
+    def test_basic(self):
+        p = Parse("")
+        self.assertEqual(p.message_stubs, [])
+        self.assertEqual(p.commands, [])
+        self.assertEqual(p.invalid_lines_numbers, [])
+
+    def test_stop_command(self):
+        self.p = Parse("STOP")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.StopCommand())
+
+    def test_move_command(self):
+        self.p = Parse("MOVE N")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.N))
+
+    def test_complex_move_command(self):
+        self.p = Parse("MOVE 2 3")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexMoveCommand((2,3)))
+
+    def test_complex_gather_command(self):
+        self.p = Parse("GATHER 4 13")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexGatherCommand((4,13)))
+
+    def test_complex_attack_command(self):
+        self.p = Parse("ATTACK 9 2")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexAttackCommand((9,2)))
+
+    def test_fire_command(self):
+        self.p = Parse("FIRE 5 6")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.FireCommand((5,6)))
+
+    def test_build_command(self):
+        self.p = Parse("BUILD TANK")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.BuildCommand("tank"))
+
+    def _test_no_invalid_lines_and_command_equal_to(self, command):
+        self.assertEqual(self.p.invalid_lines_numbers, [])
+        self.assertEqual(self.p.commands, [command])
+
+
+class TestDetailsOfParsing(unittest.TestCase):
+    def test_lower_direction(self):
+        self.p = Parse("MOVE e")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
+
+    def test_command_by_short_name(self):
+        self.p = Parse("M s")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.S))
+
+    def test_empty_lines(self):
+        p = Parse("MOVE e\n\nMOVE n")
+        self.assertEqual(p.invalid_lines_numbers, [])
+        self.assertEqual(p.commands, [cmds.MoveCommand(direction.E),
+                                      cmds.MoveCommand(direction.N)])
+
+    def test_lower_command(self):
+        self.p = Parse("move E")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
+
+    def test_whitespaces(self):
+        self.p = Parse("\t\n\r  \tMOVE e\t\n")
+        self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
+
+    def test_parse_invalid_command(self):
+        self.p = Parse("\n MO 3 \nM 3\n")
+        self._test_invalid_lines_and_no_command([2, 3])
+
+    def test_parse_too_long_int_and_str(self):
+        self.p = Parse("MOVE 30000000000 300000000000\nBUILD "+"T"*10000)
+        self._test_invalid_lines_and_no_command([1, 2])
+
+    def _test_invalid_lines_and_no_command(self, invalid_lines):
+        self.assertEqual(self.p.invalid_lines_numbers, invalid_lines)
+        self.assertEqual(self.p.commands, [])
+
+    def _test_no_invalid_lines_and_command_equal_to(self, command):
+        self.assertEqual(self.p.invalid_lines_numbers, [])
+        self.assertEqual(self.p.commands, [command])
+
+
+class TestMessages(unittest.TestCase):
+    def test_messages(self):
+        self._test_message(u"5 message text",
+                           (5, 'message text'))
+
+    def test_message_coding(self):
+        self._test_message(u"0 zażółć gęślą jaźń",
+                           (0, u'zażółć gęślą jaźń'))
+
+    def test_message_whitespaces(self):
+        self._test_message(u"12\t b\rw",
+                           (12, ' b\rw'))
+
+    def test_empty_message(self):
+        self._test_message(u"12",
+                           (12, ''))
+
+    def _test_message(self, text, message):
+        p = Parse(text)
+        self.assertEqual(p.invalid_lines_numbers, [])
+        self.assertEqual(p.message_stubs, [message])
+
+
+class TestEfficiencyParsingLongMessages(unittest.TestCase):
+    def setUp(self):
+        self.input_data = ('5 ' + 'ab jh\t @6'*100 + '\n')*20
+
+    @ max_time(1)
+    def test(self):
+        Parse(self.input_data)
+
+
+class TestEfficiencyParsingManyMessages(unittest.TestCase):
+    def setUp(self):
+        self.input_data = '5\n'*5000
+
+    @ max_time(75)
+    def test(self):
+        Parse(self.input_data)
+
+
+class TestEfficiencyParsingCommands(unittest.TestCase):
+    def setUp(self):
+        self.input_data = ('S\n')*5000
+
+    @ max_time(150)
+    def test(self):
+        Parse(self.input_data)
+
+
+class TestEfficiencyParsingInvalidInput(unittest.TestCase):
+    def setUp(self):
+        self.input_data = 'MOVE ' + '1 '*500 + '\n' \
+            + ' s \n'*1000
+
+    @ max_time(30)
+    def test(self):
+        Parse(self.input_data)
+
+
+class TestEfficiencyParsingBlankInput(unittest.TestCase):
+    def setUp(self):
+        self.input_data = '  \t \n'*2500
+
+    @ max_time(10)
+    def test(self):
+        Parse(self.input_data)
+

@@ -1,19 +1,40 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+"""
+Following actions are available:
+
+StopAction
+MoveAction
+GatherAction
+StoreAction
+FireAction
+BuildAction
+
+"""
+"""
+Classes *Command represent commands of units. Following command are available:
+ StopCommand
+ MoveCommand
+ ComplexMoveCommand
+ ComplexGatherCommand
+ FireCommand
+ ComplexAttackCommand
+ BuildCommand
+
+Attributes of instances of these classes must be accurate type, but
+haven't be sensible (for example every string is valid value for unit_type_name).
+
+"""
+
+
+
+from collections import namedtuple
+import hashlib
 import random
 
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.core import actions, cmds, direction
-from scriptcraft.core import parse
-from scriptcraft.core.CompilationStatus import CompilationStatus
-from scriptcraft.core.Message import Message
-from scriptcraft.core.parse import Parse
-from scriptcraft.core.Player import Player
-from scriptcraft.core.Program import Program, STAR_PROGRAM, run_star_program
-from scriptcraft.core.RunStatus import RunStatus
-from scriptcraft.core.Unit import Unit
-from scriptcraft.core.UnitType import BEHAVIOUR_WHEN_ATTACKED
+from scriptcraft.core import direction
 from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
 from scriptcraft.utils import *
 
@@ -278,7 +299,7 @@ class Game(object):
             return text
 
         def unit_info():
-            unit_ID = parse._parse_as_int(split_text[1])
+            unit_ID = _parse_as_int(split_text[1])
             if unit_ID == None:
                 return None
 
@@ -618,3 +639,623 @@ class Game(object):
                         minerals = self.game_map[x][y].get_minerals()
                         self.game_map.erase_at((x, y))
                         self.game_map.place_minerals_at((x, y), minerals+1)
+
+
+class Unit(object):
+    def __init__(self, player, type, position, ID):
+        self.program = None
+        self.maybe_last_compilation_status = None
+        self.maybe_run_status = None
+        self.command = StopCommand()
+        self.action = StopAction()
+        self.position = position
+        self.player = player
+        self.ID = ID
+        self.type = type
+        self._minerals = 0
+        self.outbox = []
+        self.inbox = []
+
+    @ property
+    def minerals(self):
+        return self._minerals
+
+    @ minerals.setter
+    def minerals(self, value):
+        assert value >= 0
+        assert value <= self.type.storage_size or not self.type.has_storage_limit
+        self._minerals = value
+
+    def __str__(self):
+        return ("<Unit:%d | " % self.ID) + \
+               ("%s of player %d " % (self.type.main_name, self.player.ID)) + \
+               ("at (%d, %d) " % (self.position[0], self.position[1])) + \
+               ("with %d minerals " % self.minerals if self.type.has_storage else "") + \
+               ("%s " % (("with %s" % (self.program,))
+                         if self.program else "without program")) + \
+               ("with %s doing %s>" % (self.command, self.action))
+
+
+class BEHAVIOUR_WHEN_ATTACKED(object):
+    DESTROY = '<Enum: destroy>'
+    GET_MINERAL_OR_DESTROY = '<Enum: get mineral or destroy>'
+
+
+def _use_default_value_if_flag_is_False(kwargs, flag_name, attribute_name, default_value):
+    if flag_name in kwargs:
+        if not kwargs[flag_name]:
+            assert kwargs.get(attribute_name, default_value) == default_value
+            kwargs[attribute_name] = default_value
+        else:
+            assert attribute_name in kwargs
+        del kwargs[flag_name]
+
+
+class UnitType(namedtuple('UnitType', ('attack_range',
+                                       'vision_radius',
+                                       'storage_size',
+                                       'build_cost',
+                                       'can_build',
+                                       'movable',
+                                       'behaviour_when_attacked',
+                                       'names'))):
+    """
+    Attributes:
+    attack_range -- value 0 means unit cannot attack
+    can_attack -- if False then attack_range == 0
+    vision_radius -- 0 is valid value
+    vision_diameter -- computed from vision_radius; not allowed in __init__ args
+    storage_size -- value -1 means there is no limit
+    has_storage -- if False then store_size == 0
+    build_cost -- 0 is valid value; it hasn't sense when buildable==False
+    can_be_built -- if False then build_cost == -1
+    can_build
+    movable
+    behaviour_when_attacked -- enum BEHAVIOUR_WHEN_ATTACKED
+    names -- non-empty list or tuple (always lowercase); the first name is main name
+    main_name -- not allowed in __init__ args - it's the first name from names
+
+    """
+
+    __slots__ = ()
+
+    @ copy_if_an_instance_given
+    def __new__(cls, **kwargs):
+        _use_default_value_if_flag_is_False(kwargs, 'can_be_built', 'build_cost', -1)
+        _use_default_value_if_flag_is_False(kwargs, 'has_storage', 'storage_size', 0)
+        _use_default_value_if_flag_is_False(kwargs, 'can_attack', 'attack_range', 0)
+
+        if len(kwargs['names']) == 0:
+            raise ValueError('unit type must have at least one name')
+
+        kwargs['names'] = map(lambda x: x.lower(),
+                              kwargs['names'])
+
+        return cls.__bases__[0].__new__(cls, **kwargs)
+
+    def __deepcopy__(self, memo):
+        c = UnitType(self)
+        return c
+
+    @ property
+    def main_name(self):
+        return self.names[0]
+
+    @ property
+    def vision_diameter(self):
+        return 2*self.vision_radius + 1
+
+    @ property
+    def can_be_built(self):
+        return self.build_cost != -1
+
+    @ property
+    def has_storage(self):
+        return self.storage_size != 0
+
+    @ property
+    def has_storage_limit(self):
+        return self.storage_size != -1
+
+    @ property
+    def can_attack(self):
+        return self.attack_range != 0
+
+
+DEFAULT_MINER_TYPE = UnitType(
+    attack_range=0,
+    vision_radius=7,
+    storage_size=1,
+    build_cost=3,
+    can_build=False,
+    movable=True,
+    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+    names=('5', 'miner', 'm')
+)
+DEFAULT_BASE_TYPE = UnitType(
+    attack_range=0,
+    vision_radius=16,
+    has_storage=True,
+    storage_size= -1,
+    can_be_built=False,
+    can_build=True,
+    movable=False,
+    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
+    names=('4', 'base', 'b')
+)
+DEFAULT_TANK_TYPE = UnitType(
+    can_attack=True,
+    attack_range=3,
+    vision_radius=7,
+    has_storage=False,
+    build_cost=10,
+    can_build=False,
+    movable=True,
+    behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+    names=('6', 'tank', 't')
+)
+
+
+class GameConfiguration(namedtuple("GameConfiguration",
+    ('units_types_by_names',
+     'main_base_type',
+     'main_miner_type',
+     'minerals_for_main_unit_at_start',
+     'probability_of_mineral_deposit_growing')
+    )):
+    __slots__ = ()
+
+    @ copy_if_an_instance_given
+    def __new__(cls,
+                units_types,
+                main_base_type,
+                main_miner_type,
+                minerals_for_main_unit_at_start,
+                probability_of_mineral_deposit_growing,):
+
+        units_types_by_names = {}
+        for unit_type in units_types:
+            for name in unit_type.names:
+                if name in units_types_by_names:
+                    raise ValueError("Units types with the same names are not allowed.")
+                units_types_by_names[name] = unit_type
+
+        if main_base_type not in units_types or main_miner_type not in units_types:
+            raise ValueError("main_base_type or main_miner_type not in units_types")
+
+        return cls.__bases__[0].__new__(cls,
+                                        units_types_by_names,
+                                        main_base_type,
+                                        main_miner_type,
+                                        minerals_for_main_unit_at_start,
+                                        probability_of_mineral_deposit_growing)
+
+    def __deepcopy__(self, memo):
+        c = GameConfiguration(self)
+        return c
+
+
+DEFAULT_GAME_CONFIGURATION = GameConfiguration(
+    units_types=[DEFAULT_BASE_TYPE,
+                 DEFAULT_MINER_TYPE,
+                 DEFAULT_TANK_TYPE],
+    main_base_type=DEFAULT_BASE_TYPE,
+    main_miner_type=DEFAULT_MINER_TYPE,
+    minerals_for_main_unit_at_start=10,
+    probability_of_mineral_deposit_growing=0.1,
+)
+
+
+class Player(object):
+    def __init__(self, name, color, ID, start_position):
+        self.name = name
+        self.color = color
+        self.ID = ID
+        self.units = []
+        self.maybe_base = None
+        self.start_position = start_position
+
+    def add_unit(self, unit):
+        unit.player = self
+        self.units.append(unit)
+
+    def set_base(self, unit):
+        assert unit in self.units
+        self.maybe_base = unit
+
+    def remove_unit(self, unit):
+        unit.player = None
+        self.units.remove(unit)
+        if self.maybe_base == unit:
+            self.maybe_base = None
+
+    def __str__(self):
+        return ("<Player:%d | "
+                "color (%d, %d, %d) "
+                "started at (%d, %d) "
+                "with units {%s}") \
+                % (self.ID,
+                   self.color[0], self.color[1], self.color[2],
+                   self.start_position[0], self.start_position[1],
+                   ", ".join(map(lambda unit: str(unit.ID), self.units)))
+
+
+STAR_PROGRAM = Const('star program')
+def run_star_program(input):
+    commands = []
+    lines = iter(input.split('\n'))
+    try:
+        splited_first_line = lines.next().split()
+        vision_diameter = int(splited_first_line[6])
+        lines.next() # skip parameter
+        for i in xrange(vision_diameter):
+            lines.next() # skip description of surroundings
+        for line in lines:
+            line = line.strip()
+            splited = line.split(None, 1)
+            if len(splited) == 2:
+                command = line[len(splited[0])+1:]
+                commands.append(command)
+    except (StopIteration, ValueError, IndexError):
+        pass
+    """
+    for line in input.split('\n'):
+        splited = line.strip().split(None, 1)
+        if len(splited) == 2:
+            maybe_number = splited[0]
+            if len(maybe_number)<9:
+                try:
+                    int(maybe_number)
+                except ValueError:
+                    pass
+                else:
+                    command = line[len(maybe_number)+1:]
+                    commands.append(command)
+    """
+    output = "\n".join(commands)
+
+    return RunStatus(input=input,
+                         output=output,
+                         error_output='')
+
+
+class Program(namedtuple("Program", ('language',
+                                     'code'))):
+    __slots__ = ()
+
+    @ property
+    def _code_sha(self):
+        sha = hashlib.sha1()
+        sha.update(self.code)
+        sha = sha.hexdigest()
+        return sha
+
+    def __str__(self):
+        return "<Program in %s with code sha = %s>" \
+               % (self.language, self._code_sha)
+
+
+class CompilationStatus(namedtuple("CompilationStatus",
+                                   ('output', 'error_output'))):
+    __slots__ = ()
+
+
+class RunStatus(namedtuple("RunStatus", ('input',
+                                        'output',
+                                        'error_output'))):
+    __slots__ = ()
+
+
+class Language(object):
+    CPP = 'cpp'
+    PYTHON = 'py'
+
+
+class Message(namedtuple('Message', ('sender_ID',
+                                     'receiver_ID',
+                                     'text'))):
+    """ Attributes 'sender_ID' and 'receiver_ID' might be equal to
+    zero. It means that the sender/receiver is game system. """
+
+    __slots__ = ()
+
+
+class StopAction(namedtuple('StopAction', ())):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Action stop>'
+
+
+class MoveAction(namedtuple('MoveAction',
+                            ('source', 'destination'))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Action move from (%d, %d) to (%d, %d)>' \
+               % (self.source[0], self.source[1],
+                  self.destination[0], self.destination[1])
+
+
+class GatherAction(namedtuple('GatherAction',
+                              ('source',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Action gather from (%d, %d)>' \
+               % (self.source[0], self.source[1])
+
+
+class StoreAction(namedtuple('StoreAction',
+                             ('storage_ID',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Action store to unit %d>' % self.storage_ID
+
+
+class FireAction(namedtuple('FireAction',
+                            ('destination',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Action fire at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
+
+class BuildAction(namedtuple('BuildAction',
+                             ('unit_type', 'destination'))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Action build %s at (%d, %d)>' \
+               % (self.unit_type.main_name,
+                  self.destination[0], self.destination[1])
+
+
+class actions(object):
+    StopAction = StopAction
+    MoveAction = MoveAction
+    GatherAction = GatherAction
+    StoreAction = StoreAction
+    FireAction = FireAction
+    BuildAction = BuildAction
+
+
+class StopCommand(namedtuple('StopCommand',
+                             ())):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Command stop>'
+
+
+class MoveCommand(namedtuple('MoveCommand',
+                             ('direction',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Command move to %s>' \
+               % direction.TO_FULL_NAME[self.direction]
+
+
+class ComplexMoveCommand(namedtuple('ComplexMoveCommand',
+                                    ('destination',))):
+    __slots__ = ()
+
+
+    def __str__(self):
+        return '<Command move at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
+
+class ComplexGatherCommand(namedtuple('ComplexGatherCommand',
+                                      ('destination',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Command gather from (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
+
+class FireCommand(namedtuple('FireCommand',
+                             ('destination',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Command fire at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
+
+class ComplexAttackCommand(namedtuple('ComplexAttackCommand',
+                                      ('destination',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Command attack at (%d, %d)>' \
+               % (self.destination[0], self.destination[1])
+
+
+class BuildCommand(namedtuple('BuildCommand',
+                              ('unit_type_name',))):
+    __slots__ = ()
+
+    def __str__(self):
+        return '<Command build %s>' % self.unit_type_name
+
+
+class cmds(object):
+    StopCommand = StopCommand
+    MoveCommand = MoveCommand
+    ComplexMoveCommand = ComplexMoveCommand
+    ComplexGatherCommand = ComplexGatherCommand
+    FireCommand = FireCommand
+    ComplexAttackCommand = ComplexAttackCommand
+    BuildCommand = BuildCommand
+
+
+# PARSER =======================================================================
+#-------------------------------------------------------- some usefull functions
+
+def _parse_as_int(data):
+    """ Return int or None if data is invalid. """
+
+    if len(data)>8:
+        return None
+    try:
+        return int(data)
+    except ValueError:
+        return None
+
+
+def _parse_as_direction(data):
+    """ Return direction.* or None if data is invalid. """
+
+    try:
+        return direction.BY_NAME[data.upper()]
+    except KeyError:
+        return None
+
+
+def _parse_as_str(data, max_string_length=256):
+    """ Return data or None if data has more characters than max_string_length
+    argument (default 256). """
+
+    if len(data) > max_string_length:
+        return None
+    return data
+
+
+def _split_to_word_and_rest(line):
+    splited_line = line.split(None, 1)
+    command = splited_line[0]
+    rest = splited_line[1] if len(splited_line) >= 2 else ''
+    return command, rest
+
+
+
+#----------------------------------------------------------------------- globals
+# _COMMANDS = {
+#    <name of command> : {
+#        <number of args> :
+#            (    <signature>,
+#                <function returning (cmds.*Command)>,
+#            )
+#    }
+# }
+
+_COMMANDS = {}
+
+_COMMANDS['STOP'] = _COMMANDS['S'] = {
+    0 : (
+            (_parse_as_int,),
+            lambda : cmds.StopCommand(),
+        ),
+}
+_COMMANDS['MOVE'] = _COMMANDS['M'] = {
+    1 : (
+            (_parse_as_direction,),
+            lambda direction: cmds.MoveCommand(direction=direction),
+        ),
+    2 : (
+            (_parse_as_int, _parse_as_int),
+            lambda x, y: cmds.ComplexMoveCommand(destination=(x,y)),
+        ),
+}
+_COMMANDS['GATHER'] = _COMMANDS['G'] = {
+    2 : (
+            (_parse_as_int, _parse_as_int),
+            lambda x, y: cmds.ComplexGatherCommand(destination=(x,y)),
+        ),
+}
+_COMMANDS['FIRE'] = _COMMANDS['F'] = {
+    2 : (
+            (_parse_as_int, _parse_as_int),
+            lambda x, y: cmds.FireCommand(destination=(x,y)),
+        ),
+}
+_COMMANDS['ATTACK'] = _COMMANDS['A'] = {
+    2 : (
+            (_parse_as_int, _parse_as_int),
+            lambda x, y: cmds.ComplexAttackCommand(destination=(x,y)),
+        ),
+}
+_COMMANDS['BUILD'] = _COMMANDS['B'] = {
+    1 : (
+            (_parse_as_str,),
+            lambda type_name: cmds.BuildCommand(unit_type_name=type_name.lower()),
+        ),
+}
+
+
+class Parse (object):
+    """
+    Arguments of __init__:
+     input_data -- data that should be parsed (many lines allowed)
+
+    Data are parsed in __init__. After it some attributes are created:
+     commands : list(cmds.*Command)
+     message_stubs : list(tuple(receiver_ID, text_of_message))
+     invalid_lines_numbers : list(int) -- the first line has no 1 (not 0!)
+
+    """
+
+    def __init__(self, input_data):
+        self.message_stubs = []
+        self.commands = []
+        self.invalid_lines_numbers = []
+
+        self._parse_input_data(input_data)
+
+    def _parse_input_data(self, input_data):
+        for line_index, line in enumerate(input_data.split('\n')):
+            self._line_no = line_index+1
+
+            # empty line?
+            line = line.strip()
+            if len(line) == 0:
+                continue
+
+            # command or message?
+            command, rest_of_line = _split_to_word_and_rest(line)
+            command_as_int = _parse_as_int(command)
+            if command_as_int == None: # command
+                self._parse_command(command, rest_of_line)
+            else: # message
+                message_text = line[len(command)+1:]
+                receiver_ID = command_as_int
+                message_stub = (receiver_ID, message_text)
+                self.message_stubs.append(message_stub)
+
+    def _parse_command(self, command_as_string, rest_of_line):
+        command_as_string = command_as_string.upper()
+        signatures_with_functions_by_number_of_args = _COMMANDS.get(command_as_string, None)
+        if signatures_with_functions_by_number_of_args == None:
+            self._invalid_line()
+        else:
+            args_of_command = rest_of_line.split()
+
+            # check number of args
+            signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
+            if signature_with_function == None:
+                self._invalid_line()
+                return
+            signature, method = signature_with_function
+
+            # convert args
+            args = []
+            for function, arg in zip(signature, args_of_command):
+                result = function(arg)
+                if result == None:
+                    self._invalid_line()
+                    return
+                args.append(result)
+
+            command = method(*args)
+            self.commands.append(command)
+
+    def _invalid_line(self):
+        self.invalid_lines_numbers.append(self._line_no)
+
+
+

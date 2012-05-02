@@ -9,7 +9,7 @@ except:
 import os
 
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.core.Language import Language
+from scriptcraft.gamestate import Language
 
 
 
