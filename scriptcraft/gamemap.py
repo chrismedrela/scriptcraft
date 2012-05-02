@@ -5,7 +5,7 @@ from collections import namedtuple
 import copy
 
 from scriptcraft import aima
-from scriptcraft.core import direction
+from scriptcraft import direction
 from scriptcraft.utils import *
 
 

@@ -6,7 +6,7 @@ import os
 import unittest
 import shutil
 
-from scriptcraft.core import direction
+from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.gamemap import GameMap, PositionOutOfMap
 from scriptcraft.gamestate import *

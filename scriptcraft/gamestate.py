@@ -33,8 +33,8 @@ from collections import namedtuple
 import hashlib
 import random
 
+from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.core import direction
 from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
 from scriptcraft.utils import *
 

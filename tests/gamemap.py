@@ -4,7 +4,7 @@
 import copy
 import unittest
 
-from scriptcraft.core import direction
+from scriptcraft import direction
 from scriptcraft.gamemap import (GameMap, FindPathProblem, Field,
                                  NoFreeStartPosition, FieldIsOccupied)
 from scriptcraft.utils import *

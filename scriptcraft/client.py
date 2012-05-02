@@ -16,7 +16,7 @@ import tkMessageBox
 import tkSimpleDialog
 from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter import statement
 
-from scriptcraft.core import direction
+from scriptcraft import direction
 from scriptcraft.gamemap import GameMap, NoFreeStartPosition
 from scriptcraft.gamestate import (actions, Game, DEFAULT_GAME_CONFIGURATION,
                                    Language, Program, STAR_PROGRAM)
