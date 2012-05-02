@@ -869,37 +869,37 @@ class TestUnitType(unittest.TestCase):
 
 class TestBasicParsing(unittest.TestCase):
     def test_basic(self):
-        p = Parse("")
+        p = Parser("")
         self.assertEqual(p.message_stubs, [])
         self.assertEqual(p.commands, [])
         self.assertEqual(p.invalid_lines_numbers, [])
 
     def test_stop_command(self):
-        self.p = Parse("STOP")
+        self.p = Parser("STOP")
         self._test_no_invalid_lines_and_command_equal_to(cmds.StopCommand())
 
     def test_move_command(self):
-        self.p = Parse("MOVE N")
+        self.p = Parser("MOVE N")
         self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.N))
 
     def test_complex_move_command(self):
-        self.p = Parse("MOVE 2 3")
+        self.p = Parser("MOVE 2 3")
         self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexMoveCommand((2,3)))
 
     def test_complex_gather_command(self):
-        self.p = Parse("GATHER 4 13")
+        self.p = Parser("GATHER 4 13")
         self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexGatherCommand((4,13)))
 
     def test_complex_attack_command(self):
-        self.p = Parse("ATTACK 9 2")
+        self.p = Parser("ATTACK 9 2")
         self._test_no_invalid_lines_and_command_equal_to(cmds.ComplexAttackCommand((9,2)))
 
     def test_fire_command(self):
-        self.p = Parse("FIRE 5 6")
+        self.p = Parser("FIRE 5 6")
         self._test_no_invalid_lines_and_command_equal_to(cmds.FireCommand((5,6)))
 
     def test_build_command(self):
-        self.p = Parse("BUILD TANK")
+        self.p = Parser("BUILD TANK")
         self._test_no_invalid_lines_and_command_equal_to(cmds.BuildCommand("tank"))
 
     def _test_no_invalid_lines_and_command_equal_to(self, command):
@@ -909,33 +909,33 @@ class TestBasicParsing(unittest.TestCase):
 
 class TestDetailsOfParsing(unittest.TestCase):
     def test_lower_direction(self):
-        self.p = Parse("MOVE e")
+        self.p = Parser("MOVE e")
         self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
 
     def test_command_by_short_name(self):
-        self.p = Parse("M s")
+        self.p = Parser("M s")
         self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.S))
 
     def test_empty_lines(self):
-        p = Parse("MOVE e\n\nMOVE n")
+        p = Parser("MOVE e\n\nMOVE n")
         self.assertEqual(p.invalid_lines_numbers, [])
         self.assertEqual(p.commands, [cmds.MoveCommand(direction.E),
                                       cmds.MoveCommand(direction.N)])
 
     def test_lower_command(self):
-        self.p = Parse("move E")
+        self.p = Parser("move E")
         self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
 
     def test_whitespaces(self):
-        self.p = Parse("\t\n\r  \tMOVE e\t\n")
+        self.p = Parser("\t\n\r  \tMOVE e\t\n")
         self._test_no_invalid_lines_and_command_equal_to(cmds.MoveCommand(direction.E))
 
     def test_parse_invalid_command(self):
-        self.p = Parse("\n MO 3 \nM 3\n")
+        self.p = Parser("\n MO 3 \nM 3\n")
         self._test_invalid_lines_and_no_command([2, 3])
 
     def test_parse_too_long_int_and_str(self):
-        self.p = Parse("MOVE 30000000000 300000000000\nBUILD "+"T"*10000)
+        self.p = Parser("MOVE 30000000000 300000000000\nBUILD "+"T"*10000)
         self._test_invalid_lines_and_no_command([1, 2])
 
     def _test_invalid_lines_and_no_command(self, invalid_lines):
@@ -965,7 +965,7 @@ class TestMessages(unittest.TestCase):
                            (12, ''))
 
     def _test_message(self, text, message):
-        p = Parse(text)
+        p = Parser(text)
         self.assertEqual(p.invalid_lines_numbers, [])
         self.assertEqual(p.message_stubs, [message])
 
@@ -976,7 +976,7 @@ class TestEfficiencyParsingLongMessages(unittest.TestCase):
 
     @ max_time(1)
     def test(self):
-        Parse(self.input_data)
+        Parser(self.input_data)
 
 
 class TestEfficiencyParsingManyMessages(unittest.TestCase):
@@ -985,7 +985,7 @@ class TestEfficiencyParsingManyMessages(unittest.TestCase):
 
     @ max_time(75)
     def test(self):
-        Parse(self.input_data)
+        Parser(self.input_data)
 
 
 class TestEfficiencyParsingCommands(unittest.TestCase):
@@ -994,7 +994,7 @@ class TestEfficiencyParsingCommands(unittest.TestCase):
 
     @ max_time(150)
     def test(self):
-        Parse(self.input_data)
+        Parser(self.input_data)
 
 
 class TestEfficiencyParsingInvalidInput(unittest.TestCase):
@@ -1004,7 +1004,7 @@ class TestEfficiencyParsingInvalidInput(unittest.TestCase):
 
     @ max_time(30)
     def test(self):
-        Parse(self.input_data)
+        Parser(self.input_data)
 
 
 class TestEfficiencyParsingBlankInput(unittest.TestCase):
@@ -1013,5 +1013,5 @@ class TestEfficiencyParsingBlankInput(unittest.TestCase):
 
     @ max_time(10)
     def test(self):
-        Parse(self.input_data)
+        Parser(self.input_data)
 

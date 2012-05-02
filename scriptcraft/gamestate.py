@@ -220,7 +220,7 @@ class Game(object):
     def _analise_outputs(self):
         for unit in self.units_by_IDs.itervalues():
             if unit.maybe_run_status:
-                parser = Parse(unit.maybe_run_status.output)
+                parser = Parser(unit.maybe_run_status.output)
                 messages = [Message(sender_ID=unit.ID,
                                     receiver_ID=stub[0],
                                     text=stub[1])
@@ -1188,7 +1188,7 @@ _COMMANDS['BUILD'] = _COMMANDS['B'] = {
 }
 
 
-class Parse (object):
+class Parser (object):
     """
     Arguments of __init__:
      input_data -- data that should be parsed (many lines allowed)
