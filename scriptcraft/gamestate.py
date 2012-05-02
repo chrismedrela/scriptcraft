@@ -35,6 +35,7 @@ import random
 from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
+from scriptcraft.parser import Parser
 from scriptcraft.utils import *
 
 
@@ -219,12 +220,13 @@ class Game(object):
     def _analise_outputs(self):
         for unit in self.units_by_IDs.itervalues():
             if unit.maybe_run_status:
-                parser = Parser(unit.maybe_run_status.output)
+                message_stubs, commands = \
+                  _parser.parse(unit.maybe_run_status.output)
                 messages = [Message(sender_ID=unit.ID,
                                     receiver_ID=stub[0],
                                     text=stub[1])
-                            for stub in parser.message_stubs]
-                commands = parser.commands
+                            for stub in message_stubs]
+                commands = commands
 
             else:
                 messages = []
@@ -298,6 +300,16 @@ class Game(object):
             return text
 
         def unit_info():
+            def _parse_as_int(data):
+                """ Return int or None if data is invalid. """
+
+                if len(data)>9:
+                    return None
+                try:
+                    return int(data)
+                except ValueError:
+                    return None
+
             unit_ID = _parse_as_int(split_text[1])
             if unit_ID == None:
                 return None
@@ -1025,6 +1037,13 @@ class StopCommand(namedtuple('StopCommand',
                              ())):
     __slots__ = ()
 
+    COMMAND_NAMES = ('stop', 's')
+    ARGUMENTS = ()
+
+    @staticmethod
+    def CONSTRUCTOR():
+        return StopCommand()
+
     def __str__(self):
         return '<Command stop>'
 
@@ -1032,6 +1051,13 @@ class StopCommand(namedtuple('StopCommand',
 class MoveCommand(namedtuple('MoveCommand',
                              ('direction',))):
     __slots__ = ()
+
+    COMMAND_NAMES = ('move', 'm')
+    ARGUMENTS = ('direction',)
+
+    @staticmethod
+    def CONSTRUCTOR(d):
+        return MoveCommand(d)
 
     def __str__(self):
         return '<Command move to %s>' \
@@ -1042,6 +1068,12 @@ class ComplexMoveCommand(namedtuple('ComplexMoveCommand',
                                     ('destination',))):
     __slots__ = ()
 
+    COMMAND_NAMES = ('move', 'm')
+    ARGUMENTS = ('int', 'int')
+
+    @staticmethod
+    def CONSTRUCTOR(x, y):
+        return ComplexMoveCommand((x, y))
 
     def __str__(self):
         return '<Command move at (%d, %d)>' \
@@ -1052,6 +1084,13 @@ class ComplexGatherCommand(namedtuple('ComplexGatherCommand',
                                       ('destination',))):
     __slots__ = ()
 
+    COMMAND_NAMES = ('gather', 'g')
+    ARGUMENTS = ('int', 'int')
+
+    @staticmethod
+    def CONSTRUCTOR(x, y):
+        return ComplexGatherCommand((x, y))
+
     def __str__(self):
         return '<Command gather from (%d, %d)>' \
                % (self.destination[0], self.destination[1])
@@ -1060,6 +1099,13 @@ class ComplexGatherCommand(namedtuple('ComplexGatherCommand',
 class FireCommand(namedtuple('FireCommand',
                              ('destination',))):
     __slots__ = ()
+
+    COMMAND_NAMES = ('fire', 'f')
+    ARGUMENTS = ('int', 'int')
+
+    @staticmethod
+    def CONSTRUCTOR(x, y):
+        return FireCommand((x, y))
 
     def __str__(self):
         return '<Command fire at (%d, %d)>' \
@@ -1070,6 +1116,13 @@ class ComplexAttackCommand(namedtuple('ComplexAttackCommand',
                                       ('destination',))):
     __slots__ = ()
 
+    COMMAND_NAMES = ('attack', 'a')
+    ARGUMENTS = ('int', 'int')
+
+    @staticmethod
+    def CONSTRUCTOR(x, y):
+        return ComplexAttackCommand()
+
     def __str__(self):
         return '<Command attack at (%d, %d)>' \
                % (self.destination[0], self.destination[1])
@@ -1079,11 +1132,21 @@ class BuildCommand(namedtuple('BuildCommand',
                               ('unit_type_name',))):
     __slots__ = ()
 
+    COMMAND_NAMES = ('build', 'b')
+    ARGUMENTS = ('str',)
+
+    @staticmethod
+    def CONSTRUCTOR(t):
+        return BuildCommand(t)
+
     def __str__(self):
         return '<Command build %s>' % self.unit_type_name
 
 
 class cmds(object):
+    ALL_COMMANDS = [StopCommand, MoveCommand, ComplexMoveCommand,
+                    ComplexGatherCommand, FireCommand,
+                    ComplexAttackCommand, BuildCommand]
     StopCommand = StopCommand
     MoveCommand = MoveCommand
     ComplexMoveCommand = ComplexMoveCommand
@@ -1092,169 +1155,5 @@ class cmds(object):
     ComplexAttackCommand = ComplexAttackCommand
     BuildCommand = BuildCommand
 
-
-# PARSER =======================================================================
-#-------------------------------------------------------- some usefull functions
-
-def _parse_as_int(data):
-    """ Return int or None if data is invalid. """
-
-    if len(data)>8:
-        return None
-    try:
-        return int(data)
-    except ValueError:
-        return None
-
-
-def _parse_as_direction(data):
-    """ Return direction.* or None if data is invalid. """
-
-    try:
-        return direction.BY_NAME[data.upper()]
-    except KeyError:
-        return None
-
-
-def _parse_as_str(data, max_string_length=256):
-    """ Return data or None if data has more characters than max_string_length
-    argument (default 256). """
-
-    if len(data) > max_string_length:
-        return None
-    return data
-
-
-def _split_to_word_and_rest(line):
-    splited_line = line.split(None, 1)
-    command = splited_line[0]
-    rest = splited_line[1] if len(splited_line) >= 2 else ''
-    return command, rest
-
-
-
-#----------------------------------------------------------------------- globals
-# _COMMANDS = {
-#    <name of command> : {
-#        <number of args> :
-#            (    <signature>,
-#                <function returning (cmds.*Command)>,
-#            )
-#    }
-# }
-
-_COMMANDS = {}
-
-_COMMANDS['STOP'] = _COMMANDS['S'] = {
-    0 : (
-            (_parse_as_int,),
-            lambda : cmds.StopCommand(),
-        ),
-}
-_COMMANDS['MOVE'] = _COMMANDS['M'] = {
-    1 : (
-            (_parse_as_direction,),
-            lambda direction: cmds.MoveCommand(direction=direction),
-        ),
-    2 : (
-            (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.ComplexMoveCommand(destination=(x,y)),
-        ),
-}
-_COMMANDS['GATHER'] = _COMMANDS['G'] = {
-    2 : (
-            (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.ComplexGatherCommand(destination=(x,y)),
-        ),
-}
-_COMMANDS['FIRE'] = _COMMANDS['F'] = {
-    2 : (
-            (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.FireCommand(destination=(x,y)),
-        ),
-}
-_COMMANDS['ATTACK'] = _COMMANDS['A'] = {
-    2 : (
-            (_parse_as_int, _parse_as_int),
-            lambda x, y: cmds.ComplexAttackCommand(destination=(x,y)),
-        ),
-}
-_COMMANDS['BUILD'] = _COMMANDS['B'] = {
-    1 : (
-            (_parse_as_str,),
-            lambda type_name: cmds.BuildCommand(unit_type_name=type_name.lower()),
-        ),
-}
-
-
-class Parser (object):
-    """
-    Arguments of __init__:
-     input_data -- data that should be parsed (many lines allowed)
-
-    Data are parsed in __init__. After it some attributes are created:
-     commands : list(cmds.*Command)
-     message_stubs : list(tuple(receiver_ID, text_of_message))
-     invalid_lines_numbers : list(int) -- the first line has no 1 (not 0!)
-
-    """
-
-    def __init__(self, input_data):
-        self.message_stubs = []
-        self.commands = []
-        self.invalid_lines_numbers = []
-
-        self._parse_input_data(input_data)
-
-    def _parse_input_data(self, input_data):
-        for line_index, line in enumerate(input_data.split('\n')):
-            self._line_no = line_index+1
-
-            # empty line?
-            line = line.strip()
-            if len(line) == 0:
-                continue
-
-            # command or message?
-            command, rest_of_line = _split_to_word_and_rest(line)
-            command_as_int = _parse_as_int(command)
-            if command_as_int == None: # command
-                self._parse_command(command, rest_of_line)
-            else: # message
-                message_text = line[len(command)+1:]
-                receiver_ID = command_as_int
-                message_stub = (receiver_ID, message_text)
-                self.message_stubs.append(message_stub)
-
-    def _parse_command(self, command_as_string, rest_of_line):
-        command_as_string = command_as_string.upper()
-        signatures_with_functions_by_number_of_args = _COMMANDS.get(command_as_string, None)
-        if signatures_with_functions_by_number_of_args == None:
-            self._invalid_line()
-        else:
-            args_of_command = rest_of_line.split()
-
-            # check number of args
-            signature_with_function = signatures_with_functions_by_number_of_args.get(len(args_of_command), None)
-            if signature_with_function == None:
-                self._invalid_line()
-                return
-            signature, method = signature_with_function
-
-            # convert args
-            args = []
-            for function, arg in zip(signature, args_of_command):
-                result = function(arg)
-                if result == None:
-                    self._invalid_line()
-                    return
-                args.append(result)
-
-            command = method(*args)
-            self.commands.append(command)
-
-    def _invalid_line(self):
-        self.invalid_lines_numbers.append(self._line_no)
-
-
+_parser = Parser(cmds.ALL_COMMANDS)
 
