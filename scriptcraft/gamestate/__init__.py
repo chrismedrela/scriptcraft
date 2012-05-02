@@ -35,6 +35,7 @@ import random
 from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
+from scriptcraft.gamestate import cmds, actions
 from scriptcraft.parser import Parser
 from scriptcraft.utils import *
 
@@ -50,6 +51,9 @@ class InvalidReceiver(Exception):
 
 class CannotStoreMinerals(Exception):
     pass
+
+
+_parser = Parser(cmds.ALL_COMMANDS)
 
 
 class Game(object):
@@ -657,8 +661,8 @@ class Unit(object):
         self.program = None
         self.maybe_last_compilation_status = None
         self.maybe_run_status = None
-        self.command = StopCommand()
-        self.action = StopAction()
+        self.command = cmds.StopCommand()
+        self.action = actions.StopAction()
         self.position = position
         self.player = player
         self.ID = ID
@@ -969,191 +973,4 @@ class Message(namedtuple('Message', ('sender_ID',
     zero. It means that the sender/receiver is game system. """
 
     __slots__ = ()
-
-
-class StopAction(namedtuple('StopAction', ())):
-    __slots__ = ()
-
-    def __str__(self):
-        return '<Action stop>'
-
-
-class MoveAction(namedtuple('MoveAction',
-                            ('source', 'destination'))):
-    __slots__ = ()
-
-    def __str__(self):
-        return '<Action move from (%d, %d) to (%d, %d)>' \
-               % (self.source[0], self.source[1],
-                  self.destination[0], self.destination[1])
-
-
-class GatherAction(namedtuple('GatherAction',
-                              ('source',))):
-    __slots__ = ()
-
-    def __str__(self):
-        return '<Action gather from (%d, %d)>' \
-               % (self.source[0], self.source[1])
-
-
-class StoreAction(namedtuple('StoreAction',
-                             ('storage_ID',))):
-    __slots__ = ()
-
-    def __str__(self):
-        return '<Action store to unit %d>' % self.storage_ID
-
-
-class FireAction(namedtuple('FireAction',
-                            ('destination',))):
-    __slots__ = ()
-
-    def __str__(self):
-        return '<Action fire at (%d, %d)>' \
-               % (self.destination[0], self.destination[1])
-
-
-class BuildAction(namedtuple('BuildAction',
-                             ('unit_type', 'destination'))):
-    __slots__ = ()
-
-    def __str__(self):
-        return '<Action build %s at (%d, %d)>' \
-               % (self.unit_type.main_name,
-                  self.destination[0], self.destination[1])
-
-
-class actions(object):
-    StopAction = StopAction
-    MoveAction = MoveAction
-    GatherAction = GatherAction
-    StoreAction = StoreAction
-    FireAction = FireAction
-    BuildAction = BuildAction
-
-
-class StopCommand(namedtuple('StopCommand',
-                             ())):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('stop', 's')
-    ARGUMENTS = ()
-
-    @staticmethod
-    def CONSTRUCTOR():
-        return StopCommand()
-
-    def __str__(self):
-        return '<Command stop>'
-
-
-class MoveCommand(namedtuple('MoveCommand',
-                             ('direction',))):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('move', 'm')
-    ARGUMENTS = ('direction',)
-
-    @staticmethod
-    def CONSTRUCTOR(d):
-        return MoveCommand(d)
-
-    def __str__(self):
-        return '<Command move to %s>' \
-               % direction.TO_FULL_NAME[self.direction]
-
-
-class ComplexMoveCommand(namedtuple('ComplexMoveCommand',
-                                    ('destination',))):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('move', 'm')
-    ARGUMENTS = ('int', 'int')
-
-    @staticmethod
-    def CONSTRUCTOR(x, y):
-        return ComplexMoveCommand((x, y))
-
-    def __str__(self):
-        return '<Command move at (%d, %d)>' \
-               % (self.destination[0], self.destination[1])
-
-
-class ComplexGatherCommand(namedtuple('ComplexGatherCommand',
-                                      ('destination',))):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('gather', 'g')
-    ARGUMENTS = ('int', 'int')
-
-    @staticmethod
-    def CONSTRUCTOR(x, y):
-        return ComplexGatherCommand((x, y))
-
-    def __str__(self):
-        return '<Command gather from (%d, %d)>' \
-               % (self.destination[0], self.destination[1])
-
-
-class FireCommand(namedtuple('FireCommand',
-                             ('destination',))):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('fire', 'f')
-    ARGUMENTS = ('int', 'int')
-
-    @staticmethod
-    def CONSTRUCTOR(x, y):
-        return FireCommand((x, y))
-
-    def __str__(self):
-        return '<Command fire at (%d, %d)>' \
-               % (self.destination[0], self.destination[1])
-
-
-class ComplexAttackCommand(namedtuple('ComplexAttackCommand',
-                                      ('destination',))):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('attack', 'a')
-    ARGUMENTS = ('int', 'int')
-
-    @staticmethod
-    def CONSTRUCTOR(x, y):
-        return ComplexAttackCommand()
-
-    def __str__(self):
-        return '<Command attack at (%d, %d)>' \
-               % (self.destination[0], self.destination[1])
-
-
-class BuildCommand(namedtuple('BuildCommand',
-                              ('unit_type_name',))):
-    __slots__ = ()
-
-    COMMAND_NAMES = ('build', 'b')
-    ARGUMENTS = ('str',)
-
-    @staticmethod
-    def CONSTRUCTOR(t):
-        return BuildCommand(t)
-
-    def __str__(self):
-        return '<Command build %s>' % self.unit_type_name
-
-
-class cmds(object):
-    ALL_COMMANDS = [StopCommand, MoveCommand, ComplexMoveCommand,
-                    ComplexGatherCommand, FireCommand,
-                    ComplexAttackCommand, BuildCommand]
-    StopCommand = StopCommand
-    MoveCommand = MoveCommand
-    ComplexMoveCommand = ComplexMoveCommand
-    ComplexGatherCommand = ComplexGatherCommand
-    FireCommand = FireCommand
-    ComplexAttackCommand = ComplexAttackCommand
-    BuildCommand = BuildCommand
-
-_parser = Parser(cmds.ALL_COMMANDS)
 
