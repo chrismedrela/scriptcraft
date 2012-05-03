@@ -10,7 +10,7 @@ p2
 (lp3
 (lp4
 g0
-(cscriptcraft.core.Field
+(cscriptcraft.gamemap
 Field
 p5
 c__builtin__
