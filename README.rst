@@ -46,29 +46,24 @@ Screenshot
    :alt: Screenshot not available.
    :align: center
 
-==========
-Instalacja
-==========
+=========================
+Instalacja i uruchomienie
+=========================
 
-Scriptcraft można zainstalować na dwa sposoby. Prostszy sposób polega
-na wpisaniu w bashu:
+1. Scriptcraft korzysta z pakietu ``python-imaging-tk`` który można
+   zainstalować poleceniem::
 
-  sudo pip install scriptcraft
+     sudo apt-get install python-imaging-tk
 
-Drugim sposobem jest pobranie źródeł z `pypi`_ lub z `githuba`_. Po
-ściągnięciu i rozpakowaniu paczki należy wpisać w bashu:
+2. Następnie należy ściągnąć kod źródłowy z `githuba`_::
 
-  sudo python setup.py install
+     git clone -b master git://github.com/krzysiumed/scriptcraft.git
 
-.. _`pypi`: http://pypi.python.org/pypi/scriptcraft/
+3. I uruchomić grę::
+
+     python scriptcraft/scriptcraft/client.py
+
 .. _`githuba`: https://github.com/krzysiumed/scriptcraft
-
-============
-Uruchomienie
-============
-Aby uruchomić grę, w bashu należy wpisać:
-
-  scriptcraft
 
 Po pojawieniu się okna gry należy utworzyć grę wybierając z menu
 ``Game`` opcję ``New game``. Następnie należy dodać graczy (opcja
