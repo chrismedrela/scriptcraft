@@ -24,6 +24,7 @@ class CompileAndRunProgram(object):
         self._running_commands_by_languages = running_commands_by_languages
         self._env = Environment(directory)
 
+    @log_on_enter('compile and run program', mode='only time')
     def __call__(self, language, program_code, input_data):
         self._language = language
         self._program_code = program_code
@@ -41,7 +42,7 @@ class CompileAndRunProgram(object):
         running_status = self._run()
         return (compilation_status, running_status)
 
-    @ on_error_return((OSError, IOError), None)
+    @on_error_return((OSError, IOError), None)
     def _compile(self):
         if not self._is_compilation_necessary():
             return None
@@ -59,6 +60,7 @@ class CompileAndRunProgram(object):
         self._env.create_file(('env', self._source_file_name),
                               self._program_code)
 
+    @log_on_enter('execute compilation command', mode='only time')
     def _execute_compilation_command(self):
         input = ''
         directory = 'env'
@@ -76,7 +78,7 @@ class CompileAndRunProgram(object):
     def _clear_environment(self):
         self._env.remove_folder_recursively('env')
 
-    @ on_error_return((OSError, IOError), None)
+    @on_error_return((OSError, IOError), None)
     def _run(self):
         if not self._is_compilation_successful():
             return None
@@ -94,6 +96,7 @@ class CompileAndRunProgram(object):
         destination = ('env', self._binary_file_name)
         self._env.copy_file(source, destination)
 
+    @log_on_enter('execute running command', mode='only time')
     def _execute_run_command(self):
         input = self._input_data
         folder = 'env'

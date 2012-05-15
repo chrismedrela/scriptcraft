@@ -42,6 +42,7 @@ class Parser (object):
                   'direction':self._parse_direction}
         return [switch[arg] for arg in args]
 
+    @log_on_enter('parse', mode='only time')
     def parse(self, data):
         """
         This method returns tuple containing:

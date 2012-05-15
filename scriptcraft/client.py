@@ -69,6 +69,7 @@ class GameViewer(Canvas):
         self._click_position = None
         self.selection_position = None # None or (x, y)
 
+    @log_on_enter('set game in game viewer', mode='only time')
     def set_game(self, game):
         """ Attribute game should be scriptcraft game instance or
         None.
@@ -218,6 +219,7 @@ class GameViewer(Canvas):
         """ From screen coordinaties. """
         return x-128*self._zoom, y-144*self._zoom
 
+    @log_on_enter('setting zoom in game viewer', mode='only time')
     def _set_zoom(self, zoom, (XS, YS)):
         """ Set zoom. The point (XS, YS) in screen coordinate doesn't
         move."""
@@ -262,10 +264,11 @@ class GameViewer(Canvas):
 
     def _mouse_motion_callback(self, event):
         if self._game and self._last_mouse_position:
-            dx, dy = (event.x - self._last_mouse_position[0],
-                      event.y - self._last_mouse_position[1])
-            self.move(ALL, dx, dy)
-            self._delta = (self._delta[0]-dx/256.0/self._zoom,
+            with log_on_enter('moving everything', mode='only time'):
+                dx, dy = (event.x - self._last_mouse_position[0],
+                    event.y - self._last_mouse_position[1])
+                self.move(ALL, dx, dy)
+                self._delta = (self._delta[0]-dx/256.0/self._zoom,
                            self._delta[1]-dy/144.0/self._zoom)
 
         self._last_mouse_position = (event.x, event.y)
@@ -329,6 +332,7 @@ class ClientApplication(Frame):
         self._game_session = None
         self._load_testing_game()
 
+    @log_on_enter('load game for testing')
     def _load_testing_game(self):
         filename = datafile_path('maps/default.map')
         game_map = pickle.load(open(filename, 'r'))
@@ -415,6 +419,7 @@ class ClientApplication(Frame):
 
     # callbacks ----------------------------------------------------------
 
+    @log_on_enter('use case: new game', lvl='info')
     def _new_game_callback(self):
         if not self._ask_if_delete_current_game_if_exists():
             return
@@ -446,6 +451,7 @@ class ClientApplication(Frame):
         finally:
             stream.close()
 
+    @log_on_enter('use case: save game', mode='time', lvl='info')
     def _save_game_callback(self):
         try:
             self._game_session.save()
@@ -453,6 +459,7 @@ class ClientApplication(Frame):
             self._warning('Save game',
                 'Cannot save game - io error.')
 
+    @log_on_enter('use case: load game', lvl='info')
     def _load_game_callback(self):
         if not self._ask_if_delete_current_game_if_exists():
             return
@@ -476,6 +483,7 @@ class ClientApplication(Frame):
         else:
             self.set_game_session(game_session)
 
+    @log_on_enter('use case: add player', lvl='info')
     def _add_player_callback(self):
         name = tkSimpleDialog.askstring(
             title='Create player',
@@ -499,6 +507,7 @@ class ClientApplication(Frame):
         else:
             self._set_game(self._game)
 
+    @log_on_enter('use case: set program', lvl='info')
     def _set_program_callback(self):
         stream = tkFileDialog.askopenfile(
             title='Choose source file',
@@ -521,20 +530,24 @@ class ClientApplication(Frame):
         program = Program(language=language, code=stream.read())
         self._game.set_program(unit, program)
 
+    @log_on_enter('use case: set star program', lvl='info')
     def _set_star_program_callback(self):
         field = self._game.game_map.get_field(self._game_viewer.selection_position)
         unit = self._game.units_by_IDs[field.get_unit_ID()]
         self._game.set_program(unit, STAR_PROGRAM)
 
+    @log_on_enter('use case: delete program', lvl='info')
     def _delete_program_callback(self):
         field = self._game.game_map.get_field(self._game_viewer.selection_position)
         unit = self._game.units_by_IDs[field.get_unit_ID()]
         self._game.set_program(unit, None)
 
+    @log_on_enter('use case: tic', mode='time', lvl='info')
     def _tic_callback(self):
         self._game_session.tic()
         self._set_game(self._game_session.game)
 
+    @log_on_enter('use case: quit', lvl='info')
     def _quit_callback(self):
         if not self._ask_if_quit_program():
             return
@@ -551,7 +564,7 @@ class ClientApplication(Frame):
 
 
     # other methods -------------------------------------------------------
-
+    @log_on_enter('set game session')
     def set_game_session(self, game_session):
         self._game_session = game_session
         self._set_game(None)

@@ -186,6 +186,7 @@ class Game(object):
         source.minerals -= 1
         destination.minerals += 1
 
+    @log_on_enter('tic method in Game', mode='time')
     def tic(self, compile_and_run_function):
         self._tic_for_world()
         self._compile_and_run_programs(compile_and_run_function)
@@ -195,6 +196,7 @@ class Game(object):
         self._reply_system_messages()
         self._execute_commands()
 
+    @log_on_enter('compile and run all programs', mode='time')
     def _compile_and_run_programs(self, compile_and_run_function):
         for unit in self.units_by_IDs.itervalues():
             input = self._generate_input_for(unit)
@@ -221,6 +223,7 @@ class Game(object):
             else:
                 unit.maybe_run_status = None
 
+    @log_on_enter('analising outputs', mode='time')
     def _analise_outputs(self):
         for unit in self.units_by_IDs.itervalues():
             if unit.maybe_run_status:
@@ -256,6 +259,7 @@ class Game(object):
             if reply:
                 self._send_message(reply)
 
+    @log_on_enter('execute commands', mode='time')
     def _execute_commands(self):
         units_IDs = self.units_by_IDs.keys()
         random.shuffle(units_IDs)
@@ -349,6 +353,7 @@ class Game(object):
                            text=response_text)
         return response
 
+    @log_on_enter('generating input', mode='only time')
     def _generate_input_for(self, unit):
         # first line of info
         input_data_dict = {'type':unit.type.main_name,
@@ -408,6 +413,7 @@ class Game(object):
 
         return input_data
 
+    @log_on_enter('find nearest unit in range', mode='only time')
     def find_nearest_unit_in_range_fulfilling_condition(self, center, range, condition):
         def positions_in_range(center, range):
             for x in xrange(center[0]-range,
@@ -646,6 +652,7 @@ class Game(object):
         case = switch[action_type]
         case()
 
+    @log_on_enter('tic for world', mode='time')
     def _tic_for_world(self):
         for x in xrange(self.game_map.size[0]):
             for y in xrange(self.game_map.size[1]):

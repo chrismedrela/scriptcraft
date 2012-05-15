@@ -134,6 +134,7 @@ class GameMap(list):
         field = function(field)
         self[position[0]][position[1]] = field
 
+    @log_on_enter('copying map', mode='only time')
     def __deepcopy__(self, memo):
         c = copy.copy(self)
 
@@ -311,6 +312,7 @@ class FindPathProblem(aima.search.Problem):
         x, y = node.state
         return distance((x, y), self.destination) * self.h_coefficient
 
+    @log_on_enter('find path', mode='only time')
     def find_direction(self):
         """ Return None if start_position==destination or if destination
         is unavailable or if computing path took too long time. """
