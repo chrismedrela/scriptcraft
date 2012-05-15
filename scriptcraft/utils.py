@@ -5,21 +5,30 @@ __all__ = [
     'anything',
     'Const',
     'copy_if_an_instance_given',
+    'datafile_path',
     'distance',
+    'init_logging',
+    'log',
+    'log_on_enter',
+    'log_error_callback',
     'max_time',
     'memoized',
     'on_error_do',
     'on_error_return',
-    'datafile_path',
     'skip',
+    'shutdown_logging',
     'TemporaryFileSystem',
 ]
 
 from functools import partial, wraps
+import inspect
 import os, shutil
 import pkg_resources
 import time
 import traceback
+
+from mylogging import (init_logging, log, log_on_enter,
+                       log_error_callback, shutdown_logging)
 
 
 
@@ -80,6 +89,7 @@ def datafile_path(relative_path):
     #relative_path = os.path.join('scriptcraft', relative_path)
     absolute_path = pkg_resources.resource_filename('scriptcraft', relative_path)
     return absolute_path
+
 
 def copy_if_an_instance_given(f):
     """ Decorator. Use with method __new__ of classes inheriting namedtuple.
