@@ -627,7 +627,6 @@ def run():
     root.report_callback_exception = log_error_callback
     app = ClientApplication(master=root)
     app.mainloop()
-    root.destroy()
     shutdown_logging()
 
 if __name__ == "__main__":
