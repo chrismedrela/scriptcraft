@@ -327,6 +327,29 @@ class ClientApplication(Frame):
         self._init_gui()
         self._game = None
         self._game_session = None
+        self._load_testing_game()
+
+    def _load_testing_game(self):
+        filename = datafile_path('maps/default.map')
+        game_map = pickle.load(open(filename, 'r'))
+        game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+        session = GameSession(
+            directory='scriptcraft/.tmp',
+            system_configuration=DEFAULT_SYSTEM_CONFIGURATION,
+            game=game)
+        game.new_player_with_units('Bob', (255, 0, 0))
+        game.new_player_with_units('Alice', (255, 255, 0))
+
+        def set_program(unit_id, filename):
+            program = Program(Language.PYTHON,
+                              open('scriptcraft/.tmp/'+filename).read())
+            game.set_program(game.units_by_IDs[unit_id], program)
+        for i in xrange(3,7):
+            set_program(i, 'gather.py')
+        for i in xrange(9,13):
+            set_program(i, 'gather_Alice.py')
+
+        self.set_game_session(session)
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
