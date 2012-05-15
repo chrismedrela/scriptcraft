@@ -73,7 +73,6 @@ class Parser (object):
                     argument_converters, function = signature
                     arguments = [convert(arg) for (arg, convert)
                                  in zip(arguments, argument_converters)]
-                    print command, arguments
                     if None not in arguments: # so all arguments are valid
                         command = function(*arguments)
                         if command:
