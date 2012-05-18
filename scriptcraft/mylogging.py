@@ -51,6 +51,7 @@ def init_logging(lvl='info'):
     file_handler = logging.handlers.RotatingFileHandler(
         filename=LOG_FILENAME,
         maxBytes=1024*1024,
+        mode='a',
         backupCount=2)
     file_handler.setFormatter(formatter)
     stream_handler = logging.StreamHandler()
