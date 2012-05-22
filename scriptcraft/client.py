@@ -330,7 +330,7 @@ class ClientApplication(Frame):
         self._init_gui()
         self._game = None
         self._game_session = None
-        self._load_testing_game()
+        #self._load_testing_game()
 
     @log_on_enter('load game for testing')
     def _load_testing_game(self):
