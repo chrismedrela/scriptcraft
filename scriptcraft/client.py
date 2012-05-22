@@ -432,24 +432,29 @@ class ClientApplication(Frame):
         if not directory:
             return
 
+        filename = datafile_path('maps/default.map')
         try:
-            filename = datafile_path('maps/default.map')
             stream = open(filename, 'r')
-            game_map = pickle.load(stream)
-        except pickle.UnpicklingError as ex:
-            self._warning('Create new game',
-                'Cannot create new game - map file is corrupted.')
         except IOError as ex:
             self._warning('Create new game',
-                'Cannot create new game - io error.')
+                'Cannot create new game - io error (cannot open file).')
         else:
-            game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
-            system_configuration = DEFAULT_SYSTEM_CONFIGURATION
-            game_session = GameSession(directory, system_configuration,
-                                       game=game)
-            self.set_game_session(game_session)
-        finally:
-            stream.close()
+            try:
+                game_map = pickle.load(stream)
+            except pickle.UnpicklingError as ex:
+                self._warning('Create new game',
+                              'Cannot create new game - map file is corrupted.')
+            except IOError as ex:
+                self._warning('Create new game',
+                              'Cannot create new game - io error during reading file.')
+            else:
+                game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+                system_configuration = DEFAULT_SYSTEM_CONFIGURATION
+                game_session = GameSession(directory, system_configuration,
+                                           game=game)
+                self.set_game_session(game_session)
+            finally:
+                stream.close()
 
     @log_on_enter('use case: save game', mode='time', lvl='info')
     def _save_game_callback(self):
