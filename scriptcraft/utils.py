@@ -18,11 +18,12 @@ __all__ = [
     'skip',
     'shutdown_logging',
     'TemporaryFileSystem',
+    'turn_off_standard_streams_if_it_is_py2exe_distribution',
 ]
 
 from functools import partial, wraps
 import inspect
-import os, shutil
+import os, sys, shutil
 import pkg_resources
 import time
 import traceback
@@ -83,12 +84,18 @@ def on_error_do(errors, function):
 
 
 def datafile_path(relative_path):
-    """ Return absolute path to datafile. The root directory for given
-    relative path is scriptcraft directory. An example of valid
+    """ Return valid path to datafile. The root directory for given
+    relative path is main scriptcraft directory. An example of valid
     filename: "graphic/base.png"."""
-    #relative_path = os.path.join('scriptcraft', relative_path)
-    absolute_path = pkg_resources.resource_filename('scriptcraft', relative_path)
-    return absolute_path
+
+    if _is_it_py2exe_distribution():
+        relative_path = relative_path.replace('/', '\\')
+        executable_filename = unicode(sys.prefix, sys.getfilesystemencoding())
+        result = os.path.join(executable_filename, 'scriptcraft', relative_path)
+        return result
+    else:
+        absolute_path = pkg_resources.resource_filename('scriptcraft', relative_path)
+        return absolute_path
 
 
 def copy_if_an_instance_given(f):
@@ -127,6 +134,18 @@ def skip(f):
     def wrapped(*args, **kwargs):
         pass
     return wrapped
+
+
+def turn_off_standard_streams_if_it_is_py2exe_distribution():
+    if _is_it_py2exe_distribution():
+        class Blackhole(object):
+            def write(self, text):
+                pass
+            def flush(self, text):
+                pass
+
+        sys.stderr = Blackhole()
+        sys.stdout = Blackhole()
 
 
 class memoized(object):
@@ -239,3 +258,7 @@ class TemporaryFileSystem(object):
                 assert folder != 'scriptcraft'
                 shutil.rmtree(folder)
         self._temporary_folders = []
+
+def _is_it_py2exe_distribution():
+    """Returns whether we are frozen via py2exe."""
+    return hasattr(sys, "frozen")

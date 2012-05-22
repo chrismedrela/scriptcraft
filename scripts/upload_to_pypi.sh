@@ -12,8 +12,9 @@ cd "$TMP/scriptcraft"
 
 printf "OK\n"
 
+# create standard source distribution
 python setup.py register sdist upload
 
-# we dropped windows support
-#wine C:\\Python26\\python.exe setup.py register bdist_wininst --target-version=2.6 upload
-#wine C:\\Python27\\python.exe setup.py register bdist_wininst --target-version=2.7 upload
+# create distributions for windows
+wine C:\\Python27\\python.exe setup.py py2exe --target-version=2.7
+zip -r scriptcraft-for-windows.zip dist/py2exe

@@ -3,13 +3,14 @@
 
 from setuptools import setup, find_packages
 from scriptcraft.utils import datafile_path
-import os
+import os, sys
 
 # that ugly trick solve problem with encoding of README file
 import sys
 reload(sys).setdefaultencoding("UTF-8")
 
 PROJECT_NAME = 'scriptcraft'
+DIRECTORIES_WITH_DATA_FILES = ('graphic', 'maps')
 
 def _fullsplit(path, result=None):
     """
@@ -25,23 +26,57 @@ def _fullsplit(path, result=None):
         return result
     return _fullsplit(head, [tail] + result)
 
-def _find_packages_and_data_files():
+def _find_packages():
     packages = []
-    data_files = []
     for dirpath, dirnames, filenames in os.walk(PROJECT_NAME):
         for i, dirname in enumerate(dirnames):
-            if dirname.startswith('.'): del dirnames[i]
+            if dirname.startswith('.'):
+                del dirnames[i]
         if '__init__.py' in filenames:
             packages.append('.'.join(_fullsplit(dirpath)))
-        elif filenames:
-            data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
-    return packages, data_files
+    return packages
+
+def _find_data_files():
+    data_files = []
+    for directory in DIRECTORIES_WITH_DATA_FILES:
+        for dirpath, dirnames, filenames in os.walk(directory):
+            for i, dirname in enumerate(dirnames):
+                if dirname.startswith('.'):
+                    del dirnames[i]
+            if '__init__.py' in filenames:
+                pass
+            elif filenames:
+                data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+    return data_files
+
+def _is_it_py2exe_compilation():
+    return 'py2exe' in sys.argv
 
 if __name__ == "__main__":
-    packages, _ = _find_packages_and_data_files()
-    setup(
+    packages = _find_packages()
+    data_files = _find_data_files()
+
+    if _is_it_py2exe_compilation():
+        print 'Detected py2exe installation/building.'
+        import py2exe
+        drive_c_path = r'Z:\\home\\krzysiumed\\.wine\\drive_c\\'
+        python_version = sys.version_info[0:2] # for example (2, 6)
+        python_version = "".join(map(str, python_version)) # for example "26"
+        assert python_version in ('26', '27'), ('Is it valid python version? ' +
+                                                python_version)
+        python_path = drive_c_path + "Python" + python_version + r'\\'
+        dlls = [
+            drive_c_path + r'windows\\system32\\python%s.dll' % python_version,
+            python_path + r'DLLs\\tcl85.dll',
+            python_path + r'DLLs\\tk85.dll',
+        ]
+        data_files += [('.', dlls)]
+    else:
+        print 'Detected non-py2exe installation/building.'
+
+    kwargs = dict(
         name=PROJECT_NAME,
-        version='0.1.27',
+        version='0.2.0.a1',
         author = "Krzysztof Medrela",
         author_email = "krzysiumed@gmail.com",
         description = "Scriptcraft programming game - program your units to fight against other players.",
@@ -63,10 +98,26 @@ if __name__ == "__main__":
             'PIL==1.1.7',
         ],
         packages = packages,
-        include_package_data = True,
+        include_package_data = False,
+        data_files = data_files,
+        options = {
+            'py2exe' : {'includes':['Tkinter', 'tkFileDialog'],
+                        'bundle_files':2,
+                        'dist_dir':'dist/py2exe'},
+        },
         entry_points = {
             'gui_scripts': [
                 'scriptcraft = scriptcraft.client:run',
             ],
         },
     )
+
+    if _is_it_py2exe_compilation():
+        kwargs['zipfile'] = None
+        kwargs['windows'] = [
+            {'script':'scriptcraft/client.py',
+             'dest_base':'scriptcraft'},
+        ]
+
+    setup(**kwargs)
+

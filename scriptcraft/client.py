@@ -634,6 +634,9 @@ class ClientApplication(Frame):
 
 
 def run():
+    # prevent "errors occured" message box in py2exe distribution
+    turn_off_standard_streams_if_it_is_py2exe_distribution()
+
     global root, app
     init_logging('debug')
     root = Tk()
