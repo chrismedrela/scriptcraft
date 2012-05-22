@@ -85,17 +85,18 @@ def on_error_do(errors, function):
 
 def datafile_path(relative_path):
     """ Return valid path to datafile. The root directory for given
-    relative path is main scriptcraft directory. An example of valid
-    filename: "graphic/base.png"."""
+    relative path should be main scriptcraft directory. An example of
+    valid filename: "graphic/base.png"."""
 
     if _is_it_py2exe_distribution():
         relative_path = relative_path.replace('/', '\\')
         executable_filename = unicode(sys.prefix, sys.getfilesystemencoding())
-        result = os.path.join(executable_filename, 'scriptcraft', relative_path)
+        result = os.path.join(executable_filename, relative_path)
         return result
     else:
-        absolute_path = pkg_resources.resource_filename('scriptcraft', relative_path)
-        return absolute_path
+        relative_path = os.path.join('..', relative_path)
+        result = pkg_resources.resource_filename('scriptcraft', relative_path)
+        return result
 
 
 def copy_if_an_instance_given(f):
