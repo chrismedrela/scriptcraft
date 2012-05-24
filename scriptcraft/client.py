@@ -316,6 +316,32 @@ class ClientApplication(Frame):
     TIC_LABEL = "One turn in game"
     QUIT_LABEL = "Quit"
 
+    CHOOSE_DIRECTORY_FOR_NEW_GAME = "Choose directory for new game"
+    TITLE_CREATE_NEW_GAME = 'Create new game'
+    CANNOT_CREATE_NEW_GAME = 'Cannot create new game.'
+    CANNOT_OPEN_FILE = 'Cannot open file.'
+    MAP_FILE_IS_CORRUPTED = 'Map file is corrupted.'
+    IO_ERROR_DURING_READING = 'IO error during reading file.'
+    TITLE_SAVE_GAME = 'Save game'
+    CANNOT_SAVE_GAME = 'Cannot save game'
+    IO_ERROR_DURING_SAVING = 'IO error during saving file.'
+    TITLE_LOAD_GAME = 'Load game'
+    CANNOT_LOAD_GAME = 'Cannot load game.'
+    TITLE_CREATE_PLAYER = 'Create player'
+    ENTER_NEW_PLAYER_NAME = 'Enter name for new player.'
+    TITLE_CREATE_PLAYER_CHOOSE_COLOR = 'Create player - choose color for new player'
+    CANNOT_CREATE_NEW_GAME = 'Cannot create player.'
+    NO_FREE_START_POSITION = 'No free start position on map.'
+    TITLE_CHOOSE_SOURCE_FILE = 'Choose source file'
+    TITLE_SET_PROGRAM = 'Set program'
+    CANNOT_SET_PROGRAM = 'Cannot set program.'
+    UNKNOWN_SOURCE_FILE_EXTENSION = 'Unknown source file extension.'
+    TITLE_ARE_YOU_SURE = 'Are you sure?'
+    WARNING_CURRENT_GAME_WILL_BE_LOST = 'Are you sure? Current game will be lost.'
+    TITLE_QUIT_PROGRAM = 'Quit program'
+    QUIT_PROGRAM_QUESTION = 'Do you really want to quit the program?'
+
+
     MAP_FILETYPES = [
         ('Scriptcraft map', '*.map'),
         ('All files', '*'),]
@@ -425,7 +451,7 @@ class ClientApplication(Frame):
             return
 
         directory = tkFileDialog.askdirectory(
-            title="Choose directory for new game",
+            title=ClientApplication.CHOOSE_DIRECTORY_FOR_NEW_GAME,
             mustexist=True,
             parent=self,
         )
@@ -436,17 +462,20 @@ class ClientApplication(Frame):
         try:
             stream = open(filename, 'r')
         except IOError as ex:
-            self._warning('Create new game',
-                'Cannot create new game - io error (cannot open file).')
+            self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
+                          ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
+                          ClientApplication.CANNOT_OPEN_FILE)
         else:
             try:
                 game_map = pickle.load(stream)
             except pickle.UnpicklingError as ex:
-                self._warning('Create new game',
-                              'Cannot create new game - map file is corrupted.')
+                self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
+                              ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
+                              ClientApplication.MAP_FILE_IS_CORRUPTED)
             except IOError as ex:
-                self._warning('Create new game',
-                              'Cannot create new game - io error during reading file.')
+                self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
+                              ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
+                              ClientApplication.IO_ERROR_DURING_READING)
             else:
                 game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
                 system_configuration = DEFAULT_SYSTEM_CONFIGURATION
@@ -461,8 +490,9 @@ class ClientApplication(Frame):
         try:
             self._game_session.save()
         except IOError as ex:
-            self._warning('Save game',
-                'Cannot save game - io error.')
+            self._warning(ClientApplication.TITLE_SAVE_GAME,
+                          ClientApplication.CANNOT_SAVE_GAME + ' ' + \
+                          ClientApplication.IO_ERROR_DURING_SAVING)
 
     @log_on_enter('use case: load game', lvl='info')
     def _load_game_callback(self):
@@ -470,7 +500,7 @@ class ClientApplication(Frame):
             return
 
         directory = tkFileDialog.askdirectory(
-            title='Load game',
+            title=ClientApplication.TITLE_LOAD_GAME,
             mustexist=True,
             parent=self,
         )
@@ -480,25 +510,27 @@ class ClientApplication(Frame):
         try:
             game_session = GameSession(directory, DEFAULT_SYSTEM_CONFIGURATION)
         except IOError as ex:
-            self._warning('Load game',
-                'Cannot load game - io error.')
+            self._warning(ClientApplication.TITLE_LOAD_GAME,
+                          ClientApplication.CANNOT_LOAD_GAME + ' ' + \
+                          ClientApplication.IO_ERROR_DURING_READING)
         except pickle.UnpicklingError as ex:
-            self._warning('Load game',
-                'Cannot load game - corrupted game file.')
+            self._warning(ClientApplication.TITLE_LOAD_GAME,
+                          ClientApplication.CANNOT_LOAD_GAME + ' ' + \
+                          ClientApplication.MAP_FILE_IS_CORRUPTED)
         else:
             self.set_game_session(game_session)
 
     @log_on_enter('use case: add player', lvl='info')
     def _add_player_callback(self):
         name = tkSimpleDialog.askstring(
-            title='Create player',
-            prompt='Enter new player name',
+            title=ClientApplication.TITLE_CREATE_PLAYER,
+            prompt=ClientApplication.ENTER_NEW_PLAYER_NAME,
             parent=self)
         if name is None:
             return
 
         color = tkColorChooser.askcolor(
-            title='Create player - choose color for new player',
+            title=Client.Application.TITLE_CREATE_PLAYER_CHOOSE_COLOR,
             parent=self)
         if color is None:
             return
@@ -507,15 +539,16 @@ class ClientApplication(Frame):
         try:
             self._game.new_player_with_units(name, color)
         except NoFreeStartPosition:
-            self._warning('Create player',
-                'Cannot create player - no free start position on map.')
+            self._warning(ClientApplication.CREATE_PLAYER,
+                          ClientApplication.CANNOT_CREATE_PLAYER + ' ' + \
+                          ClientApplication.NO_FREE_START_POSITION)
         else:
             self._set_game(self._game)
 
     @log_on_enter('use case: set program', lvl='info')
     def _set_program_callback(self):
         stream = tkFileDialog.askopenfile(
-            title='Choose source file',
+            title=ClientApplication.TITLE_CHOOSE_SOURCE_FILE,
             mode='r',
             parent=self)
         if stream is None:
@@ -527,8 +560,9 @@ class ClientApplication(Frame):
         elif filename.endswith('.py'):
             language = Language.PYTHON
         else:
-            self._warning('Set program',
-                'Cannot set program - unknown source file extension.')
+            self._warning(ClientApplication.TITLE_SET_PROGRAM,
+                          ClientApplication.CANNOT_SET_PROGRAM + ' ' + \
+                          ClientApplication.UNKNOWN_SOURCE_FILE_EXTENSION)
             return
         field = self._game.game_map.get_field(self._game_viewer.selection_position)
         unit = self._game.units_by_IDs[field.get_unit_ID()]
@@ -620,9 +654,8 @@ class ClientApplication(Frame):
 
     def _ask_if_delete_current_game_if_exists(self):
         if self._game:
-            return tkMessageBox.askyesno(
-                'Are you sure?',
-                'Are you sure? Current game will be lost.',
+            return tkMessageBox.askyesno(ClientApplication.TITLE_ARE_YOU_SURE,
+                ClientApplication.WARNING_CURRENT_GAME_WILL_BE_LOST,
                 icon=tkMessageBox.WARNING,
                 parent=self
             )
@@ -631,8 +664,8 @@ class ClientApplication(Frame):
 
     def _ask_if_quit_program(self):
         return tkMessageBox.askyesno(
-            'Quit program.',
-            'Do you really want to quit the program?',
+            ClientApplication.TITLE_QUIT_PROGRAM,
+            ClientApplication.QUIT_PROGRAM_QUESTION,
             icon=tkMessageBox.WARNING,
             parent=self
         )
