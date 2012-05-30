@@ -15,12 +15,15 @@ __all__ = [
     'memoized',
     'on_error_do',
     'on_error_return',
+    'record',
     'skip',
     'shutdown_logging',
     'TemporaryFileSystem',
     'turn_off_standard_streams_if_it_is_py2exe_distribution',
 ]
 
+from collections import namedtuple
+import copy
 from functools import partial, wraps
 import inspect
 import os, sys, shutil
@@ -124,6 +127,58 @@ def copy_if_an_instance_given(f):
         return f(cls, *args, **kwargs)
 
     return wraper
+
+
+class record(type):
+    """ Metaclass to create deepcopiable namedtuples.
+
+    Using:
+    class MyNamedtuple: # no parent
+        __metaclass__ = record
+        _fields = ('foo', 'bar')
+        def __new__(cls, spam):
+            return self.__bases__[0].__new__(cls, foo=spam, bar=str(spam))
+
+    """
+
+    def __new__(cls, name, bases, dct):
+        assert '_fields' in dct, 'you have to define _fields'
+        assert not bases, 'your class cannot inherit any other class'
+        assert '__deepcopy__' not in dct, \
+          'you cannot specify your own __deepcopy__ method'
+
+        SECRET_KEY = 458643
+
+        if '__new__' in dct:
+            old_new = dct['__new__']
+        else:
+            def old_new(cls, *args, **kwargs):
+                return cls.__bases__[0].__new__(cls, *args, **kwargs)
+
+        def method_new(cls, *args, **kwargs):
+            if (len(args) == 1 and len(kwargs) == 2 and
+                'key' in kwargs and kwargs['key'] == SECRET_KEY and
+                'memo' in kwargs):
+                self = args[0]
+                memo = kwargs['memo']
+                l = [copy.deepcopy(getattr(self, field), memo)
+                     for field in cls._fields]
+                return cls.__bases__[0].__new__(cls, *l)
+
+            return old_new(cls, *args, **kwargs)
+
+        def method_deepcopy(self, memo):
+            cls = self.__class__
+            copied = cls(self, key=SECRET_KEY, memo=memo)
+            memo[id(self)] = copied
+            return copied
+
+        new_bases = (namedtuple(name, dct['_fields']),)
+        del dct['_fields']
+        dct['__slots__'] = ()
+        dct['__deepcopy__'] = method_deepcopy
+        dct['__new__'] = method_new
+        return type.__new__(cls, name, new_bases, dct)
 
 
 def distance(p1, p2):
