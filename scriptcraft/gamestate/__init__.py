@@ -108,7 +108,7 @@ class Game(object):
         unit = Unit(player, unit_type, position, ID)
         player.add_unit(unit)
 
-        self.game_map.place_unit_at(position, ID)
+        self.game_map.place_unit_at(position, unit)
         self.units_by_IDs[unit.ID] = unit
 
         return unit
@@ -123,7 +123,7 @@ class Game(object):
             raise FieldIsOccupied()
 
         self.game_map.erase_at(unit.position)
-        self.game_map.place_unit_at(new_position, unit.ID)
+        self.game_map.place_unit_at(new_position, unit)
         unit.position = new_position
 
     def set_program(self, unit, program):
@@ -155,8 +155,7 @@ class Game(object):
             else:
                 unit.minerals -= 1
 
-        unit_ID = field.get_unit_ID()
-        unit = self.units_by_IDs[unit_ID]
+        unit = field.get_unit()
         switch = {BEHAVIOUR_WHEN_ATTACKED.DESTROY : destroy,
                   BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY : get_mineral_or_destroy}
 
@@ -392,11 +391,10 @@ class Game(object):
             else:
                 assert field.has_unit()
 
-                unit_ID = field.get_unit_ID()
-                unit = self.units_by_IDs[unit_ID]
+                unit = field.get_unit()
                 unit_type = unit.type.main_name
                 player_ID = unit.player.ID
-                return '%s %d %d' % (unit_type, unit_ID, player_ID)
+                return '%s %d %d' % (unit_type, unit.ID, player_ID)
 
 
         input_data += '\n'.join(map(' '.join,
@@ -427,7 +425,7 @@ class Game(object):
         valid_fields = (self.game_map.get_field(pos)
                         for pos in positions_in_range(center, range)
                         if self.game_map.is_valid_position(pos))
-        units = (self.units_by_IDs[field.get_unit_ID()]
+        units = (field.get_unit()
                  for field in valid_fields
                  if field.has_unit())
         units_fulfilling_condition = filter(lambda unit: condition(unit),
@@ -554,7 +552,7 @@ class Game(object):
 
         alien_on_destination_field = False
         if destination_field.has_unit():
-            unit_on_destination_field = self.units_by_IDs[destination_field.get_unit_ID()]
+            unit_on_destination_field = destination_field.get_unit()
             if unit_on_destination_field.player != unit.player:
                 alien_on_destination_field = True
 

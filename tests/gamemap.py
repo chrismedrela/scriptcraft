@@ -36,14 +36,15 @@ class TestGameMap(unittest.TestCase):
     def test_getting_fields(self):
         m = GameMap((16, 16), ())
         m.place_minerals_at((4, 3), 4)
-        m.place_unit_at((5, 4), 21)
+        unit = object()
+        m.place_unit_at((5, 4), unit)
         m.place_trees_at((6, 5))
         m.place_trees_at((7, 6))
         m.erase_at((7, 6))
 
         self.assertEqual(m[4][3].has_mineral_deposit(), True)
         self.assertEqual(m[4][3].get_minerals(), 4)
-        self.assertEqual(m[5][4].get_unit_ID(), 21)
+        self.assertEqual(m[5][4].get_unit(), unit)
         self.assertEqual(m[6][5].has_trees(), True)
         self.assertEqual(m[7][6].is_empty(), True)
 
@@ -86,12 +87,13 @@ class TestField(unittest.TestCase):
         self.assertFalse(field.has_unit())
 
     def test_unit(self):
-        field = Field(unit_ID=667)
+        unit = object()
+        field = Field(unit=unit)
 
         self.assertFalse(field.is_empty())
         self.assertFalse(field.has_trees())
         self.assertTrue(field.has_unit())
-        self.assertEqual(field.get_unit_ID(), 667)
+        self.assertEqual(field.get_unit(), unit)
 
     def test_minerals_and_flat(self):
         field = Field(minerals=0)
@@ -105,7 +107,7 @@ class TestField(unittest.TestCase):
     def test_trees_and_unit(self):
         self.assertRaises(
             ValueError,
-            lambda: Field(trees=True, unit_ID=1)
+            lambda: Field(trees=True, unit=object())
         )
 
     def test_erased_field(self):
@@ -118,25 +120,30 @@ class TestField(unittest.TestCase):
 
     def test_placed_unit(self):
         field = Field(trees=True)
-        field = field.PlacedUnit(unit_ID=123)
+        unit = object()
+        field = field.PlacedUnit(unit=unit)
 
         self.assertFalse(field.has_trees())
-        self.assertEqual(field.get_unit_ID(), 123)
+        self.assertEqual(field.get_unit(), unit)
 
     def test_place_on_occupied_field_allowed(self):
         field = Field(minerals=2)
         field = field.PlacedTrees()
 
     def test_repr(self):
-        field = Field(upland=True, unit_ID=123)
+        unit = '<object object>'
+        field = Field(upland=True, unit=unit)
 
         self.assertEqual(repr(field),
-                         '<Field(type=2, arg=123) : upland with unit 123>')
+                         "<Field(type=2, arg='<object object>') : upland with unit <object object>>")
 
     def test_deep_copy(self):
-        field = Field(unit_ID=123)
+        unit = [3]
+        field = Field(unit=unit)
         field_copy = copy.deepcopy(field)
         self.assertEqual(field, field_copy)
+        unit.append(2)
+        self.assertEqual(field_copy.get_unit(), [3])
 
 
 class TestFieldEfficiency(unittest.TestCase):
@@ -286,7 +293,7 @@ class TestFindingPath(unittest.TestCase):
 
         switch = {' ': lambda position: None,
                   't': lambda position: m.place_trees_at(position),
-                  'u': lambda position: m.place_unit_at(position, 1),
+                  'u': lambda position: m.place_unit_at(position, object()),
                   '*': lambda position: setattr(self, 'source', position),
                   '^': lambda position: setattr(self, 'destination', position),}
         for y, line in enumerate(split):

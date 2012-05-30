@@ -116,8 +116,8 @@ class GameMap(list):
         function = lambda field: field.PlacedMinerals(minerals)
         self._change_field_with_function_if_empty(position, function)
 
-    def place_unit_at(self, position, unit_ID):
-        function = lambda field: field.PlacedUnit(unit_ID)
+    def place_unit_at(self, position, unit):
+        function = lambda field: field.PlacedUnit(unit)
         self._change_field_with_function_if_empty(position, function)
 
     def erase_at(self, position):
@@ -146,12 +146,12 @@ class GameMap(list):
         return c
 
 
-class Field(namedtuple('Field', ('type', 'arg'))):
+class Field():
     """
     A field can has:
      mineral deposit (keyworded argument: minerals : int = number of minerals in deposit)
      *xor* trees (keyworded argument: trees : bool)
-     *xor* unit (keyworded argument: unit_ID : int)
+     *xor* unit (keyworded argument: unit : any object)
 
     Do *not* use attributes 'type' and 'arg'. Instead use methods.
 
@@ -159,49 +159,45 @@ class Field(namedtuple('Field', ('type', 'arg'))):
      type -- describe shape of field (flat, upland)
      arg -- describe object *on* a field:
         arg == 0 <==> nothing on a field
-        arg > 0 <==> unit on field; arg is unit ID
+        arg is not int <==> unit on field; arg is the unit
         arg == -1 <==> trees
         arg <= -2 <==> minerals; -(arg+2) is number of minerals
 
     Examples:
     >>> Field(upland=True, minerals=0)
     <Field(type=2, arg=-2) : upland with 0 minerals>
-    >>> Field(unit_ID=3)
-    <Field(type=1, arg=3) : flat field with unit 3>
+    >>> Field(unit='my unit')
+    <Field(type=1, arg='my unit') : flat field with unit 'my unit'>
     >>> Field(trees=True)
     <Field(type=1, arg=-1) : flat field with trees>
-    >>> Field(minerals=2, object_ID=1)
+    >>> Field(minerals=2, unit=object())
     ...
     ValueError: Field can not has more than one of: mineral deposit, tree and unit
     >>> f = Field(upland=True, minerals=2)
     >>> f.Erased()
     <Field(type=2, arg=0) : empty upland>
-    >>> f.PlacedUnit(2)
-    <Field(type=2, arg=2) : upland with unit 2>
+    >>> f.PlacedUnit('unit')
+    <Field(type=2, arg='unit') : upland with unit 'unit'>
 
     """
 
-    __slots__ = ()
+    __metaclass__ = record
+    _fields = ('type', 'arg')
 
-    @ copy_if_an_instance_given
-    def __new__(cls, upland=False, minerals=None, unit_ID=None, trees=False):
+    def __new__(cls, upland=False, minerals=None, unit=None, trees=False):
         type = 2 if upland else 1
 
-        if sum( ((minerals!=None), (unit_ID!=None), (trees)) ) > 1:
+        if sum( ((minerals!=None), (unit!=None), (trees)) ) > 1:
             raise ValueError('Field can not has more than one of: mineral deposit, tree and unit')
         arg = 0
         if trees:
             arg = -1
         elif minerals != None:
             arg = -minerals-2
-        elif unit_ID != None:
-            arg = unit_ID
+        elif unit != None:
+            arg = unit
 
         return cls.__bases__[0].__new__(cls, type, arg)
-
-    def __deepcopy__(self, memo):
-        c = Field(self)
-        return c
 
     def is_flat(self):
         return self.type == 1
@@ -222,13 +218,13 @@ class Field(namedtuple('Field', ('type', 'arg'))):
         return self.arg <= -2
 
     def has_unit(self):
-        return self.arg > 0
+        return not isinstance(self.arg, int)
 
     def get_minerals(self):
         assert self.arg <= -2
         return -(self.arg+2)
 
-    def get_unit_ID(self):
+    def get_unit(self):
         return self.arg
 
     def PlacedTrees(self):
@@ -237,8 +233,8 @@ class Field(namedtuple('Field', ('type', 'arg'))):
     def PlacedMinerals(self, how_much):
         return self._replace(arg=-2-how_much)
 
-    def PlacedUnit(self, unit_ID):
-        return self._replace(arg=unit_ID)
+    def PlacedUnit(self, unit):
+        return self._replace(arg=unit)
 
     def Erased(self):
         return self._replace(arg=0)
@@ -250,7 +246,7 @@ class Field(namedtuple('Field', ('type', 'arg'))):
             obj = '' if self.is_empty() else \
                 ' with trees' if self.has_trees() else \
                 ' with {0} minerals'.format(self.get_minerals()) if self.has_mineral_deposit() else \
-                ' with unit {0}'.format(self.get_unit_ID())
+                ' with unit {0}'.format(str(self.get_unit()))
         )
 
     def __repr__(self):

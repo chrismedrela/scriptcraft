@@ -347,8 +347,7 @@ class TestGenerateActionsForBuildCommand(BaseGenerateActionTestCase):
 
         destination = (15, 16)
 
-        unit_ID_to_remove = self.game.game_map.get_field(destination).get_unit_ID()
-        unit = self.game.units_by_IDs[unit_ID_to_remove]
+        unit = self.game.game_map.get_field(destination).get_unit()
         self.game.remove_unit(unit)
 
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
@@ -400,8 +399,7 @@ class TestGenerateActionsForComplexGatherCommand(BaseGenerateActionTestCase):
 
         self.game.move_unit_at(self.miner, (19,16))
 
-        unit_ID_to_remove = self.game.game_map.get_field((17, 16)).get_unit_ID()
-        unit_to_remove = self.game.units_by_IDs[unit_ID_to_remove]
+        unit_to_remove = self.game.game_map.get_field((17, 16)).get_unit()
         self.game.remove_unit(unit_to_remove)
 
         destinations = {'base':(18,16),
