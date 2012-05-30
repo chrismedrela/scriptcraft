@@ -330,7 +330,7 @@ class ClientApplication(Frame):
     TITLE_CREATE_PLAYER = 'Dodaj nowego gracza'
     ENTER_NEW_PLAYER_NAME = 'Wpisz nazwę nowego gracza.'
     TITLE_CREATE_PLAYER_CHOOSE_COLOR = 'Wybierz kolor dla nowego gracza.'
-    CANNOT_CREATE_NEW_GAME = 'Nie można dodać nowego gracza.'
+    CANNOT_CREATE_PLAYER = 'Nie można dodać nowego gracza.'
     NO_FREE_START_POSITION = 'Wszystkie pozycje startowe na mapie są już zajęte.'
     TITLE_CHOOSE_SOURCE_FILE = 'Wybierz plik źródłowy'
     TITLE_SET_PROGRAM = 'Ustaw program'
