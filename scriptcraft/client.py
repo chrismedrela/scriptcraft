@@ -342,13 +342,6 @@ class ClientApplication(Frame):
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
 
 
-    MAP_FILETYPES = [
-        ('Scriptcraft map', '*.map'),
-        ('All files', '*'),]
-    GAME_FILETYPES = [
-        ('Scriptcraft game', '*.game'),
-        ('All files', '*'),]
-
     # initializing --------------------------------------------------------
 
     def __init__(self, master):
