@@ -103,17 +103,18 @@ def datafile_path(relative_path):
 
 
 def copy_if_an_instance_given(f):
-    """ Decorator. Use with method __new__ of classes inheriting namedtuple.
-    Allow to make a copy instance by passing it as an only argument.
+    """ Decorator. Use with method __new__ of classes inheriting
+    namedtuple.  Allow to make a shallow copy of an instance by
+    passing it as an only argument.
 
-    What's more, if you implement __deepcopy__ like this:
+    What's more, if you implement __copy__ like this:
 
-      def __deepcopy__(self, memo):
+      def __copy__(self, memo):
           c = MyClass(self)
           return c
 
-    you can use deepcopy on your classes inheriting namedtuple with your own
-    implementation of __new__ method.
+    you can use copy.copy on your classes inheriting namedtuple with
+    your own implementation of __new__ method.
 
     """
 
