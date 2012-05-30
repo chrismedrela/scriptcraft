@@ -532,9 +532,9 @@ class ClientApplication(Frame):
         color = tkColorChooser.askcolor(
             title=ClientApplication.TITLE_CREATE_PLAYER_CHOOSE_COLOR,
             parent=self)
+        color = color[0] # original color was ((r, g, b), "#rrggbb") or (None, None)
         if color is None:
             return
-        color = color[0] # original color was ((r, g, b), "#rrggbb")
 
         try:
             self._game.new_player_with_units(name, color)
