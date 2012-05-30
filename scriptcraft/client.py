@@ -530,7 +530,7 @@ class ClientApplication(Frame):
             return
 
         color = tkColorChooser.askcolor(
-            title=Client.Application.TITLE_CREATE_PLAYER_CHOOSE_COLOR,
+            title=ClientApplication.TITLE_CREATE_PLAYER_CHOOSE_COLOR,
             parent=self)
         if color is None:
             return
