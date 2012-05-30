@@ -34,10 +34,12 @@ LOG_INDENT_PATTERN = '   '
 LOG_FILENAME = '.scriptcraft.log'
 
 
+_initialisated = False
+
 
 def init_logging(lvl='info'):
     """ Init logging. Log in file and on console."""
-    global _indent_depth, _timing_data
+    global _indent_depth, _timing_data, _initialisated
     _indent_depth = 0
 
     lvl = _validate_level(lvl)
@@ -58,6 +60,7 @@ def init_logging(lvl='info'):
     stream_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+    _initialisated = True
 
     log('STARTING APPLICATION', lvl='info')
 
@@ -71,11 +74,15 @@ def log_error_callback(cls, ex, traceback):
 
     """
 
-    logging.exception('unhandled exception!')
+    global _initialisated
+    if _initialisated:
+        logging.exception('unhandled exception!')
 
 
 def log(msg, lvl='debug'):
-    _log(_validate_level(lvl), msg, '')
+    global _initialisated
+    if _initialisated:
+        _log(_validate_level(lvl), msg, '')
 
 
 def log_on_enter(msg, lvl='debug', mode='log'):
@@ -100,21 +107,23 @@ def log_on_enter(msg, lvl='debug', mode='log'):
 
     class result(object):
         def __enter__(self): # context manager use case
-            global _indent_depth
-            if log_this:
-                _log(level, msg)
-                _indent_depth += 1
-            if time:
-                self.started_time = time_module.time()
+            global _indent_depth, _initialisated
+            if _initialisated:
+                if log_this:
+                    _log(level, msg)
+                    _indent_depth += 1
+                if time:
+                    self.started_time = time_module.time()
 
         def __exit__(self, *args): # context manager use case
             # args is [type, value, traceback] or []
-            global _indent_depth, _timing_data
-            if _timing_data is not None and time:
-                delta_time = (time_module.time() - self.started_time) * 1000
-                _timing_data[msg].append(delta_time)
-            if log_this:
-                _indent_depth -= 1
+            global _indent_depth, _timing_data, _initialisated
+            if _initialisated:
+                if _timing_data is not None and time:
+                    delta_time = (time_module.time() - self.started_time) * 1000
+                    _timing_data[msg].append(delta_time)
+                if log_this:
+                    _indent_depth -= 1
 
         def __call__(self, f): # decorator use case
             @ wraps(f)
@@ -131,6 +140,9 @@ def log_on_enter(msg, lvl='debug', mode='log'):
 
 def shutdown_logging():
     """ Print some statistical data about time consumed by timed code."""
+
+    global _initialisated
+    assert _initialisated, 'First you have to call init_logging.'
 
     if _timing_data is not None:
         log('TIMING INFO')
