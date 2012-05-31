@@ -4,7 +4,7 @@
 import unittest
 
 from scriptcraft import direction
-from scriptcraft.parser import Parser
+from scriptcraft.parser import Parser, parse_system_question
 from scriptcraft.utils import *
 
 
@@ -152,6 +152,43 @@ class TestParsingAmbiguousCommands(unittest.TestCase):
 
         illegal_operation = lambda: Parser([A, B])
         self.assertRaises(ValueError, illegal_operation)
+
+
+class TestParsingSystemQuestions(unittest.TestCase):
+    def test_parsing_list_units_command(self):
+        answer = parse_system_question('list units')
+        expected_answer = ('list-units', ())
+        self.assertEqual(answer, expected_answer)
+
+    def test_parsing_lu_command(self):
+        answer = parse_system_question('lu')
+        expected_answer = ('list-units', ())
+        self.assertEqual(answer, expected_answer)
+
+    def test_parsing_unit_info_command(self):
+        answer = parse_system_question('unit 3')
+        expected_answer = ('unit-info', (3,))
+        self.assertEqual(answer, expected_answer)
+
+    def test_parsing_u_command(self):
+        answer = parse_system_question('u 123')
+        expected_answer = ('unit-info', (123,))
+        self.assertEqual(answer, expected_answer)
+
+    def test_parsing_blank_input(self):
+        answer = parse_system_question('')
+        expected_answer = ('error', ())
+        self.assertEqual(answer, expected_answer)
+
+    def test_whitespaces(self):
+        answer = parse_system_question('  list\tunits\r')
+        expected_answer = ('list-units', ())
+        self.assertEqual(answer, expected_answer)
+
+    def test_case_insensitive(self):
+        answer = parse_system_question('lIsT UNITS')
+        expected_answer = ('list-units', ())
+        self.assertEqual(answer, expected_answer)
 
 
 class TestParsingEfficiency(BaseParsingTestCase):

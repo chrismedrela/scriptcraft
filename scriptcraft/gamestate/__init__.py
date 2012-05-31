@@ -37,7 +37,7 @@ from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
 from scriptcraft.gamestate import cmds, actions
-from scriptcraft.parser import Parser
+from scriptcraft.parser import Parser, parse_system_question
 from scriptcraft.utils import *
 
 
@@ -299,29 +299,17 @@ class Game(object):
             clear_mailbox_of(unit)
 
     def _generate_answer_to_system_message(self, message):
-        def list_units():
+        command, args = parse_system_question(message.text)
+
+        if command == 'list-units':
             sender = self.units_by_IDs[message.sender_ID]
             player = sender.player
             text = "%d " % len(player.units)
             text += " ".join(map(lambda unit: "%d %s" % (unit.ID, unit.type.main_name),
-                                  player.units))
-            return text
+                                 player.units))
 
-        def unit_info():
-            def _parse_as_int(data):
-                """ Return int or None if data is invalid. """
-
-                if len(data)>9:
-                    return None
-                try:
-                    return int(data)
-                except ValueError:
-                    return None
-
-            unit_ID = _parse_as_int(split_text[1])
-            if unit_ID == None:
-                return None
-
+        elif command == 'unit-info':
+            unit_ID = args[0]
             unit = self.units_by_IDs.get(unit_ID, None)
             if unit == None:
                 return None
@@ -332,25 +320,14 @@ class Game(object):
                          'y':unit.position[1],
                          'more_info': unit.minerals if unit.type.storage_size != 0 else unit.type.attack_range}
             text = "%(ID)d %(type)s %(x)d %(y)d %(more_info)d" % text_dict
-            return text
 
-        cleaned_text = message.text.lower()
-        split_text = tuple(cleaned_text.split())
-
-        if split_text == ('list', 'units') or split_text == ('lu',):
-            case = list_units
-        elif len(split_text)==2 and split_text[0] in ('unit', 'u'):
-            case = unit_info
         else:
-            return None
-
-        response_text = case()
-        if response_text == None:
+            assert command == 'error'
             return None
 
         response = Message(sender_ID=0,
                            receiver_ID=message.sender_ID,
-                           text=response_text)
+                           text=text)
         return response
 
     @log_on_enter('generating input', mode='only time')

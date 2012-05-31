@@ -5,16 +5,47 @@ from scriptcraft import direction
 from scriptcraft.utils import *
 
 
+def parse_system_question(question):
+    """ Return tuple (command, args) where command is:
+
+    - 'list-units' and then args is empty tuple; that's returned for
+      questions like "LU" or "list units";
+
+    - 'unit-info' and then args is tuple (unit_ID,); that's returned
+      for questions like "U 3" or "unit 123";
+
+    - 'error' and then args is empty_tuple; that's returned when the
+      question is invalid
+
+    """
+
+    cleaned = question.lower().strip()
+    split = tuple(cleaned.split(None, 1))
+
+    if split == ('list', 'units') or split == ('lu',):
+        return ('list-units', ())
+    elif len(split)==2 and split[0] in ('unit', 'u'):
+        maybe_unit_ID = _parse_int(split[1])
+        if maybe_unit_ID is not None:
+            return ('unit-info', (maybe_unit_ID,))
+        else:
+            return ('error', ())
+    else:
+        return ('error', ())
+
 
 class Parser (object):
     def __init__(self, cmds):
         """
         Argument cmds is list of commands. Each command have the
         following attributes:
+
         COMMAND_NAMES -- list of names of the command (for example
         ['b', 'build']); command names are case-insensitive
+
         ARGUMENTS -- list of types where type is 'int', 'str' (max 256
         characters or 'direction'
+
         CONSTRUCTOR -- function that receives parsed arguments and
         return command
 
