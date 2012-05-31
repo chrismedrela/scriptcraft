@@ -37,9 +37,9 @@ class Parser (object):
         for arg in args:
             if arg not in ('str', 'int', 'direction'):
                 raise ValueError("Invalid argument type: '%s'" % arg)
-        switch = {'str':self._parse_str,
-                  'int':self._parse_int,
-                  'direction':self._parse_direction}
+        switch = {'str':_parse_str,
+                  'int':_parse_int,
+                  'direction':_parse_direction}
         return [switch[arg] for arg in args]
 
     @log_on_enter('parse', mode='only time')
@@ -64,7 +64,7 @@ class Parser (object):
 
             # command or message?
             command, rest_of_line = self._split_to_word_and_rest(striped_line)
-            command_as_int = self._parse_int(command)
+            command_as_int = _parse_int(command)
             if command_as_int is None: # that's a command
                 command_as_string = command.upper()
                 arguments = rest_of_line.split()
@@ -92,29 +92,30 @@ class Parser (object):
         rest = splited_line[1] if len(splited_line) >= 2 else ''
         return command, rest
 
-    def _parse_int(self, data):
-        """ Return int or None if data is invalid. """
 
-        if len(data)>9:
-            return None
-        try:
-            return int(data)
-        except ValueError:
-            return None
+def _parse_int(data):
+    """ Return int or None if data is invalid. """
 
-    def _parse_direction(self, data):
-        """ Return direction.* or None if data is invalid. """
+    if len(data)>9:
+        return None
+    try:
+        return int(data)
+    except ValueError:
+        return None
 
-        try:
-            return direction.BY_NAME[data.upper()]
-        except KeyError:
-            return None
+def _parse_direction(data):
+    """ Return direction.* or None if data is invalid. """
 
-    def _parse_str(self, data, max_string_length=256):
-        """ Return data or None if data has more characters than max_string_length
-        argument (default 256). """
+    try:
+        return direction.BY_NAME[data.upper()]
+    except KeyError:
+        return None
 
-        if len(data) > max_string_length:
-            return None
-        return data
+def _parse_str(data, max_string_length=256):
+    """ Return data or None if data has more characters than max_string_length
+    argument (default 256). """
+
+    if len(data) > max_string_length:
+        return None
+    return data
 
