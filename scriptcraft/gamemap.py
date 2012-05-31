@@ -124,6 +124,10 @@ class GameMap(list):
         function = lambda field: field.Erased()
         self._change_field_with_function(position, function)
 
+    def find_direction(self, source, destination):
+        problem = _FindPathProblem(source, destination, self)
+        return problem.find_direction()
+
     def _change_field_with_function_if_empty(self, position, function):
         if not self[position[0]][position[1]].is_empty():
             raise FieldIsOccupied()
@@ -257,13 +261,13 @@ class Field():
                 '>')
 
 
-class FindPathProblem(aima.search.Problem):
+class _FindPathProblem(aima.search.Problem):
     """
     Represent problem of finding path in scriptcraft.core.GameMap
     to an field *or one of its neightbours*.
 
     Using:
-    >>> problem = FindPathProblem(start_position, destination, game_map)
+    >>> problem = _FindPathProblem(start_position, destination, game_map)
     >>> maybe_direction = problem.find_direction()
     """
 
@@ -278,14 +282,14 @@ class FindPathProblem(aima.search.Problem):
         self.destination = destination
         self.game_map = game_map
         dist = distance(start_position, destination)
-        self.h_coefficient = (FindPathProblem.H_COEFFICIENT_FOR_NON_HEURA
-                              if dist < FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
-                              else FindPathProblem.H_COEFFICIENT_FOR_HEURA)
+        self.h_coefficient = (_FindPathProblem.H_COEFFICIENT_FOR_NON_HEURA
+                              if dist < _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
+                              else _FindPathProblem.H_COEFFICIENT_FOR_HEURA)
         self.iteration = 0
 
     def successor(self, state):
         self.iteration += 1
-        if self.iteration >= FindPathProblem.ITERATIONS_LIMIT:
+        if self.iteration >= _FindPathProblem.ITERATIONS_LIMIT:
             raise TooLongSearchingTime()
 
         x, y = state

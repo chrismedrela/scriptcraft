@@ -35,7 +35,7 @@ import random
 
 from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.gamemap import FieldIsOccupied, FindPathProblem
+from scriptcraft.gamemap import FieldIsOccupied
 from scriptcraft.gamestate import cmds, actions
 from scriptcraft.parser import Parser, parse_system_question
 from scriptcraft.utils import *
@@ -587,8 +587,7 @@ class Game(object):
     def _find_path_and_generate_action(self, unit, goal=None):
         source = unit.position
         goal = goal or unit.command.destination
-        problem = FindPathProblem(source, goal, self.game_map)
-        maybe_direction = problem.find_direction()
+        maybe_direction = self.game_map.find_direction(source, goal)
         if not maybe_direction:
             return actions.StopAction()
 

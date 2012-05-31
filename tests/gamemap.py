@@ -5,7 +5,7 @@ import copy
 import unittest
 
 from scriptcraft import direction
-from scriptcraft.gamemap import (GameMap, FindPathProblem, Field,
+from scriptcraft.gamemap import (GameMap, Field, _FindPathProblem,
                                  NoFreeStartPosition, FieldIsOccupied)
 from scriptcraft.utils import *
 
@@ -250,17 +250,13 @@ class TestFindingPath(unittest.TestCase):
         self._test_answer_equal_to(None)
 
     def test_skip_if_too_long_searching_time(self):
-        size = 256
-        s = (' ttttttttttttttttttttttttttttttt\n'*1 + \
-             '                                \n'*10 + \
-             'ttttttttttttttttttttttttttttttt \n'*1)*5
-        s = s[:-1] # delete last '\n'
+        assert _FindPathProblem.ITERATIONS_LIMIT == 256
+        s = ' '*257
         self.game_map = self._create_game_map_from_text(s)
-        self.destination = (0, 0)
-        self.source = (0, (1+10+1)*4)
+        self.source = (0, 0)
+        self.destination = (256, 0)
 
         self._test_answer_equal_to(None)
-        assert self.problem.iteration == FindPathProblem.ITERATIONS_LIMIT
 
     @ max_time(10)
     def test_efficiency_on_blank_map_with_non_heura_algorythm(self):
@@ -308,7 +304,5 @@ class TestFindingPath(unittest.TestCase):
         self.assertEqual(expected_direction, answered_direction)
 
     def _find_direction(self):
-        self.problem = FindPathProblem(self.source, self.destination, self.game_map)
-        answer = self.problem.find_direction()
-        return answer
+        return self.game_map.find_direction(self.source, self.destination)
 
