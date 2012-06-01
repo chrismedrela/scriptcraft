@@ -6,13 +6,62 @@
 
 
 
+class GameMap(object):
+    DEFAULT_GROUND_TYPE = 1
+
+    def __init__(self, size, start_positions):
+        assert size[0]>0 and size[1]>0, \
+            "map size must be at least 1x1"
+        assert all(0 <= pos[0] < size[0] and 0 <= pos[1] < size[1]
+                   for pos in start_positions), \
+            "all start positions must be inside map"
+
+        self._free_start_positions = set(start_positions)
+        self._size = size
+
+        # self._map is dict {(x, y) : (ground_type, object_on_the_field)}
+        self._map = dict(((x, y), (GameMap.DEFAULT_GROUND_TYPE, None))
+                         for x in xrange(size[0])
+                         for y in xrange(size[1]))
+
+    def __getitem__(self, position):
+        valid_position = self._is_valid_position(position)
+        if valid_position:
+            ground_type, obj = self._map[position]
+        else:
+            ground_type, obj = GameMap.DEFAULT_GROUND_TYPE, None
+
+        return Field(position, valid_position,
+                     ground_type, obj, game_map=self)
+
+    def try_reserve_free_start_position(self):
+        for position in self._free_start_positions:
+            all_neighbours_all_accessible = all(
+                self[neighbour_position].accessible for neighbour_position
+                in self._get_four_neighbour_positions(position)
+            )
+            if self[position].accessible and all_neighbours_all_accessible:
+                self._free_start_positions.remove(position)
+                return position
+        return None
+
+    def _get_four_neighbour_positions(self, pos):
+        return ((pos[0]-1, pos[1]),
+                (pos[0]+1, pos[1]),
+                (pos[0], pos[1]-1),
+                (pos[0], pos[1]+1))
+
+    def _is_valid_position(self, position):
+        return (0 <= position[0] <= self._size[0] and
+                0 <= position[1] <= self._size[1])
 
 
 class Field(object):
-    __slots__ = ('maybe_object',
-                 'valid_position',
-                 'position',
-                 'ground_type')
+    __slots__ = ('_maybe_object',
+                 '_valid_position',
+                 '_position',
+                 '_ground_type',
+                 '_game_map')
 
     def __init__(self, position, valid_position,
                  ground_type, maybe_object, game_map):
@@ -62,7 +111,7 @@ class Field(object):
 # old code
 # ==============================================================================
 
-
+"""
 from collections import namedtuple
 import copy
 
@@ -90,14 +139,14 @@ class TooLongSearchingTime(Exception):
 
 class GameMap(list):
     def __init__(self, size, start_positions=()):
-        """Create rectangular, flat, empty map.
+        "Create rectangular, flat, empty map.
 
         Arguments:
         size -- tuple (x, y)
         start_positions -- sequence of start positions; every valid position is
             valid start position (for example (0,0) is OK, but (-1, 0) not)
 
-        """
+        "
 
         x_size, y_size = size
 
@@ -111,12 +160,12 @@ class GameMap(list):
         self.size = size
 
     def reserve_next_free_start_position(self):
-        """
+        "
         For any free start position all following conditions are truth:
          - the start position and its four neighbours exist and are empty and flat
 
         Each call return other start position or raise NoFreeStartPosition.
-        """
+        "
 
         for candidate in self._free_start_positions:
             if self._is_free_position(candidate):
@@ -213,7 +262,7 @@ class GameMap(list):
 
 
 class Field():
-    """
+    "
     A field can has:
      mineral deposit (keyworded argument: minerals : int = number of minerals in deposit)
      *xor* trees (keyworded argument: trees : bool)
@@ -245,7 +294,7 @@ class Field():
     >>> f.PlacedUnit('unit')
     <Field(type=2, arg='unit') : upland with unit 'unit'>
 
-    """
+    "
 
     __metaclass__ = record
     _fields = ('type', 'arg')
@@ -324,14 +373,14 @@ class Field():
 
 
 class _FindPathProblem(aima.search.Problem):
-    """
+    "
     Represent problem of finding path in scriptcraft.core.GameMap
     to an field *or one of its neightbours*.
 
     Using:
     >>> problem = _FindPathProblem(start_position, destination, game_map)
     >>> maybe_direction = problem.find_direction()
-    """
+    "
 
     ITERATIONS_LIMIT = 256
     MIN_DISTANCE_TO_USE_HEURA = 16
@@ -376,8 +425,8 @@ class _FindPathProblem(aima.search.Problem):
 
     @log_on_enter('find path', mode='only time')
     def find_direction(self):
-        """ Return None if start_position==destination or if destination
-        is unavailable or if computing path took too long time. """
+        " Return None if start_position==destination or if destination
+        is unavailable or if computing path took too long time. "
 
         if self.start_position == self.destination:
             return None
@@ -401,4 +450,4 @@ class _FindPathProblem(aima.search.Problem):
         else:
             return None
 
-
+"""

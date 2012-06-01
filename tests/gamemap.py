@@ -5,8 +5,8 @@ import copy
 import unittest
 
 from scriptcraft import direction
-from scriptcraft.gamemap import (GameMap, Field, _FindPathProblem,
-                                 FieldOutsideMap)
+from scriptcraft.gamemap import GameMap, Field #_FindPathProblem,
+#                                 FieldOutsideMap)
 from scriptcraft.utils import *
 
 
@@ -156,8 +156,8 @@ class TestGameMapAndField(unittest.TestCase):
 
     def _create_game_map(self, start_positions=(), occupied_positions=()):
         game_map = GameMap((16, 16), start_positions)
-        for occupied_field in occupied_fields:
-            game_map[occupied_field].place_object(object())
+        for occupied_position in occupied_positions:
+            game_map[occupied_position].place_object(object())
         return game_map
 
 
@@ -170,12 +170,12 @@ class TestGameMapEfficiency(unittest.TestCase):
 
 class TestFindingPath(unittest.TestCase):
     def test_destination_equal_to_source(self):
-        self.game_map = GameMap((4, 4))
+        self.game_map = GameMap((4, 4), ())
         self.source = self.destination = (3, 2)
         self._test_answer_equal_to(None)
 
     def test_destination_is_source_neighbour(self):
-        self.game_map = GameMap((4, 4))
+        self.game_map = GameMap((4, 4), ())
         self.source = (3, 2)
         self.destination = (3, 3)
         self._test_answer_equal_to(direction.S)
@@ -193,7 +193,7 @@ class TestFindingPath(unittest.TestCase):
 
     def test_destination_is_far_far_away_but_is_avaiable(self):
         size = 128
-        self.game_map = GameMap((size, size))
+        self.game_map = GameMap((size, size), ())
         self.source = 14, 0
         self.destination = 14+size/2, size-1
         answered_direction = self._find_direction()
@@ -233,7 +233,7 @@ class TestFindingPath(unittest.TestCase):
         self.assertTrue(answered_direction in (direction.E, direction.S))
 
     def test_destination_is_unavailable_but_its_neighbours_are_not(self):
-        s = '*u'
+        s = '*t'
         self.destination = (1, 0)
         self.game_map = self._create_game_map_from_text(s)
         self._test_answer_equal_to(None)
@@ -261,10 +261,12 @@ class TestFindingPath(unittest.TestCase):
 
         game_map = GameMap((size_x, size_y), ())
 
-        switch = {' ': lambda field: None,
-                  't': lambda field: field.place_object(object()),
-                  '*': lambda field: setattr(self, 'source', position),
-                  '^': lambda field: setattr(self, 'destination', position),}
+        switch = {
+            ' ': lambda field: None,
+            't': lambda field: field.place_object(object()),
+            '*': lambda field: setattr(self, 'source', field.position),
+            '^': lambda field: setattr(self, 'destination', field.position),
+        }
         for y, line in enumerate(split):
             for x, char in enumerate(line):
                 case = switch[char]
