@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-
+from scriptcraft import aima, direction
+from scriptcraft.utils import *
 
 
 
@@ -77,6 +78,10 @@ class GameMap(object):
                 return neighbour
         return None
 
+    def find_direction(self, source, destination):
+        problem = _FindPathProblem(source, destination, self)
+        return problem.find_direction()
+
     def _get_four_neighbours_of(self, pos):
         return (self[pos[0]-1, pos[1]],
                 self[pos[0]+1, pos[1]],
@@ -84,8 +89,8 @@ class GameMap(object):
                 self[pos[0], pos[1]+1])
 
     def _is_valid_position(self, position):
-        return (0 <= position[0] <= self._size[0] and
-                0 <= position[1] <= self._size[1])
+        return (0 <= position[0] < self._size[0] and
+                0 <= position[1] < self._size[1])
 
 
 class Field(object):
@@ -141,6 +146,79 @@ class Field(object):
         self._maybe_object = obj
         self._game_map[self._position] = self
 
+
+class _TooLongSearchingTime(Exception):
+    pass
+
+
+class _FindPathProblem(aima.search.Problem):
+    ITERATIONS_LIMIT = 256
+    MIN_DISTANCE_TO_USE_HEURA = 16
+    H_COEFFICIENT_FOR_NON_HEURA = 1.0
+    H_COEFFICIENT_FOR_HEURA = 1.03
+
+    def __init__(self, start_position, destination, game_map):
+        aima.search.Problem.__init__(self, start_position, destination)
+        self.start_position = start_position
+        self.destination = destination
+        self.game_map = game_map
+        dist = distance(start_position, destination)
+        self.h_coefficient = (_FindPathProblem.H_COEFFICIENT_FOR_NON_HEURA
+                              if dist < _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
+                              else _FindPathProblem.H_COEFFICIENT_FOR_HEURA)
+        self.iteration = 0
+
+    def successor(self, state):
+        self.iteration += 1
+        if self.iteration >= _FindPathProblem.ITERATIONS_LIMIT:
+            raise _TooLongSearchingTime()
+
+        x, y = state
+        neighbour_positions = ((x - 1, y),
+                               (x, y - 1),
+                               (x + 1, y),
+                               (x, y + 1))
+        neighbours = [(None, position) for position in neighbour_positions
+                      if (self.game_map[position].accessible
+                          or position == self.destination)]
+        return neighbours
+
+    def goal_test(self, state):
+        return state == self.destination
+
+    def path_cost(self, c, state1, action, state2):
+        return c + 1
+
+    def h(self, node):
+        x, y = node.state
+        return distance((x, y), self.destination) * self.h_coefficient
+
+    @log_on_enter('find path', mode='only time')
+    def find_direction(self):
+        """ Return None if start_position==destination or if destination
+        is unavailable or if computing path took too long time. """
+
+        if self.start_position == self.destination:
+            return None
+
+        try:
+            result_node = aima.search.astar_search(self)
+        except _TooLongSearchingTime:
+            return None
+
+        if result_node == None: # no path found
+            return None
+
+        path = result_node.path()
+        first_node, second_node = path[-1], path[-2]
+        delta = (second_node.state[0] - first_node.state[0],
+                 second_node.state[1] - first_node.state[1])
+        next_field = second_node.state
+
+        if self.game_map[next_field].accessible:
+            return direction.FROM_RAY[delta]
+        else:
+            return None
 
 
 
