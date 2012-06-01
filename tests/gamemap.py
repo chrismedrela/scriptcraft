@@ -6,176 +6,179 @@ import unittest
 
 from scriptcraft import direction
 from scriptcraft.gamemap import (GameMap, Field, _FindPathProblem,
-                                 NoFreeStartPosition, FieldIsOccupied)
+                                 FieldOutsideMap)
 from scriptcraft.utils import *
 
 
-class TestGameMap(unittest.TestCase):
-    @ max_time(100, repeat=1)
-    def test_constructor(self):
-        m = GameMap((128, 128), [(2,3), (4,5)])
 
-    def test_start_positions(self):
-        start_positions = ((0,0), (31, 31), (10,12), (22, 22), (23, 3))
-        m = GameMap((32, 32), start_positions)
-        m.place_unit_at((22, 22), 3)
-        m.place_minerals_at((23, 2), 10)
+class TestGameMapAndField(unittest.TestCase):
+    def test_creating_and_getting_and_setting_fields(self):
+        game_map = GameMap(size=(16, 16), start_positions=[(5, 6), (7, 8)])
 
-        x, y = m.reserve_next_free_start_position()
-        self.assertEqual((x, y), (10, 12))
+    def test_getting_empty_field(self):
+        game_map = GameMap((16, 16), [])
+        field = game_map[9, 6]
 
-        illegal_operation = m.reserve_next_free_start_position
-        self.assertRaises(NoFreeStartPosition, illegal_operation)
+        self.assertEqual(field.ground_type, 1)
+        self.assertEqual(field.valid_position, True)
+        self.assertEqual(field.position, (9, 6))
+        self.assertEqual(field.maybe_object, None)
+        self.assertEqual(field.accessible, True)
+        self.assertEqual(field.empty, True)
+
+    def test_changing_ground_type_of_field(self):
+        game_map = GameMap((16, 16), [])
+        field = game_map[9, 6]
+        field.change_ground(2)
+        self.assertEqual(game_map[9, 6].ground_type, 2)
+
+    def test_placing_object_on_field(self):
+        game_map = GameMap((16, 16), [])
+        field = game_map[9, 6]
+        obj = object()
+        field.place_object(obj)
+        self.assertEqual(field.accessible, False)
+        self.assertEqual(field.empty, False)
+        self.assertEqual(field.maybe_object, obj)
+        self.assertEqual(field, game_map[9, 6])
+
+    def test_remove_from_field_non_existing_object(self):
+        game_map = GameMap((16, 16), [])
+        empty_field = game_map[9, 6]
+        empty_field.place_object(None) # allowed
 
     def test_cannot_place_on_occuped_field(self):
-        m = GameMap((16, 16), ())
-        m.place_unit_at((8, 9), 4)
-        illegal_operation = lambda: m.place_minerals_at((8, 9), 8)
+        game_map = GameMap((16, 16), [])
+        game_map[9, 6].place_object(object())
+        illegal_operation = lambda: game_map[9, 6].place_object(object())
         self.assertRaises(FieldIsOccupied, illegal_operation)
 
-    def test_getting_fields(self):
-        m = GameMap((16, 16), ())
-        m.place_minerals_at((4, 3), 4)
-        unit = object()
-        m.place_unit_at((5, 4), unit)
-        m.place_trees_at((6, 5))
-        m.place_trees_at((7, 6))
-        m.erase_at((7, 6))
+    def test_placing_and_removing_object(self):
+        game_map = GameMap((16, 16), [])
+        game_map[9, 6].place_object(object())
+        game_map[9, 6].place_object(None)
+        self.assertTrue(game_map[9, 6].empty)
 
-        self.assertEqual(m[4][3].has_mineral_deposit(), True)
-        self.assertEqual(m[4][3].get_minerals(), 4)
-        self.assertEqual(m[5][4].get_unit(), unit)
-        self.assertEqual(m[6][5].has_trees(), True)
-        self.assertEqual(m[7][6].is_empty(), True)
+    def test_cannot_change_position_of_field(self):
+        game_map = GameMap((16, 16), [])
+        def illegal_operation():
+            game_map[6, 5] = game_map[7, 8]
+        self.assertRaises(ValueError, illegal_operation)
 
-        self.assertEqual(m.get_field((7, 6)), m[7][6])
+    def test_getting_field_outside_map(self):
+        game_map = GameMap((16, 16), ())
 
-    def test_find_flat_and_free_neighbour_when_it_doesnt_exist(self):
-        m = GameMap((4, 4), ())
-        m.place_trees_at((1, 0))
-        m.place_trees_at((0, 1))
+        field = game_map[-1, 0]
 
-        neighbour = m.find_flat_and_free_neighbour_of((0, 0))
-        expected_neighbour = None
-        self.assertEqual(neighbour, expected_neighbour)
+        self.assertEqual(field.ground_type, 1) # 1 is default ground type
+        self.assertEqual(field.valid_position, False)
+        self.assertEqual(field.position, (-1, 0))
+        self.assertEqual(field.maybe_object, None)
+        self.assertEqual(field.accessible, False)
+        self.assertEqual(field.empty, True)
+        illegal_operation = lambda: field.change_ground(0)
+        self.assertRaises(FieldOutsideMap, illegal_operation)
+        illegal_operation = lambda: field.place_object(None)
+        self.assertRaises(FieldOutsideMap, illegal_operation)
+        illegal_operation = lambda: field.place_object(object())
+        self.assertRaises(FieldOutsideMap, illegal_operation)
 
-    def test_is_valid_position(self):
-        m = GameMap((8, 8), ())
-        self.assertFalse(m.is_valid_position((8, 4)))
+    def test_finding_accessible_neighbour_when_it_doesnt_exist(self):
+        game_map = self._create_game_map(occupied_positions=[(0, 1), (1, 0)])
+        answer = game_map.find_accessible_neighbour_of((0, 0))
+        self.assertEqual(answer, None)
 
-    @ max_time(200, repeat=1)
-    def test_deepcopy_efficiency_and_correctness(self):
+    def test_finding_accessible_neighbour_when_it_exists(self):
+        game_map = self._create_game_map(occupied_positions=[(0, 1)])
+        answer = game_map.find_accessible_neighbour_of((0, 0))
+        self.assertEqual(answer, (1, 0))
+
+    def test_reserving_start_position_when_its_occupied(self):
+        game_map = self._create_game_map(start_positions=[(8, 8)],
+                                         occupied_positions=[(8, 8)])
+        self.assertEqual(game_map.try_reserve_free_start_position(), None)
+
+    def test_reserving_start_position_when_its_neighbour_is_occupied(self):
+        game_map = self._create_game_map(start_positions=[(8, 8)],
+                                         occupied_positions=[(8, 7)])
+        self.assertEqual(game_map.try_reserve_free_start_position(), None)
+
+    def test_reserving_start_position_when_its_not_occupied(self):
+        game_map = self._create_game_map(start_positions=[(8, 8)],
+                                         occupied_positions=[(7, 7)])
+        self.assertEqual(game_map.try_reserve_free_start_position(), (8, 8))
+
+    def test_reserving_start_position_when_there_are_more_then_one(self):
+        free_start_position = (9, 9)
+        game_map = self._create_game_map(
+            start_positions=\
+                [(1, 8), (3, 8), (5, 8), (7, 8), free_start_position],
+            occupied_positions=\
+                [(1, 9), (3, 9), (5, 9), (7, 9)])
+        self.assertEqual(game_map.try_reserve_free_start_position(),
+                         free_start_position)
+
+    def test_reserving_start_position_when_its_on_edge(self):
+        game_map = self._create_game_map(start_positions=[(0, 8)])
+        self.assertEqual(game_map.try_reserve_free_start_position(), None)
+
+    def test_deepcopying_correctness(self):
         start_positions = [(3, 3), (4, 5)]
-        m = GameMap((128, 256), start_positions)
-        c = copy.deepcopy(m)
+        original = GameMap((128, 128), start_positions)
+        copied = copy.deepcopy(original)
 
-        m.place_unit_at((127,255), 3)
-        self.assertEqual(c[127][255].is_empty(), True)
+        # check independence of objects on map
+        position = (124, 124)
+        original[position].place_object(object())
+        self.assertEqual(copied[position].maybe_object, None)
 
-        assert m._free_start_positions == c._free_start_positions
-        m.reserve_next_free_start_position()
-        self.assertNotEqual(m._free_start_positions, c._free_start_positions)
+        # check independence of _free_start_positions
+        self.assertEqual(original._free_start_positions,
+                         copied._free_start_positions)
+        original.try_reserve_free_start_position()
+        self.assertNotEqual(original._free_start_positions,
+                            copied._free_start_positions)
 
+    def test_repr_on_game_map(self):
+        game_map = GameMap((16, 12), [(12, 6), (6, 3)])
+        expected = "GameMap(16x12, id=%x)" % id(game_map)
+        self.assertEqual(str(game_map), expected)
 
-class TestField(unittest.TestCase):
-    def test_trees(self):
-        field = Field(trees=True)
+    def test_repr_on_field(self):
+        game_map = GameMap((16, 12), [(12, 6), (6, 3)])
+        field = game_map[12, 4]
+        field.place_object('<object>')
+        expected = ("Field(position=(12, 4), "
+                    "valid_position=True, "
+                    "ground_type=1, "
+                    "maybe_object='<object>')")
+        self.assertEqual(str(field), expected)
 
-        self.assertFalse(field.is_empty())
-        self.assertFalse(field.is_flat_and_empty())
-        self.assertTrue(field.has_trees())
-        self.assertFalse(field.has_unit())
-
-    def test_unit(self):
-        unit = object()
-        field = Field(unit=unit)
-
-        self.assertFalse(field.is_empty())
-        self.assertFalse(field.has_trees())
-        self.assertTrue(field.has_unit())
-        self.assertEqual(field.get_unit(), unit)
-
-    def test_minerals_and_flat(self):
-        field = Field(minerals=0)
-
-        self.assertFalse(field.is_empty())
-        self.assertTrue(field.is_flat())
-        self.assertTrue(field.has_mineral_deposit())
-        self.assertFalse(field.has_trees())
-        self.assertEqual(field.get_minerals(), 0)
-
-    def test_trees_and_unit(self):
-        self.assertRaises(
-            ValueError,
-            lambda: Field(trees=True, unit=object())
-        )
-
-    def test_erased_field(self):
-        field = Field(trees=True)
-        field = field.Erased()
-
-        self.assertTrue(field.is_empty())
-        self.assertTrue(field.is_flat_and_empty())
-        self.assertFalse(field.has_trees())
-
-    def test_placed_unit(self):
-        field = Field(trees=True)
-        unit = object()
-        field = field.PlacedUnit(unit=unit)
-
-        self.assertFalse(field.has_trees())
-        self.assertEqual(field.get_unit(), unit)
-
-    def test_place_on_occupied_field_allowed(self):
-        field = Field(minerals=2)
-        field = field.PlacedTrees()
-
-    def test_repr(self):
-        unit = '<object object>'
-        field = Field(upland=True, unit=unit)
-
-        self.assertEqual(repr(field),
-                         "<Field(type=2, arg='<object object>') : upland with unit <object object>>")
-
-    def test_deep_copy(self):
-        unit = [3]
-        field = Field(unit=unit)
-        field_copy = copy.deepcopy(field)
-        self.assertEqual(field, field_copy)
-        unit.append(2)
-        self.assertEqual(field_copy.get_unit(), [3])
+    def _create_game_map(self, start_positions=(), occupied_positions=()):
+        game_map = GameMap((16, 16), start_positions)
+        for occupied_field in occupied_fields:
+            game_map[occupied_field].place_object(object())
+        return game_map
 
 
-class TestFieldEfficiency(unittest.TestCase):
-
-    @ max_time(10)
-    def test_function_is_empty(self):
-        f = Field(minerals=2)
-        for _ in xrange(64*64):
-            f.is_empty()
-
-    @ max_time(50)
-    def test_constructor_placed_minerals(self):
-        f = Field(trees=True)
-        for _ in xrange(64*64):
-            f.PlacedMinerals(123)
+class TestGameMapEfficiency(unittest.TestCase):
+    @ max_time(25)
+    def test_deepcopying(self):
+        original = GameMap((128, 128), ())
+        copied = copy.deepcopy(original)
 
 
 class TestFindingPath(unittest.TestCase):
     def test_destination_equal_to_source(self):
         self.game_map = GameMap((4, 4))
         self.source = self.destination = (3, 2)
-
-        expected_direction = None
-        self._test_answer_equal_to(expected_direction)
+        self._test_answer_equal_to(None)
 
     def test_destination_is_source_neighbour(self):
         self.game_map = GameMap((4, 4))
         self.source = (3, 2)
         self.destination = (3, 3)
-
-        expected_direction = direction.S
-        self._test_answer_equal_to(expected_direction)
+        self._test_answer_equal_to(direction.S)
 
     def test_destination_is_unavaiable_but_its_neighbour_is_not(self):
         s = 'tu    \n' + \
@@ -185,17 +188,14 @@ class TestFindingPath(unittest.TestCase):
             ' t    \n' + \
             '   tt*'
         self.game_map = self._create_game_map_from_text(s)
-
         self.destination = (1, 0)
-        expected_direction = direction.N
-        self._test_answer_equal_to(expected_direction)
+        self._test_answer_equal_to(direction.N)
 
     def test_destination_is_far_far_away_but_is_avaiable(self):
         size = 128
         self.game_map = GameMap((size, size))
         self.source = 14, 0
         self.destination = 14+size/2, size-1
-
         answered_direction = self._find_direction()
         self.assertTrue(answered_direction in (direction.E, direction.S))
 
@@ -205,9 +205,7 @@ class TestFindingPath(unittest.TestCase):
             '*t  \n' + \
             ' t^ '
         self.game_map = self._create_game_map_from_text(s)
-
-        expected_direction = None
-        self._test_answer_equal_to(expected_direction)
+        self._test_answer_equal_to(None)
 
     def test_road_block(self):
         s = '                         \n' + \
@@ -231,7 +229,6 @@ class TestFindingPath(unittest.TestCase):
             '                         \n' + \
             '                         '
         self.game_map = self._create_game_map_from_text(s)
-
         answered_direction = self._find_direction()
         self.assertTrue(answered_direction in (direction.E, direction.S))
 
@@ -239,14 +236,12 @@ class TestFindingPath(unittest.TestCase):
         s = '*u'
         self.destination = (1, 0)
         self.game_map = self._create_game_map_from_text(s)
-
         self._test_answer_equal_to(None)
 
     def test_destination_behind_border(self):
         self.game_map = GameMap((3, 3), ())
         self.destination = (3, 0)
         self.source = (2, 0)
-
         self._test_answer_equal_to(None)
 
     def test_skip_if_too_long_searching_time(self):
@@ -255,28 +250,7 @@ class TestFindingPath(unittest.TestCase):
         self.game_map = self._create_game_map_from_text(s)
         self.source = (0, 0)
         self.destination = (256, 0)
-
         self._test_answer_equal_to(None)
-
-    @ max_time(10)
-    def test_efficiency_on_blank_map_with_non_heura_algorythm(self):
-        size_of_map = FindPathProblem.MIN_DISTANCE_TO_USE_HEURA/2-1
-        self._test_efficiency_on_blank_map(size_of_map)
-        assert distance(self.source, self.destination) < FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
-
-    @ max_time(150)
-    def test_efficiency_on_blank_map_with_heura_algorythm(self):
-        size_of_map = 128
-        self._test_efficiency_on_blank_map(size_of_map)
-        assert distance(self.source, self.destination) >= FindPathProblem.MIN_DISTANCE_TO_USE_HEURA
-
-    def _test_efficiency_on_blank_map(self, size_of_map):
-        self.game_map = GameMap((size_of_map, size_of_map))
-        self.source = size_of_map-1, 0
-        self.destination = 0, size_of_map-1
-
-        answered_direction = self._find_direction()
-        self.assertTrue(answered_direction != None)
 
     def _create_game_map_from_text(self, s):
         """ '*' means source and '^' - destination """
@@ -285,23 +259,48 @@ class TestFindingPath(unittest.TestCase):
 
         size_x, size_y = len(split[0]), len(split)
 
-        m = GameMap((size_x, size_y), ())
+        game_map = GameMap((size_x, size_y), ())
 
-        switch = {' ': lambda position: None,
-                  't': lambda position: m.place_trees_at(position),
-                  'u': lambda position: m.place_unit_at(position, object()),
-                  '*': lambda position: setattr(self, 'source', position),
-                  '^': lambda position: setattr(self, 'destination', position),}
+        switch = {' ': lambda field: None,
+                  't': lambda field: field.place_object(object()),
+                  '*': lambda field: setattr(self, 'source', position),
+                  '^': lambda field: setattr(self, 'destination', position),}
         for y, line in enumerate(split):
             for x, char in enumerate(line):
                 case = switch[char]
-                case((x, y))
+                case(game_map[x, y])
 
-        return m
+        return game_map
 
     def _test_answer_equal_to(self, expected_direction):
         answered_direction = self._find_direction()
         self.assertEqual(expected_direction, answered_direction)
+
+    def _find_direction(self):
+        return self.game_map.find_direction(self.source, self.destination)
+
+
+class TestFindingPathEfficiency(unittest.TestCase):
+    @ max_time(10)
+    def test_efficiency_on_blank_map_with_non_heura_algorythm(self):
+        size_of_map = _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA/2-1
+        assert (distance(self.source, self.destination) < \
+                _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA)
+        self._test_efficiency_on_blank_map(size_of_map)
+
+    @ max_time(150)
+    def test_efficiency_on_blank_map_with_heura_algorythm(self):
+        size_of_map = 128
+        assert (distance(self.source, self.destination) >= \
+                FindPathProblem.MIN_DISTANCE_TO_USE_HEURA)
+        self._test_efficiency_on_blank_map(size_of_map)
+
+    def _test_efficiency_on_blank_map(self, size_of_map):
+        self.game_map = GameMap((size_of_map, size_of_map))
+        self.source = size_of_map-1, 0
+        self.destination = 0, size_of_map-1
+        answered_direction = self._find_direction()
+        self.assertTrue(answered_direction != None)
 
     def _find_direction(self):
         return self.game_map.find_direction(self.source, self.destination)
