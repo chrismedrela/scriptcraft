@@ -141,7 +141,7 @@ class TestGameMapAndField(unittest.TestCase):
 
     def test_repr_on_game_map(self):
         game_map = GameMap((16, 12), [(12, 6), (6, 3)])
-        expected = "GameMap(16x12, id=%x)" % id(game_map)
+        expected = "GameMap(16x12, id=0x%x)" % id(game_map)
         self.assertEqual(str(game_map), expected)
 
     def test_repr_on_field(self):
@@ -151,7 +151,8 @@ class TestGameMapAndField(unittest.TestCase):
         expected = ("Field(position=(12, 4), "
                     "valid_position=True, "
                     "ground_type=1, "
-                    "maybe_object='<object>')")
+                    "maybe_object='<object>', "
+                    "id(game_map)=0x%x)" % id(game_map))
         self.assertEqual(str(field), expected)
 
     def _create_game_map(self, start_positions=(), occupied_positions=()):

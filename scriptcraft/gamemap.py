@@ -61,6 +61,14 @@ class GameMap(object):
                                     GameMap.MAX_GROUND_TYPE))
         self._map[position] = (field.ground_type, field.maybe_object)
 
+    def __repr__(self):
+        return "GameMap(%dx%d, id=0x%x)" % \
+          (self._size[0], self._size[1], id(self))
+
+    @property
+    def size(self):
+        return self._size
+
     def try_reserve_free_start_position(self):
         for position in self._free_start_positions:
             all_neighbours_are_accessible = all(
@@ -113,6 +121,13 @@ class Field(object):
                 all(getattr(self, attr) == getattr(other, attr)
                     for attr in ('_maybe_object', '_valid_position',
                                  '_position', '_ground_type')))
+
+    def __repr__(self):
+        return ("Field(position=%r, valid_position=%r, ground_type=%r, "
+                "maybe_object=%r, id(game_map)=0x%x)" % \
+                (self._position, self._valid_position, self._ground_type,
+                 self._maybe_object, id(self._game_map)))
+
 
     @property
     def position(self):
