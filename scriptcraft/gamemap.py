@@ -62,20 +62,26 @@ class GameMap(object):
 
     def try_reserve_free_start_position(self):
         for position in self._free_start_positions:
-            all_neighbours_all_accessible = all(
-                self[neighbour_position].accessible for neighbour_position
-                in self._get_four_neighbour_positions(position)
+            all_neighbours_are_accessible = all(
+                neighbour.accessible for neighbour
+                in self._get_four_neighbours_of(position)
             )
-            if self[position].accessible and all_neighbours_all_accessible:
+            if self[position].accessible and all_neighbours_are_accessible:
                 self._free_start_positions.remove(position)
                 return position
         return None
 
-    def _get_four_neighbour_positions(self, pos):
-        return ((pos[0]-1, pos[1]),
-                (pos[0]+1, pos[1]),
-                (pos[0], pos[1]-1),
-                (pos[0], pos[1]+1))
+    def find_accessible_neighbour_of(self, position):
+        for neighbour in self._get_four_neighbours_of(position):
+            if neighbour.accessible:
+                return neighbour
+        return None
+
+    def _get_four_neighbours_of(self, pos):
+        return (self[pos[0]-1, pos[1]],
+                self[pos[0]+1, pos[1]],
+                self[pos[0], pos[1]-1],
+                self[pos[0], pos[1]+1])
 
     def _is_valid_position(self, position):
         return (0 <= position[0] <= self._size[0] and

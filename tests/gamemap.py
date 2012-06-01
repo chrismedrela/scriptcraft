@@ -91,7 +91,7 @@ class TestGameMapAndField(unittest.TestCase):
     def test_finding_accessible_neighbour_when_it_exists(self):
         game_map = self._create_game_map(occupied_positions=[(0, 1)])
         answer = game_map.find_accessible_neighbour_of((0, 0))
-        self.assertEqual(answer, (1, 0))
+        self.assertEqual(answer.position, (1, 0))
 
     def test_reserving_start_position_when_its_occupied(self):
         game_map = self._create_game_map(start_positions=[(8, 8)],
@@ -181,7 +181,7 @@ class TestFindingPath(unittest.TestCase):
         self._test_answer_equal_to(direction.S)
 
     def test_destination_is_unavaiable_but_its_neighbour_is_not(self):
-        s = 'tu    \n' + \
+        s = 'tt    \n' + \
             'ttttt \n' + \
             '      \n' + \
             ' ttttt\n' + \
