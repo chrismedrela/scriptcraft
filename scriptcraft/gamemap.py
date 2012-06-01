@@ -5,9 +5,17 @@
 
 
 
+class FieldOutsideMap(Exception):
+    pass
+
+class FieldIsOccupied(Exception):
+    pass
+
 
 class GameMap(object):
     DEFAULT_GROUND_TYPE = 1
+    MIN_GROUND_TYPE = 1
+    MAX_GROUND_TYPE = 127
 
     def __init__(self, size, start_positions):
         assert size[0]>0 and size[1]>0, \
@@ -33,6 +41,24 @@ class GameMap(object):
 
         return Field(position, valid_position,
                      ground_type, obj, game_map=self)
+
+    def __setitem__(self, position, field):
+        if not self._is_valid_position(position):
+            raise FieldOutsideMap('The position is outside map.')
+        if field.position != position:
+            raise ValueError('The field position was %r but you want assign '
+                             'the field to %r.' % (field.position, position))
+        old_ground_type, old_obj = self._map[position]
+        if old_obj is not None and field.maybe_object is not None:
+            raise FieldIsOccupied('Cannot place object on occupied field. '
+                                  'First remove the object.')
+        assert (GameMap.MIN_GROUND_TYPE <=
+                field.ground_type <=
+                GameMap.MAX_GROUND_TYPE), \
+            ('Invalid ground type. Ground type must be integer '
+             'between %r and %r' % (GameMap.MIN_GROUND_TYPE,
+                                    GameMap.MAX_GROUND_TYPE))
+        self._map[position] = (field.ground_type, field.maybe_object)
 
     def try_reserve_free_start_position(self):
         for position in self._free_start_positions:
@@ -71,6 +97,12 @@ class Field(object):
         self._maybe_object = maybe_object
         self._game_map = game_map
 
+    def __eq__(self, other):
+        return (self._game_map is other._game_map and
+                all(getattr(self, attr) == getattr(other, attr)
+                    for attr in ('_maybe_object', '_valid_position',
+                                 '_position', '_ground_type')))
+
     @property
     def position(self):
         return self._position
@@ -102,7 +134,6 @@ class Field(object):
     def place_object(self, obj):
         self._maybe_object = obj
         self._game_map[self._position] = self
-
 
 
 

@@ -5,8 +5,8 @@ import copy
 import unittest
 
 from scriptcraft import direction
-from scriptcraft.gamemap import GameMap, Field #_FindPathProblem,
-#                                 FieldOutsideMap)
+from scriptcraft.gamemap import (GameMap, Field, #_FindPathProblem,
+                                 FieldOutsideMap, FieldIsOccupied)
 from scriptcraft.utils import *
 
 
