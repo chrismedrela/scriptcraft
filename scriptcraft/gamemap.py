@@ -1,6 +1,68 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+
+
+
+
+
+
+
+class Field(object):
+    __slots__ = ('maybe_object',
+                 'valid_position',
+                 'position',
+                 'ground_type')
+
+    def __init__(self, position, valid_position,
+                 ground_type, maybe_object, game_map):
+        self._position = position
+        self._valid_position = valid_position
+        self._ground_type = ground_type
+        self._maybe_object = maybe_object
+        self._game_map = game_map
+
+    @property
+    def position(self):
+        return self._position
+
+    @property
+    def valid_position(self):
+        return self._valid_position
+
+    @property
+    def ground_type(self):
+        return self._ground_type
+
+    @property
+    def maybe_object(self):
+        return self._maybe_object
+
+    @property
+    def empty(self):
+        return self._maybe_object is None
+
+    @property
+    def accessible(self):
+        return self._maybe_object is None and self._valid_position
+
+    def change_ground(self, new_ground):
+        self._ground_type = new_ground
+        self._game_map[self._position] = self
+
+    def place_object(self, obj):
+        self._maybe_object = obj
+        self._game_map[self._position] = self
+
+
+
+
+
+# ==============================================================================
+# old code
+# ==============================================================================
+
+
 from collections import namedtuple
 import copy
 
