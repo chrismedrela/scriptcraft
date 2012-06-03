@@ -43,7 +43,7 @@ class GameViewer(Canvas):
     sent. In this case pointer_position attribute is None.
     """
 
-    SCROLLING_SENSITIVITY = 1.05 # in (1, +inf); greater means faster scrolling
+    SCROLLING_SENSITIVITY = 1.15 # in (1, +inf); greater means faster scrolling
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
