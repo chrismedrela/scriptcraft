@@ -221,7 +221,7 @@ class GameViewer(Canvas):
         """ From screen coordinaties. """
         return x-128*self._zoom, y-144*self._zoom
 
-    @log_on_enter('setting zoom in game viewer', mode='only time')
+    @log_on_enter('GameViewer._set_zoom', mode='only time')
     def _set_zoom(self, zoom, (XS, YS)):
         """ Set zoom. The point (XS, YS) in screen coordinate doesn't
         move."""
@@ -236,11 +236,12 @@ class GameViewer(Canvas):
         self._zoom, old_zoom = zoom, self._zoom
 
         # scale all images
-        names = self._scaled_images_cache.keys()
-        self._scaled_images_cache = {} # clear cache
-        for name in names:
-            image = self._get_scaled_sprite(name)
-            self.itemconfigure(name, image=image)
+        with log_on_enter('GameViewer._set_zoom: rescaling', mode='only time'):
+            names = self._scaled_images_cache.keys()
+            self._scaled_images_cache = {} # clear cache
+            for name in names:
+                image = self._get_scaled_sprite(name)
+                self.itemconfigure(name, image=image)
 
         # scale all texts
         font = self._get_font_for_current_zoom()
