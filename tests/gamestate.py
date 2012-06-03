@@ -960,3 +960,31 @@ class TestUnitType(unittest.TestCase):
         self.assertRaises(ValueError, illegal_operation)
 
 
+class TestLoadGameMap(unittest.TestCase):
+    def test_basic(self):
+        data = ("This is scriptcraft map version 1.\n"
+                ". ; ^ _ \n"
+                "@ , # ~ \n"
+                ".M;T^S_T\n"
+                "@S,M# ~ \n")
+
+        game_map = load_game_map(data)
+
+        for i in xrange(16):
+            self.assertEqual(game_map[i%4, i/4].ground_type, (i%8)+1)
+        self.assertTrue(isinstance(game_map[1, 2].maybe_object, Tree))
+        self.assertTrue(isinstance(game_map[3, 2].maybe_object, Tree))
+        self.assertTrue(isinstance(game_map[0, 2].maybe_object,
+                                   MineralDeposit))
+        self.assertTrue(isinstance(game_map[1, 3].maybe_object,
+                                   MineralDeposit))
+        self.assertTrue(game_map[0, 2].maybe_object.minerals, 50)
+        self.assertTrue(game_map[1, 3].maybe_object.minerals, 50)
+        self.assertEqual(game_map._free_start_positions,
+                         set([(0, 3), (2, 2)]))
+
+    def test_invalid_input(self):
+        data = 'Invalid input'
+
+        illegal_operation = lambda: load_game_map(data)
+        self.assertRaises(InvalidGameMapData, illegal_operation)

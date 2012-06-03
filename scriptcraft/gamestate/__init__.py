@@ -35,7 +35,7 @@ import random
 
 from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.gamemap import FieldIsOccupied
+from scriptcraft.gamemap import FieldIsOccupied, GameMap
 from scriptcraft.gamestate import cmds, actions
 from scriptcraft.parser import Parser, parse_system_question
 from scriptcraft.utils import *
@@ -55,6 +55,10 @@ class CannotStoreMinerals(Exception):
 
 
 class NoFreeStartPosition(Exception):
+    pass
+
+
+class InvalidGameMapData(Exception):
     pass
 
 
@@ -1019,5 +1023,97 @@ class Message(namedtuple('Message', ('sender_ID',
 
 
 
+_MAGIC_GAME_MAP_PHRASE = "this is scriptcraft map version 1."
+_CHAR_TO_GROUND_TYPE = {'.':1, ';':2, '^':3, '_':4,
+                        '@':5, ',':6, '#':7, '~':8}
+_CHAR_TO_OBJECT_CONSTRUCTOR = {
+    ' ':lambda: None,
+    't':lambda: Tree(),
+    'm':lambda: MineralDeposit(50),
+}
+def load_game_map(data):
+    """ Return GameMap from data or raise InvalidGameMapData. """
+
+    lines = data.split('\n')
+    if not lines[0].lower().startswith(_MAGIC_GAME_MAP_PHRASE):
+        raise InvalidGameMapData('Game map data must starts with %r' \
+                                   % _MAGIC_GAME_MAP_PHRASE)
+
+    del lines[0]
+    # delete last line if it's blank (allow break line after last line
+    # of map)
+    if not lines[-1].strip():
+        del lines[-1]
+    rows = len(lines)
+    if rows == 0:
+        raise InvalidGameMapData('Game map size must be at least 1x1 '
+                                 '(found 0 rows of map data).')
+
+    columns = None
+    ground_types = []
+    objects = []
+    start_positions = []
+    for row, line in enumerate(lines):
+        iter_line = iter(line)
+        ground_types.append([])
+        objects.append([])
+        column = 0
+        try:
+            while True:
+                try:
+                    char = iter_line.next()
+                except StopIteration as ex:
+                    char = None
+
+                if char in (' ', '\t', '\r', None):
+                    # check number of columns
+                    if columns is None:
+                        if column == 0:
+                            raise InvalidGameMapData( \
+                              'Game map size must be at least 1x1 '
+                              'found 0 fields in first row of map).')
+                        columns = column
+                    else:
+                        if column != columns:
+                            raise InvalidGameMapData( \
+                              'Invalid %d row of map. Detected %d fields '
+                              'but there were %d fields in first row '
+                              '(make sure there is no break line '
+                              'after last row of map).'
+                                % (row, column, columns))
+                    break
+
+                ground_type = _CHAR_TO_GROUND_TYPE.get(char, None)
+                if ground_type is None:
+                    raise InvalidGameMapData( \
+                      'Invalid ground type: %r of field %r' \
+                      % (char, (column, row)))
+                ground_types[-1].append(ground_type)
+
+                char = iter_line.next().lower()
+                if char not in ('t', 'm', ' ', 's'):
+                    raise InvalidGameMapData( \
+                      'Invalid object type: %r of field %r' \
+                      % (char, (column, row)))
+                if char != 's':
+                    objects[-1].append(char)
+                else:
+                    start_positions.append((column, row))
+                    objects[-1].append(' ')
+
+                column += 1
+        except StopIteration as ex:
+            raise InvalidGameMapData('Invalid game map: unexpected '
+                                     'end of line when parsing field '
+                                     'at %r.' % ((column, row),))
+
+    result = GameMap((columns, rows), start_positions)
+    for x in xrange(columns):
+        for y in xrange(rows):
+            field = result[x, y]
+            field.change_ground(ground_types[y][x])
+            obj = _CHAR_TO_OBJECT_CONSTRUCTOR[objects[y][x]]()
+            field.place_object(obj)
+    return result
 
 
