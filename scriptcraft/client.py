@@ -20,7 +20,8 @@ from scriptcraft import direction
 from scriptcraft.gamemap import GameMap
 from scriptcraft.gamestate import (actions, Game, DEFAULT_GAME_CONFIGURATION,
                                    Language, Program, STAR_PROGRAM, Unit,
-                                   NoFreeStartPosition, Tree, MineralDeposit)
+                                   NoFreeStartPosition, Tree, MineralDeposit,
+                                   load_game_map, InvalidGameMapData)
 from scriptcraft.gamesession import GameSession, SystemConfiguration
 from scriptcraft.utils import *
 
@@ -359,25 +360,27 @@ class ClientApplication(Frame):
 
     @log_on_enter('load game for testing')
     def _load_testing_game(self):
-        filename = datafile_path('maps/default.map')
+        filename = datafile_path('maps/small.map')
 
-        # create game_map (and add trees)
-        #game_map = pickle.load(open(filename, 'r'))
-        import random
-        size = 64
-        game_map = GameMap((size, size), [(10, 10), (53, 10), (10, 53), (53, 53)])
-        number_of_trees = 0
-        for x in xrange(size):
-            for y in xrange(size):
-                p = 1.0
-                if (6 <= x <= 14 or 49 <= x <= 57 or
-                    6 <= y <= 14 or 49 <= y <= 57):
-                    p = 0.0
-                if (random.random() < p):
-                    number_of_trees += 1
-                    game_map[x, y].place_object(Tree())
-        log('map size: %d, number of fields: %d' % (size, size**2))
-        log('number of trees: %d' % number_of_trees)
+        # create game_map
+        game_map = load_game_map(open(filename, 'r').read())
+
+        def generate_simple_map():
+            import random
+            size = 64
+            game_map = GameMap((size, size), [(10, 10), (53, 10), (10, 53), (53, 53)])
+            number_of_trees = 0
+            for x in xrange(size):
+                for y in xrange(size):
+                    p = 1.0
+                    if (6 <= x <= 14 or 49 <= x <= 57 or
+                        6 <= y <= 14 or 49 <= y <= 57):
+                        p = 0.0
+                        if (random.random() < p):
+                            number_of_trees += 1
+                            game_map[x, y].place_object(Tree())
+            log('map size: %d, number of fields: %d' % (size, size**2))
+            log('number of trees: %d' % number_of_trees)
 
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         session = GameSession(
@@ -484,8 +487,8 @@ class ClientApplication(Frame):
                           ClientApplication.CANNOT_OPEN_FILE)
         else:
             try:
-                game_map = pickle.load(stream)
-            except pickle.UnpicklingError as ex:
+                game_map = load_game_map(stream.read())
+            except InvalidGameMapData as ex:
                 self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                               ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
                               ClientApplication.MAP_FILE_IS_CORRUPTED)
