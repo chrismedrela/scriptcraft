@@ -54,6 +54,10 @@ class CannotStoreMinerals(Exception):
     pass
 
 
+class NoFreeStartPosition(Exception):
+    pass
+
+
 _parser = Parser(cmds.ALL_COMMANDS)
 
 
@@ -71,7 +75,9 @@ class Game(object):
     def new_player(self, name, color):
         """ May raise NoFreeStartPosition """
 
-        start_position = self.game_map.reserve_next_free_start_position()
+        start_position = self.game_map.try_reserve_free_start_position()
+        if start_position is None:
+            raise NoFreeStartPosition()
         ID = self._get_new_ID()
         player = Player(name, color, ID, start_position)
 
@@ -88,27 +94,32 @@ class Game(object):
 
         player = self.new_player(name, color)
 
-        base = self.new_unit(player, player.start_position, self.configuration.main_base_type)
+        base = self.new_unit(player, player.start_position,
+                             self.configuration.main_base_type)
         base.minerals = self.configuration.minerals_for_main_unit_at_start
         player.set_base(base)
 
         miners = []
         for dx, dy in direction.FROM_RAY:
-            position = player.start_position[0] + dx, player.start_position[1] + dy
-            miner = self.new_unit(player, position, self.configuration.main_miner_type)
+            position = (player.start_position[0] + dx,
+                        player.start_position[1] + dy)
+            miner = self.new_unit(player, position,
+                                  self.configuration.main_miner_type)
             miners.append(miner)
 
         return player, base, miners
 
     def new_unit(self, player, position, unit_type):
-        if not self.game_map.get_field(position).is_empty():
+        field = self.game_map[position]
+        assert field.valid_position, 'invalid position %r' % (position,)
+        if not field.empty:
             raise FieldIsOccupied()
 
         ID = self._get_new_ID()
         unit = Unit(player, unit_type, position, ID)
         player.add_unit(unit)
 
-        self.game_map.place_unit_at(position, unit)
+        self.game_map[position].place_object(unit)
         self.units_by_IDs[unit.ID] = unit
 
         return unit
@@ -116,14 +127,16 @@ class Game(object):
     def remove_unit(self, unit):
         unit.player.remove_unit(unit)
         del self.units_by_IDs[unit.ID]
-        self.game_map.erase_at(unit.position)
+        self.game_map[unit.position].place_object(None)
 
     def move_unit_at(self, unit, new_position):
-        if not self.game_map.get_field(new_position).is_empty():
+        field = self.game_map[new_position]
+        assert field.valid_position, 'invalid position %r' % (position,)
+        if not field.empty:
             raise FieldIsOccupied()
 
-        self.game_map.erase_at(unit.position)
-        self.game_map.place_unit_at(new_position, unit)
+        self.game_map[unit.position].place_object(None)
+        self.game_map[new_position].place_object(unit)
         unit.position = new_position
 
     def set_program(self, unit, program):
@@ -133,18 +146,21 @@ class Game(object):
         unit.program = program
 
     def fire_at(self, position):
-        field = self.game_map.get_field(position)
+        assert self.game_map[position].valid_position, \
+          'invalid position %r' % (position, )
 
-        if field.has_trees():
-            self.game_map.erase_at(position)
+        maybe_object = self.game_map[position].maybe_object
 
-        elif field.has_unit():
-            self._fire_at_unit(field)
+        if isinstance(maybe_object, Tree):
+            self.game_map[position].place_object(None)
 
-        else:
+        elif isinstance(maybe_object, Unit):
+            self._fire_at_unit(maybe_object)
+
+        else: # MineralDeposit or None
             pass
 
-    def _fire_at_unit(self, field):
+    def _fire_at_unit(self, unit):
         def destroy():
             self.remove_unit(unit)
 
@@ -155,36 +171,34 @@ class Game(object):
             else:
                 unit.minerals -= 1
 
-        unit = field.get_unit()
         switch = {BEHAVIOUR_WHEN_ATTACKED.DESTROY : destroy,
                   BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY : get_mineral_or_destroy}
 
         case = switch[unit.type.behaviour_when_attacked]
         case()
 
-    def store_minerals_from_deposit_to_unit(self, source_position, destination):
-        field_with_source = self.game_map.get_field(source_position)
-        if field_with_source.get_minerals() == 0:
+    def store_minerals_from_deposit_to_unit(self, source_position,
+                                            destination_unit):
+        mineral_deposit = self.game_map[source_position].maybe_object
+        if mineral_deposit.minerals == 0:
             raise CannotStoreMinerals('source (mineral deposit) is empty')
 
-        if destination.minerals == destination.type.storage_size:
-            raise CannotStoreMinerals('destination unit is full')
+        if destination_unit.minerals == destination_unit.type.storage_size:
+            raise CannotStoreMinerals('destination_unit unit is full')
 
-        minerals_in_source = field_with_source.get_minerals()
-        self.game_map.erase_at(source_position)
-        self.game_map.place_minerals_at(source_position, minerals_in_source-1)
+        mineral_deposit.minerals -= 1
+        destination_unit.minerals += 1
 
-        destination.minerals += 1
+    def store_minerals_from_unit_to_unit(self, source_unit,
+                                         destination_unit):
+        if source_unit.minerals == 0:
+            raise CannotStoreMinerals('source_unit unit is empty')
 
-    def store_minerals_from_unit_to_unit(self, source, destination):
-        if source.minerals == 0:
-            raise CannotStoreMinerals('source unit is empty')
+        if destination_unit.minerals == destination_unit.type.storage_size:
+            raise CannotStoreMinerals('destination_unit unit is full')
 
-        if destination.minerals == destination.type.storage_size:
-            raise CannotStoreMinerals('destination unit is full')
-
-        source.minerals -= 1
-        destination.minerals += 1
+        source_unit.minerals -= 1
+        destination_unit.minerals += 1
 
     @log_on_enter('tic method in Game', mode='time')
     def tic(self, compile_and_run_function):
@@ -267,6 +281,7 @@ class Game(object):
         for unit_ID in units_IDs:
             unit = self.units_by_IDs.get(unit_ID, None)
 
+            # unit can be destroyed by another unit
             if not unit:
                 continue
 
@@ -282,10 +297,12 @@ class Game(object):
         if not is_valid_ID(message.receiver_ID):
             raise InvalidReceiver()
 
-        sender = self if message.sender_ID == 0 else self.units_by_IDs[message.sender_ID]
+        sender = (self if message.sender_ID == 0
+                  else self.units_by_IDs[message.sender_ID])
         sender.outbox.append(message)
 
-        receiver = self if message.receiver_ID == 0 else self.units_by_IDs[message.receiver_ID]
+        receiver = (self if message.receiver_ID == 0
+                    else self.units_by_IDs[message.receiver_ID])
         receiver.inbox.append(message)
 
     def _clear_mailboxes(self):
@@ -305,7 +322,8 @@ class Game(object):
             sender = self.units_by_IDs[message.sender_ID]
             player = sender.player
             text = "%d " % len(player.units)
-            text += " ".join(map(lambda unit: "%d %s" % (unit.ID, unit.type.main_name),
+            text += " ".join(map(lambda unit: "%d %s" % \
+                                   (unit.ID, unit.type.main_name),
                                  player.units))
 
         elif command == 'unit-info':
@@ -318,7 +336,9 @@ class Game(object):
                          'type':unit.type.main_name,
                          'x':unit.position[0],
                          'y':unit.position[1],
-                         'more_info': unit.minerals if unit.type.storage_size != 0 else unit.type.attack_range}
+                         'more_info': (unit.minerals
+                                       if unit.type.storage_size != 0
+                                       else unit.type.attack_range)}
             text = "%(ID)d %(type)s %(x)d %(y)d %(more_info)d" % text_dict
 
         else:
@@ -340,57 +360,63 @@ class Game(object):
                            'x':unit.position[0],
                            'y':unit.position[1],
                            'vision_diameter':unit.type.vision_diameter,
-                           'extra_info': unit.minerals if unit.type.storage_size!=0 else unit.type.attack_range}
-        input_data = '%(type)s %(ID)d %(player_ID)d %(messages_len)d %(x)d %(y)d %(vision_diameter)d\n%(extra_info)d\n' % input_data_dict
+                           'extra_info': (unit.minerals
+                                          if unit.type.storage_size!=0
+                                          else unit.type.attack_range)}
+        input_data = ('%(type)s %(ID)d %(player_ID)d %(messages_len)d '
+                      '%(x)d %(y)d %(vision_diameter)d\n%(extra_info)d\n' \
+                        % input_data_dict)
 
         # info about surroundings
         def generate_input_for_field(x, y):
             # out of map?
-            if not self.game_map.is_valid_position((x, y)):
+            if not self.game_map[x, y].valid_position:
                 return '1 0 0'
 
             # not out of map
-            field = self.game_map[x][y]
+            field = self.game_map[x, y]
 
-            if field.is_empty():
-                if field.is_flat():
-                    return '0 0 0'
-                else: # is upland
-                    return '1 0 0'
+            obj = field.maybe_object
+            if field.empty:
+                return '0 0 0'
 
-            elif field.has_mineral_deposit():
-                minerals = field.get_minerals()
+            elif isinstance(obj, MineralDeposit):
+                minerals = obj.minerals
                 return '2 %d 0' % minerals
 
-            elif field.has_trees():
+            elif isinstance(obj, Tree):
                 return '3 0 0'
 
             else:
-                assert field.has_unit()
+                assert isinstance(obj, Unit)
 
-                unit = field.get_unit()
+                unit = obj
                 unit_type = unit.type.main_name
                 player_ID = unit.player.ID
                 return '%s %d %d' % (unit_type, unit.ID, player_ID)
 
 
-        input_data += '\n'.join(map(' '.join,
-                                    [   [   generate_input_for_field(x, y)
-                                        for x in xrange(unit.position[0] - unit.type.vision_radius,
-                                                        unit.position[0] + unit.type.vision_radius + 1)]
-                                    for y in xrange(unit.position[1] - unit.type.vision_radius,
-                                                    unit.position[1] + unit.type.vision_radius + 1)]))
+        min_x = unit.position[0] - unit.type.vision_radius
+        max_x = unit.position[0] + unit.type.vision_radius
+        min_y = unit.position[1] - unit.type.vision_radius
+        max_y = unit.position[1] + unit.type.vision_radius
+        input_data += '\n'.join(map(
+            ' '.join,
+            [   [   generate_input_for_field(x, y)
+                for x in xrange(min_x, max_x+1)]
+            for y in xrange(min_y, max_y+1)]
+        ))
         input_data += '\n'
 
         # messages
-        input_data += '\n'.join(map(lambda message: '%d %s' % (message.sender_ID,
-                                                               message.text),
-                                    unit.inbox))
+        input_data += '\n'.join('%d %s' % (message.sender_ID, message.text)
+                                for message in unit.inbox)
 
         return input_data
 
     @log_on_enter('find nearest unit in range', mode='only time')
-    def find_nearest_unit_in_range_fulfilling_condition(self, center, range, condition):
+    def find_nearest_unit_in_range_fulfilling_condition(self, center,
+                                                        range, condition):
         def positions_in_range(center, range):
             for x in xrange(center[0]-range,
                             center[0]+range+1):
@@ -399,31 +425,38 @@ class Game(object):
                     if distance((x, y), center) <= range:
                         yield x, y
 
-        valid_fields = (self.game_map.get_field(pos)
-                        for pos in positions_in_range(center, range)
-                        if self.game_map.is_valid_position(pos))
-        units = (field.get_unit()
-                 for field in valid_fields
-                 if field.has_unit())
-        units_fulfilling_condition = filter(lambda unit: condition(unit),
-                                            units)
-        the_nearest = (None
-                       if not units_fulfilling_condition
-                       else min(units_fulfilling_condition,
-                                key=lambda unit: distance(center, unit.position)))
+        fields = (self.game_map[pos] for pos
+                  in positions_in_range(center, range))
+        objs = (field.maybe_object for field
+                in fields if not field.empty)
+        units_fulfilling_condition = list(
+            obj for obj in objs
+            if isinstance(obj, Unit) and condition(obj))
+        if not units_fulfilling_condition:
+            return None
 
-        return the_nearest
+        return min(units_fulfilling_condition,
+                   key=lambda unit: distance(center, unit.position))
 
     def _generate_action_for(self, unit):
         command_type = type(unit.command)
 
-        switch = {cmds.StopCommand : self._generate_action_for_unit_with_stop_command,
-                  cmds.ComplexMoveCommand : self._generate_action_for_unit_with_complex_move_command,
-                  cmds.MoveCommand : self._generate_action_for_unit_with_move_command,
-                  cmds.ComplexGatherCommand : self._generate_action_for_unit_with_complex_gather_command,
-                  cmds.FireCommand : self._generate_action_for_unit_with_fire_command,
-                  cmds.ComplexAttackCommand : self._generate_action_for_unit_with_complex_attack_command,
-                  cmds.BuildCommand : self._generate_action_for_unit_with_build_command}
+        switch = {
+            cmds.StopCommand : \
+              self._generate_action_for_unit_with_stop_command,
+            cmds.ComplexMoveCommand : \
+              self._generate_action_for_unit_with_complex_move_command,
+            cmds.MoveCommand : \
+              self._generate_action_for_unit_with_move_command,
+            cmds.ComplexGatherCommand : \
+              self._generate_action_for_unit_with_complex_gather_command,
+            cmds.FireCommand : \
+              self._generate_action_for_unit_with_fire_command,
+            cmds.ComplexAttackCommand : \
+              self._generate_action_for_unit_with_complex_attack_command,
+            cmds.BuildCommand : \
+              self._generate_action_for_unit_with_build_command
+        }
         case = switch[command_type]
 
         return case(unit)
@@ -435,7 +468,7 @@ class Game(object):
         if not unit.type.movable:
             return actions.StopAction()
 
-        if not self.game_map.is_valid_position(unit.command.destination):
+        if not self.game_map[unit.command.destination].valid_position:
             return actions.StopAction()
 
         return self._find_path_and_generate_action(unit)
@@ -450,10 +483,8 @@ class Game(object):
         if not unit_type.movable:
             return actions.StopAction()
 
-        if not self.game_map.is_valid_position(destination):
-            return actions.StopAction()
-
-        if not self.game_map.get_field(destination).is_empty():
+        destination_field = self.game_map[destination]
+        if not destination_field.accessible:
             return actions.StopAction()
 
         return actions.MoveAction(source=unit.position,
@@ -464,11 +495,12 @@ class Game(object):
             return actions.StopAction()
 
         destination = unit.command.destination
-        if not self.game_map.is_valid_position(destination):
+        destination_field = self.game_map[destination]
+        if not destination_field.valid_position:
             return actions.StopAction()
 
-        destination_field = self.game_map.get_field(destination)
-        if not destination_field.has_mineral_deposit():
+        mineral_deposit = destination_field.maybe_object
+        if not isinstance(mineral_deposit, MineralDeposit):
             return actions.StopAction()
 
         if unit.minerals == unit.type.storage_size:
@@ -492,7 +524,7 @@ class Game(object):
         else:
             if distance(unit.position, destination) == 1:
                 # gather
-                if destination_field.get_minerals() == 0:
+                if mineral_deposit.minerals == 0:
                     return actions.StopAction()
 
                 else:
@@ -507,12 +539,14 @@ class Game(object):
             return actions.StopAction()
 
         destination = unit.command.destination
-        if not self.game_map.is_valid_position(destination):
+        destination_field = self.game_map[destination]
+        if not destination_field.valid_position:
             return actions.StopAction()
 
         if distance(unit.position, destination) > unit.type.attack_range:
             return actions.StopAction()
 
+        # don't allow auto-destruction
         if unit.position == destination:
             return actions.StopAction()
 
@@ -522,14 +556,13 @@ class Game(object):
         if not unit.type.movable or not unit.type.can_attack:
             return actions.StopAction()
 
-        if not self.game_map.is_valid_position(unit.command.destination):
+        destination_field = self.game_map[unit.command.destination]
+        if not destination_field.valid_position:
             return actions.StopAction()
 
-        destination_field = self.game_map.get_field(unit.command.destination)
-
         alien_on_destination_field = False
-        if destination_field.has_unit():
-            unit_on_destination_field = destination_field.get_unit()
+        if isinstance(destination_field.maybe_object, Unit):
+            unit_on_destination_field = destination_field.maybe_object
             if unit_on_destination_field.player != unit.player:
                 alien_on_destination_field = True
 
@@ -571,11 +604,12 @@ class Game(object):
             return actions.StopAction()
 
         # find free neightbour
-        maybe_free_position = self.game_map.find_flat_and_free_neighbour_of(unit.position)
+        maybe_empty_neighbour = \
+            self.game_map.find_accessible_neighbour_of(unit.position)
 
-        if not maybe_free_position:
+        if not maybe_empty_neighbour:
             return actions.StopAction()
-        position = maybe_free_position
+        position = maybe_empty_neighbour.position
 
         # build unit
         if unit.type.has_storage:
@@ -595,29 +629,28 @@ class Game(object):
         destination = (ray[0] + source[0],
                        ray[1] + source[1])
         return actions.MoveAction(source=unit.position,
-                                 destination=destination)
+                                  destination=destination)
 
     def _execute_action_for(self, unit):
         action_type = type(unit.action)
 
         def build_unit():
             new_unit = self.new_unit(unit.player,
-                                 unit.action.destination,
-                                 unit.action.unit_type)
+                                     unit.action.destination,
+                                     unit.action.unit_type)
             self.set_program(new_unit, unit.program)
 
         switch = {
             actions.StopAction : \
                 lambda: None,
             actions.MoveAction : \
-                lambda: self.move_unit_at(unit,
-                                          unit.action.destination),
+                lambda: self.move_unit_at(unit, unit.action.destination),
             actions.GatherAction : \
-                lambda: self.store_minerals_from_deposit_to_unit(unit.action.source,
-                                                                 unit),
+                lambda: self.store_minerals_from_deposit_to_unit( \
+                    unit.action.source, unit),
             actions.StoreAction : \
-                lambda: self.store_minerals_from_unit_to_unit(unit,
-                                                              self.units_by_IDs[unit.action.storage_ID]),
+                lambda: self.store_minerals_from_unit_to_unit( \
+                    unit, self.units_by_IDs[unit.action.storage_ID]),
             actions.FireAction : \
                 lambda: self.fire_at(unit.action.destination),
             actions.BuildAction : \
@@ -631,11 +664,39 @@ class Game(object):
     def _tic_for_world(self):
         for x in xrange(self.game_map.size[0]):
             for y in xrange(self.game_map.size[1]):
-                if self.game_map[x][y].has_mineral_deposit():
-                    if random.random() < self.configuration.probability_of_mineral_deposit_growing:
-                        minerals = self.game_map[x][y].get_minerals()
-                        self.game_map.erase_at((x, y))
-                        self.game_map.place_minerals_at((x, y), minerals+1)
+                if (isinstance(self.game_map[x, y].maybe_object,
+                               MineralDeposit) and
+                    random.random() < \
+                    self.configuration.probability_of_mineral_deposit_growing):
+                    mineral_deposit = self.game_map[x, y].maybe_object
+                    mineral_deposit.minerals += 1
+
+
+class MineralDeposit(object):
+    __slots__ = ('_minerals', )
+
+    def __init__(self, minerals):
+        self.minerals = minerals
+
+    @property
+    def minerals(self):
+        return self._minerals
+
+    @minerals.setter
+    def minerals(self, value):
+        assert value >= 0
+        self._minerals = value
+
+
+class Tree(object):
+    MIN_TREE_TYPE = 1
+    MAX_TREE_TYPE = 6
+    __slots__ = ('type', )
+
+    def __init__(self, type=None):
+        type = type or random.randint(Tree.MIN_TREE_TYPE,
+                                      Tree.MAX_TREE_TYPE)
+        self.type = type
 
 
 class Unit(object):
@@ -955,4 +1016,8 @@ class Message(namedtuple('Message', ('sender_ID',
     zero. It means that the sender/receiver is game system. """
 
     __slots__ = ()
+
+
+
+
 

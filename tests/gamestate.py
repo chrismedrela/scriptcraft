@@ -8,54 +8,58 @@ import shutil
 
 from scriptcraft import direction
 from scriptcraft.compilation import CompileAndRunProgram
-from scriptcraft.gamemap import GameMap, PositionOutOfMap
+from scriptcraft.gamemap import GameMap, FieldIsOccupied
 from scriptcraft.gamestate import *
 from scriptcraft.utils import *
 
 
 
 class BaseGameTestCase(unittest.TestCase):
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-
+    def _prepare_game(self, many_starting_points=False):
         self._create_unit_types()
-        self._create_map_and_game()
+        self._create_map_and_game(many_starting_points)
         self._create_player_Bob()
         self._modify_world()
 
     def _create_unit_types(self):
-        self.miner_type = UnitType(attack_range=0,
-                                   vision_radius=7,
-                                   storage_size=1,
-                                   build_cost=3,
-                                   can_build=False,
-                                   movable=True,
-                                   behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
-                                   names=('5', 'miner', 'm'))
+        self.miner_type = UnitType(
+            attack_range=0,
+            vision_radius=7,
+            storage_size=1,
+            build_cost=3,
+            can_build=False,
+            movable=True,
+            behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+            names=('5', 'miner', 'm')
+        )
 
-        self.base_type = UnitType(attack_range=0,
-                                  vision_radius=2,
-                                  has_storage=True,
-                                  storage_size= -1,
-                                  can_be_built=False,
-                                  can_build=True,
-                                  movable=False,
-                                  behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
-                                  names=('4', 'base', 'b'))
+        self.base_type = UnitType(
+            attack_range=0,
+            vision_radius=2,
+            has_storage=True,
+            storage_size= -1,
+            can_be_built=False,
+            can_build=True,
+            movable=False,
+            behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.GET_MINERAL_OR_DESTROY,
+            names=('4', 'base', 'b')
+        )
 
-        self.tank_type = UnitType(can_attack=True,
-                                  attack_range=5,
-                                  vision_radius=2,
-                                  has_storage=False,
-                                  build_cost=10,
-                                  can_build=False,
-                                  movable=True,
-                                  behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
-                                  names=('6', 'tank', 't'))
+        self.tank_type = UnitType(
+            can_attack=True,
+            attack_range=5,
+            vision_radius=2,
+            has_storage=False,
+            build_cost=10,
+            can_build=False,
+            movable=True,
+            behaviour_when_attacked=BEHAVIOUR_WHEN_ATTACKED.DESTROY,
+            names=('6', 'tank', 't')
+        )
 
         self.unit_types = [self.miner_type, self.base_type, self.tank_type]
 
-    def _create_map_and_game(self):
+    def _create_map_and_game(self, many_starting_points):
         game_configuration = GameConfiguration(
             units_types=self.unit_types,
             main_base_type=self.base_type,
@@ -64,8 +68,11 @@ class BaseGameTestCase(unittest.TestCase):
             probability_of_mineral_deposit_growing=1.0,
         )
 
-        self.start_positions = [(16, 16), (48, 48), (16, 48), (48, 16)]
-        self.map_size = 64, 64
+        if many_starting_points:
+            self.start_positions = [(16, 16), (48, 48), (16, 48), (48, 16)]
+        else:
+            self.start_positions = [(16, 16)]
+        self.map_size = (64, 64)
         game_map = GameMap(self.map_size, self.start_positions)
         self.game = Game(game_map, game_configuration)
 
@@ -77,53 +84,65 @@ class BaseGameTestCase(unittest.TestCase):
 
     def _modify_world(self):
         self.trees_position = (2, 62)
-        self.game.game_map.place_trees_at(self.trees_position)
+        self.game.game_map[self.trees_position].place_object(Tree())
 
         self.minerals_position = (22, 16)
         self.free_position_nearby_minerals = (21, 16)
         minerals_in_deposit = 20
-        self.game.game_map.place_minerals_at(self.minerals_position, minerals_in_deposit)
+        mineral_deposit = MineralDeposit(minerals_in_deposit)
+        self.game.game_map[self.minerals_position].place_object(mineral_deposit)
 
         self.free_positions = [(35, 36), (35, 37), (35, 38)]
-        assert all(self.game.game_map.get_field(free_position).is_empty()
+        assert all(self.game.game_map[free_position].empty
                    for free_position in self.free_positions)
 
 
 
 class TestBasic(BaseGameTestCase):
     def test_new_player(self):
+        self._prepare_game(many_starting_points=True)
+
         color = (255, 0, 0)
         Alice = self.game.new_player('Alice', color)
 
         self.assertTrue(Alice in self.game.players_by_IDs.itervalues())
-        self.assertTrue(Alice.start_position == self.start_positions[1]) # 1st position belongs to Bob
+        self.assertTrue(Alice.start_position in self.start_positions)
+        self.assertTrue(Alice.start_position != self.player.start_position)
 
     def test_new_player_with_base(self):
+        self._prepare_game(many_starting_points=True)
+
         color = (0, 255, 0)
         Alice, base, miners = self.game.new_player_with_units('Alice', color)
 
         self.assertEqual(len(Alice.units), 4 + 1) # 4 miners and 1 base
-        self.assertEqual(base.position, self.start_positions[1])
+        self.assertTrue(base.position in self.start_positions)
         self.assertTrue(Alice.maybe_base != None)
         for miner in miners:
-            field_with_miner = self.game.game_map.get_field(miner.position)
-            self.assertTrue(field_with_miner.has_unit())
+            field_with_miner = self.game.game_map[miner.position]
+            self.assertTrue(field_with_miner.maybe_object)
             self.assertTrue(distance(miner.position, base.position) == 1)
 
     def test_new_unit(self):
-        miner = self.game.new_unit(self.player, self.free_positions[0], self.miner_type)
+        self._prepare_game()
+
+        miner = self.game.new_unit(self.player, self.free_positions[0],
+                                   self.miner_type)
 
         self.assertTrue(miner in self.game.units_by_IDs.itervalues())
         self.assertTrue(miner in self.player.units)
         self.assertEqual(miner.player, self.player)
 
     def test_new_unit_on_occupied_field(self):
+        self._prepare_game()
         illegal_operation = lambda: self.game.new_unit(self.player,
                                                        self.base.position,
                                                        self.miner_type)
         self.assertRaises(FieldIsOccupied, illegal_operation)
 
     def test_remove_unit(self):
+        self._prepare_game()
+
         self.game.remove_unit(self.base)
 
         self.assertTrue(self.base.ID not in self.game.units_by_IDs)
@@ -131,6 +150,8 @@ class TestBasic(BaseGameTestCase):
         self.assertTrue(self.base not in self.player.units)
 
     def test_set_program(self):
+        self._prepare_game()
+
         program = Program(Language.PYTHON, code='# simple code')
         self.game.set_program(self.base, program)
 
@@ -139,6 +160,7 @@ class TestBasic(BaseGameTestCase):
 
 class TestUtils(BaseGameTestCase):
     def test_searching_nearest_unit(self):
+        self._prepare_game(many_starting_points=True)
         Alice = self.game.new_player('Alice', (255, 0, 0))
         Bob_unit = self.game.new_unit(self.player, (61, 0), self.miner_type)
         Alice_unit = self.game.new_unit(Alice, (62, 0), self.miner_type)
@@ -151,6 +173,7 @@ class TestUtils(BaseGameTestCase):
         self.assertEqual(found_unit, expected_unit)
 
     def test_generate_input(self):
+        self._prepare_game()
         assert self.trees_position == (2, 62)
         assert self.tank.type.vision_radius == 2
 
@@ -192,9 +215,13 @@ class TestUtils(BaseGameTestCase):
 
 
 class TestFire(BaseGameTestCase):
+    def setUp(self):
+        super(TestFire, self).setUp()
+        self._prepare_game()
+
     def test_fire_trees(self):
         self.game.fire_at(self.trees_position)
-        self.assertTrue(self.game.game_map.get_field(self.trees_position).is_empty())
+        self.assertTrue(self.game.game_map[self.trees_position].empty)
 
     def test_fire_miner(self):
         self.game.fire_at(self.miner.position)
@@ -216,22 +243,27 @@ class TestFire(BaseGameTestCase):
 
     def test_cannot_fire_out_of_map(self):
         illegal_operation = lambda: self.game.fire_at((-1, -1))
-        self.assertRaises(PositionOutOfMap, illegal_operation)
+        self.assertRaises(AssertionError, illegal_operation)
 
 
 class TestStoreMinerals(BaseGameTestCase):
+    def setUp(self):
+        super(TestStoreMinerals, self).setUp()
+        self._prepare_game()
+
     def test_store_minerals(self):
         self._test_store_minerals_from_deposit_to_miner(self.miner)
         self._test_store_minerals_from_miner_to_base(self.miner)
 
     def _test_store_minerals_from_deposit_to_miner(self, miner):
-        minerals_in_deposit = self.game.game_map.get_field(self.minerals_position).get_minerals()
-
-        self.game.store_minerals_from_deposit_to_unit(self.minerals_position, miner)
+        minerals_in_deposit = \
+          self.game.game_map[self.minerals_position].maybe_object.minerals
+        self.game.store_minerals_from_deposit_to_unit( \
+          self.minerals_position, miner)
 
         self.assertEqual(miner.minerals, 1)
-        self.assertEqual(self.game.game_map.get_field(self.minerals_position).get_minerals(),
-                         minerals_in_deposit - 1)
+        self.assertEqual(minerals_in_deposit - 1, \
+          self.game.game_map[self.minerals_position].maybe_object.minerals)
 
     def _test_store_minerals_from_miner_to_base(self, miner):
         minerals_in_base = self.base.minerals
@@ -242,34 +274,45 @@ class TestStoreMinerals(BaseGameTestCase):
         self.assertEqual(self.base.minerals, minerals_in_base + 1)
 
     def test_store_minerals_when_destination_is_full(self):
-        self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
-        illegal_operation = lambda: self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
+        self.game.store_minerals_from_deposit_to_unit( \
+          self.minerals_position, self.miner)
+        illegal_operation = lambda: \
+          self.game.store_minerals_from_deposit_to_unit( \
+          self.minerals_position, self.miner)
         self.assertRaises(CannotStoreMinerals, illegal_operation)
 
     def test_store_minerals_when_mineral_deposit_source_is_empty(self):
-        self.game.game_map.erase_at(self.minerals_position)
-        self.game.game_map.place_minerals_at(self.minerals_position, 0)
-        illegal_operation = lambda: self.game.store_minerals_from_deposit_to_unit(self.minerals_position, self.miner)
+        self.game.game_map[self.minerals_position].place_object(None)
+        mineral_deposit = MineralDeposit(0)
+        self.game.game_map[self.minerals_position].place_object(mineral_deposit)
+        illegal_operation = lambda: \
+          self.game.store_minerals_from_deposit_to_unit( \
+          self.minerals_position, self.miner)
         self.assertRaises(CannotStoreMinerals, illegal_operation)
 
     def test_store_minerals_when_miner_source_is_empty(self):
-        illegal_operation = lambda: self.game.store_minerals_from_unit_to_unit(self.miner, self.base)
+        illegal_operation = lambda: \
+          self.game.store_minerals_from_unit_to_unit(self.miner, self.base)
         self.assertRaises(CannotStoreMinerals, illegal_operation)
 
 
 class TestMoveUnit(BaseGameTestCase):
+    def setUp(self):
+        super(TestMoveUnit, self).setUp()
+        self._prepare_game()
+
     def test_move_unit(self):
         old_position = self.miner.position
         new_position = self.free_positions[0]
 
         self.game.move_unit_at(self.miner, new_position)
 
-        self.assertTrue(self.game.game_map.get_field(old_position).is_empty())
-        self.assertTrue(self.game.game_map.get_field(new_position).has_unit())
+        self.assertTrue(self.game.game_map[old_position].empty)
+        self.assertTrue(self.game.game_map[new_position].maybe_object)
 
     def test_cannot_move_unit_on_occuped_field(self):
-        illegal_operation = lambda: self.game.move_unit_at(self.miner,
-                                                           self.base.position)
+        illegal_operation = lambda: \
+          self.game.move_unit_at(self.miner, self.base.position)
         self.assertRaises(FieldIsOccupied, illegal_operation)
 
 
@@ -285,6 +328,10 @@ class BaseGenerateActionTestCase(BaseGameTestCase):
 
 
 class TestGenerateActionsForMoveCommand(BaseGenerateActionTestCase):
+    def setUp(self):
+        super(TestGenerateActionsForMoveCommand, self).setUp()
+        self._prepare_game()
+
     def test_miner(self):
         old_position = self.tank.position
         new_position = old_position[0], old_position[1] - 1
@@ -297,7 +344,8 @@ class TestGenerateActionsForMoveCommand(BaseGenerateActionTestCase):
         self.game.move_unit_at(self.miner, (2, 0))
 
         invalid_command = cmds.MoveCommand(direction=direction.N)
-        self._assert_stop_action_for_command(invalid_command, unit=self.miner)
+        self._assert_stop_action_for_command(invalid_command,
+                                             unit=self.miner)
 
     def test_destination_occupied(self):
         assert self.miner.position == (16, 17)
@@ -311,15 +359,21 @@ class TestGenerateActionsForMoveCommand(BaseGenerateActionTestCase):
 
 
 class TestGenerateActionsForFireCommand(BaseGenerateActionTestCase):
+    def setUp(self):
+        super(TestGenerateActionsForFireCommand, self).setUp()
+        self._prepare_game()
+
     def test_destination_in_attack_range(self):
         destination = (5,63)
-        assert distance(destination, self.tank.position) == self.tank.type.attack_range
+        assert (distance(destination, self.tank.position) == \
+                self.tank.type.attack_range)
         expected_action = actions.FireAction(destination)
         self._test_tank(destination, expected_action)
 
     def test_destination_too_far(self):
         destination = (6,63)
-        assert distance(destination, self.tank.position) > self.tank.type.attack_range
+        assert (distance(destination, self.tank.position) > \
+                self.tank.type.attack_range)
         expected_action = actions.StopAction()
         self._test_tank(destination, expected_action)
 
@@ -341,13 +395,17 @@ class TestGenerateActionsForFireCommand(BaseGenerateActionTestCase):
 
 
 class TestGenerateActionsForBuildCommand(BaseGenerateActionTestCase):
+    def setUp(self):
+        super(TestGenerateActionsForBuildCommand, self).setUp()
+        self._prepare_game()
+
     def test_basic(self):
         assert self.base.position == (16, 16)
         self.base.minerals = 100
 
         destination = (15, 16)
 
-        unit = self.game.game_map.get_field(destination).get_unit()
+        unit = self.game.game_map[destination].maybe_object
         self.game.remove_unit(unit)
 
         command = cmds.BuildCommand(unit_type_name=self.miner_type.main_name)
@@ -375,6 +433,10 @@ class TestGenerateActionsForBuildCommand(BaseGenerateActionTestCase):
 
 
 class TestGenerateActionsForComplexMoveCommand(BaseGenerateActionTestCase):
+    def setUp(self):
+        super(TestGenerateActionsForComplexMoveCommand, self).setUp()
+        self._prepare_game()
+
     def test_invalid_destination(self):
         invalid_command = cmds.ComplexMoveCommand(destination=(10000, 0))
         self._assert_stop_action_for_command(invalid_command, unit=self.miner)
@@ -385,6 +447,10 @@ class TestGenerateActionsForComplexMoveCommand(BaseGenerateActionTestCase):
 
 
 class TestGenerateActionsForComplexGatherCommand(BaseGenerateActionTestCase):
+    def setUp(self):
+        super(TestGenerateActionsForComplexGatherCommand, self).setUp()
+        self._prepare_game()
+
     def test_full_miner(self):
         self._test_miner(minerals_in_miner=self.miner.type.storage_size,
                          direction='base')
@@ -399,7 +465,7 @@ class TestGenerateActionsForComplexGatherCommand(BaseGenerateActionTestCase):
 
         self.game.move_unit_at(self.miner, (19,16))
 
-        unit_to_remove = self.game.game_map.get_field((17, 16)).get_unit()
+        unit_to_remove = self.game.game_map[17, 16].maybe_object
         self.game.remove_unit(unit_to_remove)
 
         destinations = {'base':(18,16),
@@ -408,21 +474,24 @@ class TestGenerateActionsForComplexGatherCommand(BaseGenerateActionTestCase):
 
         self.miner.minerals = minerals_in_miner
 
-        command = cmds.ComplexGatherCommand(destination=self.minerals_position)
+        command = cmds.ComplexGatherCommand( \
+          destination=self.minerals_position)
         expected_action = actions.MoveAction(source=self.miner.position,
                                              destination=destination)
         self._test_generate_action(command, expected_action, unit=self.miner)
 
     def test_empty_miner_nearby_mineral_deposit(self):
-        self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
+        self.game.move_unit_at(self.miner,
+                               self.free_position_nearby_minerals)
         command = cmds.ComplexGatherCommand(self.minerals_position)
         expected_action = actions.GatherAction(source=self.minerals_position)
         self._test_generate_action(command, expected_action, unit=self.miner)
 
     def test_empty_miner_and_empty_mineral_deposit(self):
         self.game.move_unit_at(self.miner, self.free_position_nearby_minerals)
-        self.game.game_map.erase_at(self.minerals_position)
-        self.game.game_map.place_minerals_at(self.minerals_position, 0)
+        self.game.game_map[self.minerals_position].place_object(None)
+        mineral_deposit = MineralDeposit(0)
+        self.game.game_map[self.minerals_position].place_object(mineral_deposit)
 
         command = cmds.ComplexGatherCommand(self.minerals_position)
         self._assert_stop_action_for_command(command, unit=self.miner)
@@ -447,6 +516,10 @@ class TestGenerateActionsForComplexGatherCommand(BaseGenerateActionTestCase):
 
 
 class TestGenerateActionsForComplexAttackCommand(BaseGenerateActionTestCase):
+    def setUp(self):
+        super(TestGenerateActionsForComplexAttackCommand, self).setUp()
+        self._prepare_game(many_starting_points=True)
+
     def test_alien_in_destination(self):
         destination_of_attack = position_of_alien = (3, 63)
         self._test_tank(position_of_alien, destination_of_attack)
@@ -461,7 +534,8 @@ class TestGenerateActionsForComplexAttackCommand(BaseGenerateActionTestCase):
         alien_unit = self.game.new_unit(Alice, position, self.miner_type)
 
         assert self.tank.position == (0,63)
-        assert distance(self.tank.position, alien_unit.position) <= self.tank.type.attack_range
+        assert (distance(self.tank.position, alien_unit.position) <= \
+                self.tank.type.attack_range)
 
         command = cmds.ComplexAttackCommand(destination)
         expected_action = actions.FireAction(position)
@@ -499,19 +573,22 @@ class TestGenerateActionsForComplexAttackCommand(BaseGenerateActionTestCase):
 
 class TestExecuteActions(BaseGameTestCase):
     def test_gather_action(self):
-        minerals_in_deposit = self.game.game_map.get_field(self.minerals_position).get_minerals()
-        self.miner.action = actions.GatherAction(source=self.minerals_position)
+        self._prepare_game()
+        minerals_in_deposit = \
+          self.game.game_map[self.minerals_position].maybe_object.minerals
+        self.miner.action = actions.GatherAction( \
+          source=self.minerals_position)
 
         self.game._execute_action_for(self.miner)
 
         self.assertEqual(self.miner.minerals, 1)
-        self.assertEqual(self.game.game_map.get_field(self.minerals_position).get_minerals(),
-                         minerals_in_deposit - 1)
+        self.assertEqual(minerals_in_deposit - 1, \
+          self.game.game_map[self.minerals_position].maybe_object.minerals)
 
 
 class TestMessageSystem(BaseGameTestCase):
     def test_send_message_between_players_allowed(self):
-
+        self._prepare_game(many_starting_points=True)
         _, Alice_base, _ = self.game.new_player_with_units('Alice', (0, 255, 0))
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=Alice_base.ID,
@@ -522,6 +599,7 @@ class TestMessageSystem(BaseGameTestCase):
         self.assertEqual(Alice_base.inbox, [message])
 
     def test_send_system_message(self):
+        self._prepare_game()
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=0,
                           text='text of message')
@@ -531,6 +609,7 @@ class TestMessageSystem(BaseGameTestCase):
         self.assertEqual(self.game.inbox, [message])
 
     def test_send_message_with_invalid_receiver(self):
+        self._prepare_game()
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=1234567,
                           text='text of message')
@@ -540,6 +619,7 @@ class TestMessageSystem(BaseGameTestCase):
         self.assertRaises(InvalidReceiver, illegal_operation)
 
     def test_send_message_with_invalid_sender(self):
+        self._prepare_game()
         message = Message(sender_ID=1234567,
                           receiver_ID=self.base.ID,
                           text='text of message')
@@ -549,6 +629,7 @@ class TestMessageSystem(BaseGameTestCase):
         self.assertRaises(InvalidSender, illegal_operation)
 
     def test_clear_mailboxes(self):
+        self._prepare_game()
         message = Message(sender_ID=self.base.ID,
                           receiver_ID=self.miner.ID,
                           text='text of message')
@@ -567,6 +648,10 @@ class TestMessageSystem(BaseGameTestCase):
 
 
 class TestAnsweringSystemRequest(BaseGameTestCase):
+    def setUp(self):
+        super(TestAnsweringSystemRequest, self).setUp()
+        self._prepare_game()
+
     def test_list_of_units_request(self):
         assert len(self.player.units) == 6
 
@@ -612,7 +697,9 @@ class TestAnsweringSystemRequest(BaseGameTestCase):
         system_message = self._generate_system_request_demanded_by_base(question)
 
         answer_message = self.game._generate_answer_to_system_message(system_message)
-        expected_answer_message = Message(sender_ID=0, receiver_ID=self.base.ID, text=answer)
+        expected_answer_message = Message(sender_ID=0,
+                                          receiver_ID=self.base.ID,
+                                          text=answer)
         self.assertEqual(expected_answer_message, answer_message)
 
     def _generate_system_request_demanded_by_base(self, question):
@@ -625,7 +712,11 @@ class TestAnsweringSystemRequest(BaseGameTestCase):
         self.assertEqual(reply, None)
 
 
-class TestEfficiency(BaseGameTestCase):
+class TestGameEfficiency(BaseGameTestCase):
+    def setUp(self):
+        super(TestGameEfficiency, self).setUp()
+        self._prepare_game()
+
     @ max_time(50, repeat=3)
     def test_efficiency_of_deepcopy(self):
         game_copy = copy.deepcopy(self.game)
@@ -634,6 +725,7 @@ class TestEfficiency(BaseGameTestCase):
 class TestGameTic(BaseGameTestCase):
     def setUp(self):
         super(TestGameTic, self).setUp()
+        self._prepare_game()
         self.directory = 'tmp_unittest'
         self.file_system = TemporaryFileSystem(self.directory)
         self._create_compile_and_run_function()
@@ -663,8 +755,10 @@ print "%d MOVE 5 63" # command for tank
 print "MOVE 15 15"
             """
 
-            program_for_base = Program(Language.PYTHON, code_source_for_base)
-            program_for_miner = Program(Language.PYTHON, code_source_for_miner)
+            program_for_base = Program(Language.PYTHON,
+                                       code_source_for_base)
+            program_for_miner = Program(Language.PYTHON,
+                                        code_source_for_miner)
             program_for_tank = STAR_PROGRAM
             self.game.set_program(self.base, program_for_base)
             self.game.set_program(self.miner, program_for_miner)
@@ -676,7 +770,6 @@ print "MOVE 15 15"
             self.assertTrue(self.base.maybe_run_status != None)
             self.assertTrue(self.miner.maybe_run_status != None)
             self.assertTrue(self.tank.maybe_run_status != None)
-            print self.tank.__dict__
             self.assertEqual(self.tank.position, (1, 63))
 
         finally:
@@ -684,11 +777,13 @@ print "MOVE 15 15"
 
     def test_tic_for_world(self):
         assert self.game.configuration.probability_of_mineral_deposit_growing == 1.0
-        old_minerals_amount = self.game.game_map.get_field(self.minerals_position).get_minerals()
+        old_minerals_amount = \
+          self.game.game_map[self.minerals_position].maybe_object.minerals
 
         self.game._tic_for_world()
 
-        new_minerals_amount = self.game.game_map.get_field(self.minerals_position).get_minerals()
+        new_minerals_amount = \
+          self.game.game_map[self.minerals_position].maybe_object.minerals
         self.assertEqual(new_minerals_amount, old_minerals_amount+1)
 
 

@@ -117,7 +117,8 @@ class Field(object):
         self._game_map = game_map
 
     def __eq__(self, other):
-        return (self._game_map is other._game_map and
+        return (type(self) == type(other) and
+                self._game_map is other._game_map and
                 all(getattr(self, attr) == getattr(other, attr)
                     for attr in ('_maybe_object', '_valid_position',
                                  '_position', '_ground_type')))
