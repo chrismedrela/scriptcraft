@@ -12,7 +12,7 @@ import shutil
 
 
 GRAPHIC_SOURCE = '../graphics'
-GRAPHIC_DESTINATION = '../scriptcraft/graphic'
+GRAPHIC_DESTINATION = '../graphic'
 
 def _copy_files():
     pattern = "*.png"
