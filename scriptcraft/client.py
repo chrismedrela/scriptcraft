@@ -17,9 +17,10 @@ import tkSimpleDialog
 from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter import statement
 
 from scriptcraft import direction
-from scriptcraft.gamemap import GameMap, NoFreeStartPosition
+from scriptcraft.gamemap import GameMap
 from scriptcraft.gamestate import (actions, Game, DEFAULT_GAME_CONFIGURATION,
-                                   Language, Program, STAR_PROGRAM)
+                                   Language, Program, STAR_PROGRAM, Unit,
+                                   NoFreeStartPosition, Tree, MineralDeposit)
 from scriptcraft.gamesession import GameSession, SystemConfiguration
 from scriptcraft.utils import *
 
@@ -99,20 +100,21 @@ class GameViewer(Canvas):
             d = direction.FROM_RAY[tuple(delta)]
             direction_name = direction.TO_FULL_NAME[d]
             self._draw('arrow-%s' % direction_name, source,
-                        extra_tags=['upper-layer'])
+                            extra_tags=['upper-layer'])
 
         # go from west to east and in each row from north to south
         for position in itertools.product(xrange(game.game_map.size[0]),
                                           xrange(game.game_map.size[1])):
-            field = game.game_map.get_field(position)
+            field = game.game_map[position]
+            obj = field.maybe_object
             self._draw('flat_field', position) # draw ground
-            if field.has_mineral_deposit(): # draw minerals
+            if isinstance(obj, MineralDeposit): # draw minerals
                 self._draw('minerals', position)
-            if field.has_trees(): # draw trees
+            if isinstance(obj, Tree): # draw trees
                 self._draw('tree', position)
 
-            if field.has_unit(): # draw unit
-                unit = game.units_by_IDs[field.get_unit_ID()]
+            if isinstance(obj, Unit): # draw unit
+                unit = obj
                 switch = {'4': lambda u: 'base',
                           '6': lambda u: 'tank',
                           '5': lambda u: ('full_miner'
@@ -243,7 +245,7 @@ class GameViewer(Canvas):
         # scale all texts
         font = self._get_font_for_current_zoom()
         self.itemconfigure('text', font=font,
-                           state = NORMAL if font else HIDDEN)
+                            state = NORMAL if font else HIDDEN)
 
         # move all images
         factor = zoom/old_zoom
@@ -291,7 +293,7 @@ class GameViewer(Canvas):
             integer_click_position = map(lambda i: int(math.floor(i)),
                                          click_position)
             integer_click_position = tuple(integer_click_position)
-            if self._game.game_map.is_valid_position(integer_click_position):
+            if self._game.game_map[integer_click_position].valid_position:
                 self._set_selection_position(integer_click_position)
                 self.event_generate("<<field-selected>>")
             elif self.selection_position:
@@ -319,7 +321,8 @@ class ClientApplication(Frame):
     CHOOSE_DIRECTORY_FOR_NEW_GAME = "Wybierz folder dla nowej gry"
     TITLE_CREATE_NEW_GAME = 'Stwórz nową grę'
     CANNOT_CREATE_NEW_GAME = 'Nie można stworzyć nowej gry.'
-    CANNOT_OPEN_FILE = 'Nie można otworzyć pliku (być może nie masz wystarczających uprawnień).'
+    CANNOT_OPEN_FILE = ('Nie można otworzyć pliku '
+                        '(być może nie masz wystarczających uprawnień).')
     MAP_FILE_IS_CORRUPTED = 'Plik mapy jest uszkodzony.'
     IO_ERROR_DURING_READING = 'Wystąpił błąd podczas czytania pliku.'
     TITLE_SAVE_GAME = 'Zapisz grę'
@@ -331,13 +334,15 @@ class ClientApplication(Frame):
     ENTER_NEW_PLAYER_NAME = 'Wpisz nazwę nowego gracza.'
     TITLE_CREATE_PLAYER_CHOOSE_COLOR = 'Wybierz kolor dla nowego gracza.'
     CANNOT_CREATE_PLAYER = 'Nie można dodać nowego gracza.'
-    NO_FREE_START_POSITION = 'Wszystkie pozycje startowe na mapie są już zajęte.'
+    NO_FREE_START_POSITION = \
+      'Wszystkie pozycje startowe na mapie są już zajęte.'
     TITLE_CHOOSE_SOURCE_FILE = 'Wybierz plik źródłowy'
     TITLE_SET_PROGRAM = 'Ustaw program'
     CANNOT_SET_PROGRAM = 'Nie można ustawić programu.'
     UNKNOWN_SOURCE_FILE_EXTENSION = 'Nieznane rozszerzenie pliku źródłowego.'
     TITLE_ARE_YOU_SURE = 'Czy jesteś pewien?'
-    WARNING_CURRENT_GAME_WILL_BE_LOST = 'Czy jesteś pewien? Aktualna gra zostanie bezpowrotnie utracona.'
+    WARNING_CURRENT_GAME_WILL_BE_LOST = \
+      'Czy jesteś pewien? Aktualna gra zostanie bezpowrotnie utracona.'
     TITLE_QUIT_PROGRAM = 'Wyjdź z programu'
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
 
@@ -349,12 +354,30 @@ class ClientApplication(Frame):
         self._init_gui()
         self._game = None
         self._game_session = None
-        #self._load_testing_game()
+        self._load_testing_game()
 
     @log_on_enter('load game for testing')
     def _load_testing_game(self):
         filename = datafile_path('maps/default.map')
-        game_map = pickle.load(open(filename, 'r'))
+
+        # create game_map (and add trees)
+        #game_map = pickle.load(open(filename, 'r'))
+        import random
+        size = 64
+        game_map = GameMap((size, size), [(10, 10), (53, 10), (10, 53), (53, 53)])
+        number_of_trees = 0
+        for x in xrange(size):
+            for y in xrange(size):
+                p = 1.0
+                if (6 <= x <= 14 or 49 <= x <= 57 or
+                    6 <= y <= 14 or 49 <= y <= 57):
+                    p = 0.0
+                if (random.random() < p):
+                    number_of_trees += 1
+                    game_map[x, y].place_object(Tree())
+        log('map size: %d, number of fields: %d' % (size, size**2))
+        log('number of trees: %d' % number_of_trees)
+
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         session = GameSession(
             directory='scriptcraft/.tmp',
@@ -557,21 +580,21 @@ class ClientApplication(Frame):
                           ClientApplication.CANNOT_SET_PROGRAM + ' ' + \
                           ClientApplication.UNKNOWN_SOURCE_FILE_EXTENSION)
             return
-        field = self._game.game_map.get_field(self._game_viewer.selection_position)
-        unit = self._game.units_by_IDs[field.get_unit_ID()]
+        field = self._game.game_map[self._game_viewer.selection_position]
+        unit = field.maybe_object
         program = Program(language=language, code=stream.read())
         self._game.set_program(unit, program)
 
     @log_on_enter('use case: set star program', lvl='info')
     def _set_star_program_callback(self):
-        field = self._game.game_map.get_field(self._game_viewer.selection_position)
-        unit = self._game.units_by_IDs[field.get_unit_ID()]
+        field = self._game.game_map[self._game_viewer.selection_position]
+        unit = field.maybe_object
         self._game.set_program(unit, STAR_PROGRAM)
 
     @log_on_enter('use case: delete program', lvl='info')
     def _delete_program_callback(self):
-        field = self._game.game_map.get_field(self._game_viewer.selection_position)
-        unit = self._game.units_by_IDs[field.get_unit_ID()]
+        field = self._game.game_map[self._game_viewer.selection_position]
+        unit = field.maybe_object
         self._game.set_program(unit, None)
 
     @log_on_enter('use case: tic', mode='time', lvl='info')
@@ -611,22 +634,23 @@ class ClientApplication(Frame):
         self._refresh_game_menu_items_state()
 
     def _print_info_about_field_at(self, position):
-        field = self._game.game_map.get_field(position)
+        field = self._game.game_map[position]
         print "\nSelected position: (%d, %d)" % position
         print "Field: %s" % str(field)
-        if field.has_unit():
-            unit = self._game.units_by_IDs[field.get_unit_ID()]
+        if isinstance(field.maybe_object, Unit):
+            unit = field.maybe_object
             print "Unit: %s" % (unit,)
             print "Compilation: %s" % (unit.maybe_last_compilation_status,)
             print "Executing: %s" % (unit.maybe_run_status,)
 
     def _refresh_game_menu_items_state(self):
         has_game = self._game is not None
+        obj = (self._game.game_map[self._game_viewer.selection_position].maybe_object
+               if has_game and self._game_viewer.selection_position is not None
+               else None)
         has_unit = (self._game is not None and
                     self._game_viewer.selection_position is not None and
-                    self._game.game_map.get_field(
-                        self._game_viewer.selection_position
-                    ).has_unit())
+                    isinstance(obj, Unit))
 
         state = NORMAL if has_game else DISABLED
         entries = [ClientApplication.ADD_PLAYER_LABEL,
