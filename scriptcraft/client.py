@@ -8,6 +8,7 @@ except:
 import itertools
 import math
 import os.path
+import random
 from Tkinter import *
 import tkColorChooser
 import tkFileDialog
@@ -349,10 +350,21 @@ class ClientApplication(Frame):
     TITLE_QUIT_PROGRAM = 'Wyjdź z programu'
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
 
-    MAP_FILE_TYPES = [
+    MAP_FILE_TYPES = (
         ('Plik mapy', '*.map'),
         ('Wszystkie pliki', '*')
-    ]
+    )
+
+    DEFAULT_PLAYER_COLORS = (
+        (178, 146, 0),
+        (128, 0, 0),
+        (0, 255, 220),
+        (255, 0, 255),
+        (0, 0, 255),
+        (0, 200, 0),
+        (255, 255, 0),
+        (255, 0, 0), # the last one is get as the first one
+    )
 
     # initializing --------------------------------------------------------
 
@@ -387,13 +399,17 @@ class ClientApplication(Frame):
             log('map size: %d, number of fields: %d' % (size, size**2))
             log('number of trees: %d' % number_of_trees)
 
+        # create game and game session
         game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         session = GameSession(
             directory='scriptcraft/.tmp',
             system_configuration=DEFAULT_SYSTEM_CONFIGURATION,
             game=game)
-        game.new_player_with_units('Bob', (255, 0, 0))
-        game.new_player_with_units('Alice', (255, 255, 0))
+        self.set_game_session(session)
+
+        # modify game (add players)
+        game.new_player_with_units('Bob', self._reserve_color())
+        game.new_player_with_units('Alice', self._reserve_color())
 
         def set_program(unit_id, filename):
             program = Program(Language.PYTHON,
@@ -404,7 +420,7 @@ class ClientApplication(Frame):
         for i in xrange(9,13):
             set_program(i, 'gather_Alice.py')
 
-        self.set_game_session(session)
+        self._set_game(game)
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
@@ -478,7 +494,7 @@ class ClientApplication(Frame):
         map_filename = tkFileDialog.askopenfilename(
             title=ClientApplication.CHOOSE_MAP_FILE,
             filetypes=ClientApplication.MAP_FILE_TYPES,
-        #initialdir=datafile_path('')
+            #initialdir=datafile_path('') # TODO
             parent=self,
         )
         if not map_filename:
@@ -562,13 +578,7 @@ class ClientApplication(Frame):
         if name is None:
             return
 
-        color = tkColorChooser.askcolor(
-            title=ClientApplication.TITLE_CREATE_PLAYER_CHOOSE_COLOR,
-            parent=self)
-        color = color[0] # original color was ((r, g, b), "#rrggbb") or (None, None)
-        if color is None:
-            return
-
+        color = self._reserve_color()
         try:
             self._game.new_player_with_units(name, color)
         except NoFreeStartPosition:
@@ -646,9 +656,22 @@ class ClientApplication(Frame):
     def _set_game(self, game):
         """ Call it if game instance was changed and you want to make
         the application up to date."""
+        if game is not None: # set game.free_colors
+            if self._game is None or not hasattr(self._game, 'free_colors'):
+                game.free_colors = \
+                  list(ClientApplication.DEFAULT_PLAYER_COLORS)
+            else:
+                game.free_colors = self._game.free_colors
         self._game = game
         self._game_viewer.set_game(game)
         self._refresh_game_menu_items_state()
+
+    def _reserve_color(self):
+        if self._game.free_colors:
+            return self._game.free_colors.pop()
+        else:
+            rand = lambda: random.randint(0, 255)
+            return (rand(), rand(), rand())
 
     def _print_info_about_field_at(self, position):
         field = self._game.game_map[position]
