@@ -320,6 +320,7 @@ class ClientApplication(Frame):
     TIC_LABEL = "Symuluj jedną turę gry"
     QUIT_LABEL = "Wyjdź"
 
+    CHOOSE_MAP_FILE = 'Wybierz mapę'
     CHOOSE_DIRECTORY_FOR_NEW_GAME = "Wybierz folder dla nowej gry"
     TITLE_CREATE_NEW_GAME = 'Stwórz nową grę'
     CANNOT_CREATE_NEW_GAME = 'Nie można stworzyć nowej gry.'
@@ -348,6 +349,10 @@ class ClientApplication(Frame):
     TITLE_QUIT_PROGRAM = 'Wyjdź z programu'
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
 
+    MAP_FILE_TYPES = [
+        ('Plik mapy', '*.map'),
+        ('Wszystkie pliki', '*')
+    ]
 
     # initializing --------------------------------------------------------
 
@@ -470,6 +475,15 @@ class ClientApplication(Frame):
         if not self._ask_if_delete_current_game_if_exists():
             return
 
+        map_filename = tkFileDialog.askopenfilename(
+            title=ClientApplication.CHOOSE_MAP_FILE,
+            filetypes=ClientApplication.MAP_FILE_TYPES,
+        #initialdir=datafile_path('')
+            parent=self,
+        )
+        if not map_filename:
+            return
+
         directory = tkFileDialog.askdirectory(
             title=ClientApplication.CHOOSE_DIRECTORY_FOR_NEW_GAME,
             mustexist=True,
@@ -478,9 +492,8 @@ class ClientApplication(Frame):
         if not directory:
             return
 
-        filename = datafile_path('maps/default.map')
         try:
-            stream = open(filename, 'r')
+            stream = open(map_filename, 'r')
         except IOError as ex:
             self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                           ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
