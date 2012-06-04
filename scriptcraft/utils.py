@@ -10,6 +10,7 @@ __all__ = [
     'init_logging',
     'log',
     'log_on_enter',
+    'log_exception',
     'log_error_callback',
     'max_time',
     'memoized',
@@ -31,7 +32,7 @@ import pkg_resources
 import time
 import traceback
 
-from mylogging import (init_logging, log, log_on_enter,
+from mylogging import (init_logging, log, log_on_enter, log_exception,
                        log_error_callback, shutdown_logging)
 
 

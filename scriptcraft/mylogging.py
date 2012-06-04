@@ -13,6 +13,7 @@ The module provide timing (see log_on_enter function).
 __all__ = [
     'init_logging',
     'log',
+    'log_exception',
     'log_on_enter',
     'log_error_callback',
     'shutdown_logging',
@@ -74,6 +75,10 @@ def log_error_callback(cls, ex, traceback):
 
     """
 
+    log_exception(ex)
+
+
+def log_exception(ex):
     global _initialisated
     if _initialisated:
         logging.exception('unhandled exception!')
