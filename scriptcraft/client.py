@@ -734,11 +734,15 @@ def run():
 
     global root, app
     init_logging('debug')
-    root = Tk()
-    root.report_callback_exception = log_error_callback
-    app = ClientApplication(master=root)
-    app.mainloop()
-    shutdown_logging()
+    try:
+        root = Tk()
+        root.report_callback_exception = log_error_callback
+        app = ClientApplication(master=root)
+        app.mainloop()
+    except Exception as ex:
+        log_exception(ex)
+    finally:
+        shutdown_logging()
 
 if __name__ == "__main__":
     run()
