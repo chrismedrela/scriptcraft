@@ -42,3 +42,13 @@ TO_FULL_NAME = {
 	S:'south',
 	E:'east',
 }
+
+def estimated(source, dest):
+    dx, dy = dest[0]-source[0], dest[1]-source[1]
+    if dx==dy==0:
+        return None
+    if abs(dx) > abs(dy): # then estimated direction is W or E
+        return E if dx > 0 else W
+    else: # then estimated direction is S or N
+        return S if dy > 0 else N
+

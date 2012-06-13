@@ -572,6 +572,29 @@ class TestGenerateActionsForComplexAttackCommand(BaseGenerateActionTestCase):
 
 
 class TestExecuteActions(BaseGameTestCase):
+    def test_align_of_moving_unit(self):
+        self._prepare_game()
+        assert self.tank.position == (0, 63)
+        destination = (3, 61)
+        self.tank.direction = direction.N
+        self.tank.action = actions.MoveAction(source=self.tank.position,
+                                              destination=destination)
+
+        self.game._execute_action_for(self.tank)
+
+        self.assertEqual(self.tank.direction, direction.E)
+
+    def test_align_of_unit_with_fire_action(self):
+        self._prepare_game()
+        assert self.tank.position == (0, 63)
+        destination = (2, 60)
+        self.tank.direction = direction.S
+        self.tank.action = actions.FireAction(destination=destination)
+
+        self.game._execute_action_for(self.tank)
+
+        self.assertEqual(self.tank.direction, direction.N)
+
     def test_gather_action(self):
         self._prepare_game()
         minerals_in_deposit = \
@@ -886,11 +909,12 @@ class TestUnit(unittest.TestCase):
         unit_type = self._build_simple_unit_type()
         player = self._build_simple_player()
         unit = Unit(player=player, type=unit_type, position=(2, 3), ID=7)
+        unit.direction = direction.S
         unit.program = STAR_PROGRAM
 
         expected = ("<Unit:7 | tank of player 14 at (2, 3) "
                     "with star program with <Command stop> "
-                    "doing <Action stop>>")
+                    "doing <Action stop> directed to south>")
         self.assertEqual(str(unit), expected)
 
     def _build_simple_unit_type(self):

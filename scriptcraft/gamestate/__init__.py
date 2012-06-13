@@ -638,6 +638,28 @@ class Game(object):
     def _execute_action_for(self, unit):
         action_type = type(unit.action)
 
+        def move_action():
+            self.move_unit_at(unit, unit.action.destination)
+            unit.direction = direction.estimated( \
+              unit.action.source, unit.action.destination)
+
+        def gather_action():
+            self.store_minerals_from_deposit_to_unit( \
+              unit.action.source, unit)
+            unit.direction = direction.estimated( \
+              unit.position, unit.action.source)
+
+        def store_action():
+            storage = self.units_by_IDs[unit.action.storage_ID]
+            self.store_minerals_from_unit_to_unit(unit, storage)
+            unit.direction = direction.estimated( \
+              unit.position, storage.position)
+
+        def fire_action():
+            self.fire_at(unit.action.destination)
+            unit.direction = direction.estimated( \
+              unit.position, unit.action.destination)
+
         def build_unit():
             new_unit = self.new_unit(unit.player,
                                      unit.action.destination,
@@ -645,20 +667,12 @@ class Game(object):
             self.set_program(new_unit, unit.program)
 
         switch = {
-            actions.StopAction : \
-                lambda: None,
-            actions.MoveAction : \
-                lambda: self.move_unit_at(unit, unit.action.destination),
-            actions.GatherAction : \
-                lambda: self.store_minerals_from_deposit_to_unit( \
-                    unit.action.source, unit),
-            actions.StoreAction : \
-                lambda: self.store_minerals_from_unit_to_unit( \
-                    unit, self.units_by_IDs[unit.action.storage_ID]),
-            actions.FireAction : \
-                lambda: self.fire_at(unit.action.destination),
-            actions.BuildAction : \
-                build_unit
+            actions.StopAction : lambda: None,
+            actions.MoveAction : move_action,
+            actions.GatherAction : gather_action,
+            actions.StoreAction : store_action,
+            actions.FireAction : fire_action,
+            actions.BuildAction : build_unit,
         }
 
         case = switch[action_type]
@@ -705,6 +719,7 @@ class Tree(object):
 
 class Unit(object):
     def __init__(self, player, type, position, ID):
+        self.direction = direction.N
         self.program = None
         self.maybe_last_compilation_status = None
         self.maybe_run_status = None
@@ -735,7 +750,8 @@ class Unit(object):
                ("with %d minerals " % self.minerals if self.type.has_storage else "") + \
                ("%s " % (("with %s" % (self.program,))
                          if self.program else "without program")) + \
-               ("with %s doing %s>" % (self.command, self.action))
+               ("with %s doing %s " % (self.command, self.action)) + \
+               ("directed to %s>" % (direction.TO_FULL_NAME[self.direction],))
 
 
 class BEHAVIOUR_WHEN_ATTACKED(object):
