@@ -4,7 +4,6 @@
 __all__ = [
     'anything',
     'Const',
-    'copy_if_an_instance_given',
     'datafile_path',
     'distance',
     'init_logging',
@@ -101,34 +100,6 @@ def datafile_path(relative_path):
         relative_path = os.path.join('..', relative_path)
         result = pkg_resources.resource_filename('scriptcraft', relative_path)
         return result
-
-
-def copy_if_an_instance_given(f):
-    """ Decorator. Use with method __new__ of classes inheriting
-    namedtuple.  Allow to make a shallow copy of an instance by
-    passing it as an only argument.
-
-    What's more, if you implement __copy__ like this:
-
-      def __copy__(self, memo):
-          c = MyClass(self)
-          return c
-
-    you can use copy.copy on your classes inheriting namedtuple with
-    your own implementation of __new__ method.
-
-    """
-
-    @ wraps(f)
-    def wraper(cls, *args, **kwargs):
-        if len(args) == 1 and type(args[0]) == cls and len(kwargs) == 0:
-            self = args[0]
-            l = [getattr(self, field) for field in cls._fields]
-            return cls.__bases__[0].__new__(cls, *l)
-
-        return f(cls, *args, **kwargs)
-
-    return wraper
 
 
 class record(type):
