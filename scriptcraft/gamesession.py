@@ -38,6 +38,7 @@ class SystemConfiguration(object):
 
 class GameSession(object):
     GAME_FILE_PATH = 'game.gam'
+    PICKLE_PROTOCOL = 2
 
     def __init__(self, directory, system_configuration, game=None):
         """ May raise IOError or pickle.UnpicklingError. """
@@ -50,7 +51,8 @@ class GameSession(object):
 
     def save(self):
         """ Save game. May raise errors. """
-        pickle.dump(self.game, open(self._game_file, 'w'))
+        pickle.dump(self.game, open(self._game_file, 'w'),
+                    GameSession.PICKLE_PROTOCOL)
 
     def tic(self):
         languages = self._system_configuration.languages_configurations.items()
