@@ -34,6 +34,8 @@ class SystemConfiguration(object):
                 'g++ src.cpp -o bin',
                 './bin')
         }
+        self.max_compilation_time = 5.0
+        self.max_execution_time = 0.5
 
 
 class GameSession(object):
@@ -65,7 +67,9 @@ class GameSession(object):
             source_file_names,
             binary_file_names,
             compilation_commands,
-            running_commands)
+            running_commands,
+            self._system_configuration.max_compilation_time,
+            self._system_configuration.max_execution_time)
         self.game.tic(compile_and_run)
 
     def __getattr__(self, name):

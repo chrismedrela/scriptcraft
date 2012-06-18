@@ -6,6 +6,7 @@ import os
 import shutil
 import stat
 import subprocess
+import time
 
 from scriptcraft.utils import *
 
@@ -16,16 +17,21 @@ class CompileAndRunProgram(object):
                  source_file_names_by_languages,
                  binary_file_names_by_languages,
                  compilation_commands_by_languages,
-                 running_commands_by_languages):
+                 running_commands_by_languages,
+                 max_compilation_time=None,
+                 max_execution_time=None):
         self._directory = directory
         self._source_file_names_by_languages = source_file_names_by_languages
         self._binary_file_names_by_languages = binary_file_names_by_languages
         self._compilation_commands_by_languages = compilation_commands_by_languages
         self._running_commands_by_languages = running_commands_by_languages
+        self._max_compilation_time = max_compilation_time
+        self._max_execution_time = max_execution_time
         self._env = Environment(directory)
 
     @log_on_enter('compile and run program', mode='only time')
-    def __call__(self, language, program_code, input_data):
+    def __call__(self, language, program_code, input_data,
+                 max_compilation_time=None, max_execution_time=None):
         self._language = language
         self._program_code = program_code
         self._input_data = input_data
@@ -64,10 +70,11 @@ class CompileAndRunProgram(object):
     def _execute_compilation_command(self):
         input = ''
         directory = 'env'
-        output, error_output, exit_status = \
+        output, error_output, exit_status, killed, execution_time = \
             self._env.execute_bash_command(self._compilation_command,
-                                           input, directory)
-        return (output, error_output)
+                                           input, directory,
+                                           self._max_compilation_time)
+        return (output, error_output, killed, execution_time)
 
     def _copy_binary_if_exists(self):
         source = ('env', self._binary_file_name)
@@ -100,9 +107,11 @@ class CompileAndRunProgram(object):
     def _execute_run_command(self):
         input = self._input_data
         folder = 'env'
-        output, error_output, exit_code = \
-            self._env.execute_bash_command(self._running_command, input, folder)
-        return (output, error_output)
+        output, error_output, exit_code, killed, execution_time = \
+            self._env.execute_bash_command(self._running_command,
+                                           input, folder,
+                                           self._max_execution_time)
+        return (output, error_output, killed, execution_time)
 
 
 class Environment(object):
@@ -142,7 +151,8 @@ class Environment(object):
         except OSError:
             pass
 
-    def execute_bash_command(self, command, input_data, dirty_folder_path):
+    def execute_bash_command(self, command, input_data, dirty_folder_path,
+                             max_execution_time=None):
         iterable_folder_path, folder = self._cleaned_path(dirty_folder_path)
         process = subprocess.Popen(command,
                                    stdin=subprocess.PIPE,
@@ -160,11 +170,28 @@ class Environment(object):
         finally:
             process.stdin.close()
 
+        # wait for finishing process or kill it
+        started_time = time.time()
+        elapsed_time = lambda: time.time() - started_time
+        killed = False
+        while process.poll() is None: # while process not terminated
+            if (max_execution_time is not None and
+                elapsed_time() > max_execution_time):
+                # kill the process
+                process.kill()
+                killed = True
+            else:
+                time.sleep(0.01)
+        execution_time = elapsed_time()
+        exit_code = process.returncode
+
         # read output and finish
-        exit_code = process.wait()
-        output = process.stdout.read()
-        errors_output = process.stderr.read()
-        return output, errors_output, exit_code
+        if not killed:
+            output = process.stdout.read()
+            errors_output = process.stderr.read()
+        else:
+            output, errors_output = '', ''
+        return output, errors_output, exit_code, killed, execution_time
 
     def _cleaned_path(self, dirty_path):
         if isinstance(dirty_path, basestring):

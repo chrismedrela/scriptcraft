@@ -945,7 +945,9 @@ class TestRunStarProgram(unittest.TestCase):
         run_status = run_star_program(input)
         excepted_run_status = RunStatus(input=input,
                                         output=excepted_output,
-                                        error_output=excepted_error_output)
+                                        error_output=excepted_error_output,
+                                        killed=False,
+                                        execution_time=0.0)
         self.assertEqual(run_status, excepted_run_status)
 
 

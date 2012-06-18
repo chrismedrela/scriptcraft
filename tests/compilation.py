@@ -3,6 +3,7 @@
 
 import os
 import unittest
+import time
 
 from scriptcraft.compilation import Environment, CompileAndRunProgram
 from scriptcraft.gamestate import Language
@@ -28,10 +29,12 @@ class TestBasic(unittest.TestCase):
         status = compile_and_run(Language.CPP, program_code, input_data)
 
         maybe_compilation_status, maybe_running_status = status
-        expected_compilation_status = ('', '')
-        expected_running_status = ('tekst outputowy\nala', '')
-        self.assertEqual(maybe_compilation_status, expected_compilation_status)
-        self.assertEqual(maybe_running_status, expected_running_status)
+        self.assertEqual(maybe_compilation_status[0:3],
+                         ('', '', False))
+        self.assertTrue(maybe_compilation_status[3] > 0.0)
+        self.assertEqual(maybe_running_status[0:3],
+                         ('tekst outputowy\nala', '', False))
+        self.assertTrue(maybe_running_status[3] > 0.0)
 
     def test_environment_folder_already_exists(self):
         self.file_system.create_folder_if_necessary('env')
@@ -51,9 +54,11 @@ class TestBasic(unittest.TestCase):
              "../../../../lib/crt1.o: In function `_start':\n"
              "(.text+0x20): undefined reference to `main'\n"
              "collect2: ld returned 1 exit status\n"),
+            False
         )
         expected_running_status = None
-        self.assertEqual(maybe_compilation_status, expected_compilation_status)
+        self.assertEqual(maybe_compilation_status[0:3],
+                         expected_compilation_status)
         self.assertEqual(maybe_running_status, expected_running_status)
 
     def test_compilation_not_necessary(self):
@@ -67,9 +72,13 @@ class TestBasic(unittest.TestCase):
         status = compile_and_run(Language.CPP, program_code, input_data)
 
         maybe_compilation_status, maybe_running_status = status
-        expected_running_status = ('tekst outputowy\nala', '')
         self.assertTrue(maybe_compilation_status is None)
-        self.assertEqual(maybe_running_status, expected_running_status)
+        self.assertTrue(maybe_running_status is not None)
+        output, error_output, killed, elapsed_time = maybe_running_status
+        self.assertEqual(output, 'tekst outputowy\nala')
+        self.assertEqual(error_output, '')
+        self.assertFalse(killed)
+        self.assertTrue(0 < elapsed_time)
 
     def _build_compile_and_run_program_instance(self):
         result = CompileAndRunProgram(self.directory,
@@ -205,9 +214,24 @@ class TestEnvironment(unittest.TestCase):
         command = 'echo bla bla && unknown_command'
         folder = ''
 
-        output, error_output, exit_code = \
-            self.env.execute_bash_command(command, input_data, folder)
+        output, error_output, exit_code, killed, execution_time = \
+            self.env.execute_bash_command(command, input_data, folder,
+                                          max_execution_time=1.0)
 
         self.assertEqual(output, 'bla bla\n')
         self.assertTrue(error_output != '')
         self.assertTrue(exit_code != 0)
+        self.assertFalse(killed)
+        self.assertTrue(0.0 < execution_time < 1.0)
+
+    def test_execute_bash_command_which_take_too_much_time(self):
+        command = 'sleep 1.0'
+        started_time = time.time()
+
+        output, error_output, exit_code, killed, execution_time = \
+            self.env.execute_bash_command(command, '', '', 0.2)
+        delta_time = time.time() - started_time
+        print delta_time
+        self.assertTrue(delta_time < 0.3)
+        self.assertTrue(killed)
+

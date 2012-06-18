@@ -222,15 +222,19 @@ class Game(object):
             if isinstance(unit.program, Program):
                 status = compile_and_run_function(unit.program.language,
                                                   unit.program.code,
-                                                  input)
+                                                  input,)
                 maybe_compilation_status, maybe_running_status = status
                 if maybe_compilation_status:
-                    output, error_output = maybe_compilation_status
-                    compilation_status = CompilationStatus(output, error_output)
+                    output, error_output, killed, execution_time = \
+                       maybe_compilation_status
+                    compilation_status = CompilationStatus( \
+                       output, error_output, killed, execution_time)
                     unit.maybe_last_compilation_status = compilation_status
                 if maybe_running_status:
-                    output, error_output = maybe_running_status
-                    running_status = RunStatus(input, output, error_output)
+                    output, error_output, killed, execution_time = \
+                       maybe_running_status
+                    running_status = RunStatus(input, output, error_output,
+                                               killed, execution_time)
                     unit.maybe_run_status = running_status
                 else:
                     unit.maybe_run_status = None
@@ -983,8 +987,10 @@ def run_star_program(input):
     output = "\n".join(commands)
 
     return RunStatus(input=input,
-                         output=output,
-                         error_output='')
+                     output=output,
+                     error_output='',
+                     killed=False,
+                     execution_time=0.0)
 
 
 class Program(namedtuple("Program", ('language',
@@ -1004,13 +1010,16 @@ class Program(namedtuple("Program", ('language',
 
 
 class CompilationStatus(namedtuple("CompilationStatus",
-                                   ('output', 'error_output'))):
+                                   ('output', 'error_output',
+                                    'killed', 'execution_time'))):
     __slots__ = ()
 
 
 class RunStatus(namedtuple("RunStatus", ('input',
                                         'output',
-                                        'error_output'))):
+                                        'error_output',
+                                        'killed',
+                                        'execution_time'))):
     __slots__ = ()
 
 
