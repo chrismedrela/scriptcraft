@@ -75,13 +75,13 @@ def log_error_callback(cls, ex, traceback):
 
     """
 
-    log_exception(ex)
+    log_exception("unhandled exception!")
 
 
-def log_exception(ex):
+def log_exception(title="Exception!"):
     global _initialisated
     if _initialisated:
-        logging.exception('unhandled exception!')
+        logging.exception(title)
 
 
 def log(msg, lvl='debug'):

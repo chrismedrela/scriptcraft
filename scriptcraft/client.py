@@ -539,6 +539,7 @@ class ClientApplication(Frame):
         try:
             self._game_session.save()
         except IOError as ex:
+            log_exception()
             self._warning(ClientApplication.TITLE_SAVE_GAME,
                           ClientApplication.CANNOT_SAVE_GAME + ' ' + \
                           ClientApplication.IO_ERROR_DURING_SAVING)
@@ -559,10 +560,12 @@ class ClientApplication(Frame):
         try:
             game_session = GameSession(directory, DEFAULT_SYSTEM_CONFIGURATION)
         except IOError as ex:
+            log_exception()
             self._warning(ClientApplication.TITLE_LOAD_GAME,
                           ClientApplication.CANNOT_LOAD_GAME + ' ' + \
                           ClientApplication.IO_ERROR_DURING_READING)
         except pickle.UnpicklingError as ex:
+            log_exception()
             self._warning(ClientApplication.TITLE_LOAD_GAME,
                           ClientApplication.CANNOT_LOAD_GAME + ' ' + \
                           ClientApplication.MAP_FILE_IS_CORRUPTED)
@@ -740,7 +743,7 @@ def run():
         app = ClientApplication(master=root)
         app.mainloop()
     except Exception as ex:
-        log_exception(ex)
+        log_exception('Unhandled exception outside tkinter!')
     finally:
         shutdown_logging()
 
