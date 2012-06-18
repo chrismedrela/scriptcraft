@@ -380,7 +380,7 @@ class ClientApplication(Frame):
         filename = datafile_path('maps/small.map')
 
         # create game_map
-        game_map = load_game_map(open(filename, 'r').read())
+        #game_map = load_game_map(open(filename, 'r').read())
 
         def generate_simple_map():
             import random
@@ -399,26 +399,29 @@ class ClientApplication(Frame):
             log('map size: %d, number of fields: %d' % (size, size**2))
             log('number of trees: %d' % number_of_trees)
 
+        #game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+
         # create game and game session
-        game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
         session = GameSession(
             directory='scriptcraft/.tmp',
-            system_configuration=DEFAULT_SYSTEM_CONFIGURATION,
-            game=game)
+            system_configuration=DEFAULT_SYSTEM_CONFIGURATION,)
+            #game=game)
         self.set_game_session(session)
+        game = session.game
 
         # modify game (add players)
-        game.new_player_with_units('Bob', self._reserve_color())
-        game.new_player_with_units('Alice', self._reserve_color())
+        # game.new_player_with_units('Bob', self._reserve_color())
+        # game.new_player_with_units('Alice', self._reserve_color())
 
         def set_program(unit_id, filename):
             program = Program(Language.PYTHON,
                               open('scriptcraft/.tmp/'+filename).read())
             game.set_program(game.units_by_IDs[unit_id], program)
+        set_program(8, 'build_tank.py')
         for i in xrange(3,7):
-            set_program(i, 'gather.py')
+            set_program(i, 'move_randomly.py')
         for i in xrange(9,13):
-            set_program(i, 'gather_Alice.py')
+            set_program(i, 'move_randomly.py')
 
         self._set_game(game)
 
