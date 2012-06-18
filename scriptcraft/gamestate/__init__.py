@@ -769,14 +769,7 @@ def _use_default_value_if_flag_is_False(kwargs, flag_name, attribute_name, defau
         del kwargs[flag_name]
 
 
-class UnitType(namedtuple('UnitType', ('attack_range',
-                                       'vision_radius',
-                                       'storage_size',
-                                       'build_cost',
-                                       'can_build',
-                                       'movable',
-                                       'behaviour_when_attacked',
-                                       'names'))):
+class UnitType(object):
     """
     Attributes:
     attack_range -- value 0 means unit cannot attack
@@ -795,10 +788,16 @@ class UnitType(namedtuple('UnitType', ('attack_range',
 
     """
 
-    __slots__ = ()
+    __slots__ = ('attack_range',
+                 'vision_radius',
+                 'storage_size',
+                 'build_cost',
+                 'can_build',
+                 'movable',
+                 'behaviour_when_attacked',
+                 'names')
 
-    @ copy_if_an_instance_given
-    def __new__(cls, **kwargs):
+    def __init__(self, **kwargs):
         _use_default_value_if_flag_is_False(kwargs, 'can_be_built', 'build_cost', -1)
         _use_default_value_if_flag_is_False(kwargs, 'has_storage', 'storage_size', 0)
         _use_default_value_if_flag_is_False(kwargs, 'can_attack', 'attack_range', 0)
@@ -809,11 +808,8 @@ class UnitType(namedtuple('UnitType', ('attack_range',
         kwargs['names'] = map(lambda x: x.lower(),
                               kwargs['names'])
 
-        return cls.__bases__[0].__new__(cls, **kwargs)
-
-    def __deepcopy__(self, memo):
-        c = UnitType(self)
-        return c
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     @ property
     def main_name(self):
@@ -874,22 +870,20 @@ DEFAULT_TANK_TYPE = UnitType(
 )
 
 
-class GameConfiguration(namedtuple("GameConfiguration",
-    ('units_types_by_names',
-     'main_base_type',
-     'main_miner_type',
-     'minerals_for_main_unit_at_start',
-     'probability_of_mineral_deposit_growing')
-    )):
-    __slots__ = ()
+class GameConfiguration(object):
+    __slots__ = ('units_types_by_names',
+                 'main_base_type',
+                 'main_miner_type',
+                 'minerals_for_main_unit_at_start',
+                 'probability_of_mineral_deposit_growing')
 
-    @ copy_if_an_instance_given
-    def __new__(cls,
-                units_types,
-                main_base_type,
-                main_miner_type,
-                minerals_for_main_unit_at_start,
-                probability_of_mineral_deposit_growing,):
+
+    def __init__(self,
+                 units_types,
+                 main_base_type,
+                 main_miner_type,
+                 minerals_for_main_unit_at_start,
+                 probability_of_mineral_deposit_growing,):
 
         units_types_by_names = {}
         for unit_type in units_types:
@@ -901,16 +895,12 @@ class GameConfiguration(namedtuple("GameConfiguration",
         if main_base_type not in units_types or main_miner_type not in units_types:
             raise ValueError("main_base_type or main_miner_type not in units_types")
 
-        return cls.__bases__[0].__new__(cls,
-                                        units_types_by_names,
-                                        main_base_type,
-                                        main_miner_type,
-                                        minerals_for_main_unit_at_start,
-                                        probability_of_mineral_deposit_growing)
-
-    def __deepcopy__(self, memo):
-        c = GameConfiguration(self)
-        return c
+        self.units_types_by_names = units_types_by_names
+        self.main_base_type = main_base_type
+        self.main_miner_type = main_miner_type
+        self.minerals_for_main_unit_at_start = minerals_for_main_unit_at_start
+        self.probability_of_mineral_deposit_growing = \
+          probability_of_mineral_deposit_growing
 
 
 DEFAULT_GAME_CONFIGURATION = GameConfiguration(

@@ -848,11 +848,6 @@ class TestGameConfiguration(unittest.TestCase):
 
         self._test_game_configuration_cannot_be_created()
 
-    def test_deep_copy(self):
-        configuration = GameConfiguration(**self.kwargs)
-        configuration_copy = copy.deepcopy(configuration)
-        self.assertEqual(configuration, configuration_copy)
-
     def _test_game_configuration_cannot_be_created(self):
         illegal_operation = lambda: GameConfiguration(**self.kwargs)
         self.assertRaises(ValueError, illegal_operation)
@@ -972,11 +967,6 @@ class TestUnitType(unittest.TestCase):
     def test_upper_cases_names(self):
         unit_type = UnitType(**self.kwargs)
         self.assertEqual(unit_type.main_name, 'myunittype')
-
-    def test_deep_copy(self):
-        unit_type = UnitType(**self.kwargs)
-        unit_type_copy = copy.deepcopy(unit_type)
-        self.assertEqual(unit_type, unit_type_copy)
 
     def test_unit_type_must_have_names(self):
         self.kwargs['names'] = []
