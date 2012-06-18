@@ -43,11 +43,14 @@ class Parser (object):
         COMMAND_NAMES -- list of names of the command (for example
         ['b', 'build']); command names are case-insensitive
 
-        ARGUMENTS -- list of types where type is 'int', 'str' (max 256
-        characters or 'direction'
+        ARGUMENTS -- list of types where type is:
+         - 'int'
+         - 'str' (max 256 characters)
+         - or 'direction'
 
-        CONSTRUCTOR -- function that receives parsed arguments and
-        return command
+        CONSTRUCTOR -- function that receives parsed arguments
+        (arguments whose type is 'str' are normalized by lowercasing)
+        and returns command
 
         """
 
@@ -143,10 +146,10 @@ def _parse_direction(data):
         return None
 
 def _parse_str(data, max_string_length=256):
-    """ Return data or None if data has more characters than max_string_length
-    argument (default 256). """
+    """ Return lowercased data or None if data has more characters
+    than max_string_length argument (default 256)."""
 
     if len(data) > max_string_length:
         return None
-    return data
+    return data.lower()
 

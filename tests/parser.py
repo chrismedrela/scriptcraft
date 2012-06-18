@@ -84,10 +84,10 @@ class TestBasicParsing(BaseParsingTestCase):
         self.assert_command_is(-12345678)
 
     def test_string_command(self):
-        string = "x"*256
+        string = "X"*256
         self.parse_text("STRING \t" + string + " ")
         self.assert_no_messages()
-        self.assert_command_is(string)
+        self.assert_command_is(string.lower())
 
     def test_direction_command(self):
         self.parse_text("D N")
@@ -120,7 +120,7 @@ class TestBasicParsing(BaseParsingTestCase):
     def test_case_insensitive(self):
         self.parse_text("cOmpLex 5 sTrInG e")
         self.assert_no_messages()
-        self.assert_command_is((5, 'sTrInG', direction.E))
+        self.assert_command_is((5, 'string', direction.E))
 
 
 class TestParsingInvalidData(BaseParsingTestCase):
