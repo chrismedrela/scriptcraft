@@ -321,6 +321,7 @@ class ClientApplication(Frame):
     SET_STAR_PROGRAM_LABEL = "Ustaw star program zaznaczonej jednostce"
     DELETE_PROGRAM_LABEL = "Usuń program zaznaczonej jednostce"
     TIC_LABEL = "Symuluj jedną turę gry"
+    TIC_IN_LOOP_LABEL = "Symulacja gry w pętli"
     QUIT_LABEL = "Wyjdź"
 
     CHOOSE_MAP_FILE = 'Wybierz mapę'
@@ -378,6 +379,7 @@ class ClientApplication(Frame):
 
     def __init__(self, master):
         Frame.__init__(self, master)
+        self._tic_in_loop = BooleanVar(False)
         self._init_gui()
         self._game = None
         self._game_session = None
@@ -442,6 +444,8 @@ class ClientApplication(Frame):
             command = self._queue.get_nowait()
             assert command == 'ready'
             self._set_game(self._game_session.game)
+            if self._tic_in_loop.get():
+                self._tic()
         self.master.after(ClientApplication.FREQUENCY_OF_CHECKING_QUERY,
                           self._check_query)
 
@@ -508,6 +512,11 @@ class ClientApplication(Frame):
             label=ClientApplication.TIC_LABEL,
             command=self._tic_callback,
             state=DISABLED)
+        self._game_menu.add_checkbutton(
+            label=ClientApplication.TIC_IN_LOOP_LABEL,
+            command=lambda: self._tic_in_loop_callback(switch=False),
+            state=DISABLED,
+            variable=self._tic_in_loop)
         self._game_menu.add_separator()
         self._game_menu.add_command(
             label=ClientApplication.QUIT_LABEL,
@@ -517,9 +526,16 @@ class ClientApplication(Frame):
         root.config(menu=menubar)
 
     def _create_keyboard_shortcuts(self):
-        self._game_menu.entryconfigure(ClientApplication.TIC_LABEL,
-                                       accelerator="t")
+        self._game_menu.entryconfigure(
+            ClientApplication.TIC_LABEL,
+            accelerator="t")
         self.bind_all("<t>", lambda w: self._tic_callback())
+
+        self._game_menu.entryconfigure(
+            ClientApplication.TIC_IN_LOOP_LABEL,
+            accelerator='spacja')
+        self.bind_all("<space>", \
+            lambda w: self._tic_in_loop_callback(switch=True))
 
     # callbacks ----------------------------------------------------------
 
@@ -666,10 +682,14 @@ class ClientApplication(Frame):
 
     @log_on_enter('use case: tic', mode='time', lvl='info')
     def _tic_callback(self):
-        try:
-            self._game_session.tic(self._queue)
-        except AlreadyExecuteGame as ex:
-            log('already execute game')
+        self._tic()
+
+    @log_on_enter('use case: switch tic in loop', lvl='info')
+    def _tic_in_loop_callback(self, switch):
+        if switch:
+            self._tic_in_loop.set(not self._tic_in_loop.get())
+        if self._tic_in_loop.get():
+            self._tic()
 
     @log_on_enter('use case: quit', lvl='info')
     def _quit_callback(self):
@@ -688,10 +708,18 @@ class ClientApplication(Frame):
 
 
     # other methods -------------------------------------------------------
+    def _tic(self):
+        try:
+            self._game_session.tic(self._queue)
+        except AlreadyExecuteGame as ex:
+            log('already execute game')
+
     @log_on_enter('set game session')
     def set_game_session(self, game_session):
         self._game_session = game_session
         self._set_game(None)
+        self._tic_in_loop.set(False)
+        self._queue = Queue()
         if game_session:
             self._set_game(game_session.game)
 
@@ -737,7 +765,8 @@ class ClientApplication(Frame):
         state = NORMAL if has_game else DISABLED
         entries = [ClientApplication.ADD_PLAYER_LABEL,
                    ClientApplication.SAVE_GAME_LABEL,
-                   ClientApplication.TIC_LABEL]
+                   ClientApplication.TIC_LABEL,
+                   ClientApplication.TIC_IN_LOOP_LABEL]
         for entry in entries:
             self._game_menu.entryconfigure(entry, state=state)
 
