@@ -9,6 +9,7 @@ except:
 import itertools
 import math
 import os.path
+from Queue import Queue
 import random
 from Tkinter import *
 import tkColorChooser
@@ -24,7 +25,8 @@ from scriptcraft.gamestate import (actions, Game, DEFAULT_GAME_CONFIGURATION,
                                    Language, Program, STAR_PROGRAM, Unit,
                                    NoFreeStartPosition, Tree, MineralDeposit,
                                    load_game_map, InvalidGameMapData)
-from scriptcraft.gamesession import GameSession, SystemConfiguration
+from scriptcraft.gamesession import (GameSession, SystemConfiguration,
+                                     AlreadyExecuteGame)
 from scriptcraft.utils import *
 
 
@@ -308,6 +310,7 @@ class GameViewer(Canvas):
 class ClientApplication(Frame):
 
     CONFIGURATION_FILE = 'configuration.ini'
+    FREQUENCY_OF_CHECKING_QUERY = 50 # ms
 
     MENU_GAME_LABEL = "Gra"
     NEW_GAME_LABEL = "Stwórz nową grę..."
@@ -378,6 +381,9 @@ class ClientApplication(Frame):
         self._init_gui()
         self._game = None
         self._game_session = None
+        self._queue = Queue()
+        self._master = master
+        self._check_query()
         self._load_configuration_file()
         self._load_testing_game()
 
@@ -430,6 +436,14 @@ class ClientApplication(Frame):
             set_program(i, 'move_randomly.py')
 
         self._set_game(game)
+
+    def _check_query(self):
+        if not self._queue.empty():
+            command = self._queue.get_nowait()
+            assert command == 'ready'
+            self._set_game(self._game_session.game)
+        self.master.after(ClientApplication.FREQUENCY_OF_CHECKING_QUERY,
+                          self._check_query)
 
     def _load_configuration_file(self):
         try:
@@ -652,8 +666,10 @@ class ClientApplication(Frame):
 
     @log_on_enter('use case: tic', mode='time', lvl='info')
     def _tic_callback(self):
-        self._game_session.tic()
-        self._set_game(self._game_session.game)
+        try:
+            self._game_session.tic(self._queue)
+        except AlreadyExecuteGame as ex:
+            log('already execute game')
 
     @log_on_enter('use case: quit', lvl='info')
     def _quit_callback(self):

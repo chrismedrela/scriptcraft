@@ -3,15 +3,22 @@
 
 
 import ConfigParser
+import copy
 try:
     import cPickle as pickle
 except:
     import pickle
 import os
+import threading
 
 from scriptcraft.compilation import CompileAndRunProgram
 from scriptcraft.gamestate import Language
+from scriptcraft.utils import *
 
+
+
+class AlreadyExecuteGame(Exception):
+    pass
 
 
 class LanguageConfiguration(object):
@@ -86,13 +93,24 @@ class GameSession(object):
             self.game = game
         else:
             self.game = pickle.load(open(self._game_file, 'r'))
+        self._already_execute_game_turn = False
 
     def save(self):
         """ Save game. May raise errors. """
         pickle.dump(self.game, open(self._game_file, 'w'),
                     GameSession.PICKLE_PROTOCOL)
 
-    def tic(self):
+    def tic(self, queue):
+        if self._already_execute_game_turn:
+            raise AlreadyExecuteGame()
+        self._already_execute_game_turn = True
+        with log_on_enter('copying game', mode='only time'):
+            game = copy.deepcopy(self.game)
+        target = lambda: self._tic_async(queue, game)
+        thread = threading.Thread(target=target)
+        thread.start()
+
+    def _tic_async(self, queue, game):
         languages = self._system_configuration.languages_configurations.items()
         source_file_names = dict([(k, v.source_file_name) for k, v in languages])
         binary_file_names = dict([(k, v.binary_file_name) for k, v in languages])
@@ -106,7 +124,11 @@ class GameSession(object):
             running_commands,
             self._system_configuration.max_compilation_time,
             self._system_configuration.max_execution_time)
-        self.game.tic(compile_and_run)
+        game.tic(compile_and_run)
+
+        self.game = game
+        queue.put('ready')
+        self._already_execute_game_turn = False
 
     def __getattr__(self, name):
         return getattr(self.game, name)
