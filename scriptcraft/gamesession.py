@@ -2,6 +2,7 @@
 #-*- coding:utf-8 -*-
 
 
+import ConfigParser
 try:
     import cPickle as pickle
 except:
@@ -23,19 +24,54 @@ class LanguageConfiguration(object):
 
 
 class SystemConfiguration(object):
-    def __init__(self):
-        self.languages_configurations = {
-            Language.PYTHON : LanguageConfiguration(
-                'src.py', 'bin.py',
-                'cp src.py bin.py',
-                'python bin.py'),
-            Language.CPP : LanguageConfiguration(
-                'src.cpp', 'bin',
-                'g++ src.cpp -o bin',
-                './bin')
-        }
-        self.max_compilation_time = 5.0
-        self.max_execution_time = 0.5
+    SECTION_TO_LANGUAGE = {
+        'cpp' : Language.CPP,
+        'python' : Language.PYTHON,
+    }
+
+    def __init__(self, ini_file):
+        """ May raise IOError or ConfigParser.Error or ValueError. """
+        self.languages_configurations = {}
+
+        config = ConfigParser.RawConfigParser()
+        config.readfp(open(ini_file))
+        sections = config.sections()
+
+        if not config.has_option('DEFAULT', 'compilationlimit'):
+            raise ValueError("Missing 'compilationlimit' option "
+                             "in default section.")
+        if not config.has_option('DEFAULT', 'executinglimit'):
+            raise ValueError("Missing, 'executinglimit' option "
+                             "in default section.")
+        self.max_compilation_time = \
+          config.getfloat('DEFAULT', 'compilationlimit')
+        if self.max_compilation_time == 0.0:
+            self.max_compilation_time = None
+        self.max_execution_time = \
+          config.getfloat('DEFAULT', 'executinglimit')
+        if self.max_execution_time == 0.0:
+            self.max_execution_time = None
+
+        for section in sections:
+            language = SystemConfiguration.SECTION_TO_LANGUAGE.get(
+                section.lower(), None)
+            if language is None:
+                raise ValueError('Unknown language name %r.' % section)
+            if (not config.has_option(section, 'sourceextension') or
+                not config.has_option(section, 'binaryextension') or
+                not config.has_option(section, 'compile') or
+                not config.has_option(section, 'execute')):
+                raise ValueError("Missing fields in section %r. "
+                                 "The section should contain: "
+                                 "'sourceextension', 'binaryextension' "
+                                 "'compile' and 'execute'." % section)
+            source_extension = config.get(section, 'sourceextension')
+            binary_extension = config.get(section, 'binaryextension')
+            compile_command = config.get(section, 'compile')
+            execute_command = config.get(section, 'execute')
+            self.languages_configurations[language] = LanguageConfiguration(
+                'src.'+source_extension, 'bin.'+binary_extension,
+                compile_command, execute_command)
 
 
 class GameSession(object):

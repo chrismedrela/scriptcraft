@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+import ConfigParser
 try:
     import cPickle as pickle
 except:
@@ -304,11 +305,9 @@ class GameViewer(Canvas):
                 self.event_generate("<<selection-removed>>")
 
 
-
-DEFAULT_SYSTEM_CONFIGURATION = SystemConfiguration()
-
-
 class ClientApplication(Frame):
+
+    CONFIGURATION_FILE = 'configuration.ini'
 
     MENU_GAME_LABEL = "Gra"
     NEW_GAME_LABEL = "Stwórz nową grę..."
@@ -349,6 +348,12 @@ class ClientApplication(Frame):
       'Czy jesteś pewien? Aktualna gra zostanie bezpowrotnie utracona.'
     TITLE_QUIT_PROGRAM = 'Wyjdź z programu'
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
+    TITLE_INVALID_CONFIGURATION_FILE = 'Niepoprawny plik konfiguracji'
+    INVALID_CONFIGURATION_FILE = ('Nie można wczytać ustawień z pliku '
+                                  'konfiguracji. Aplikacja zostanie '
+                                  'zamknięta. Sprawdź zawartość pliku "' + \
+                                  CONFIGURATION_FILE + \
+                                  '".')
 
     MAP_FILE_TYPES = (
         ('Plik mapy', '*.map'),
@@ -373,6 +378,7 @@ class ClientApplication(Frame):
         self._init_gui()
         self._game = None
         self._game_session = None
+        self._load_configuration_file()
         self._load_testing_game()
 
     @log_on_enter('load game for testing')
@@ -404,7 +410,7 @@ class ClientApplication(Frame):
         # create game and game session
         session = GameSession(
             directory='scriptcraft/.tmp',
-            system_configuration=DEFAULT_SYSTEM_CONFIGURATION,)
+            system_configuration=self.system_configuration)
             #game=game)
         self.set_game_session(session)
         game = session.game
@@ -424,6 +430,20 @@ class ClientApplication(Frame):
             set_program(i, 'move_randomly.py')
 
         self._set_game(game)
+
+    def _load_configuration_file(self):
+        try:
+            self.system_configuration = \
+               SystemConfiguration(ClientApplication.CONFIGURATION_FILE)
+        except (IOError, ValueError, ConfigParser.Error) as ex:
+            log_exception('invalid configuration file')
+            self._warning(
+                ClientApplication.TITLE_INVALID_CONFIGURATION_FILE,
+                ClientApplication.INVALID_CONFIGURATION_FILE
+            )
+            global root
+            root.destroy()
+
 
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
@@ -530,8 +550,8 @@ class ClientApplication(Frame):
                               ClientApplication.IO_ERROR_DURING_READING)
             else:
                 game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
-                system_configuration = DEFAULT_SYSTEM_CONFIGURATION
-                game_session = GameSession(directory, system_configuration,
+                game_session = GameSession(directory,
+                                           self.system_configuration,
                                            game=game)
                 self.set_game_session(game_session)
             finally:
@@ -561,7 +581,7 @@ class ClientApplication(Frame):
             return
 
         try:
-            game_session = GameSession(directory, DEFAULT_SYSTEM_CONFIGURATION)
+            game_session = GameSession(directory, self.system_configuration)
         except IOError as ex:
             log_exception()
             self._warning(ClientApplication.TITLE_LOAD_GAME,

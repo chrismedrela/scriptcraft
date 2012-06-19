@@ -47,6 +47,7 @@ def _find_data_files():
                 pass
             elif filenames:
                 data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+    data_files.append(('.', ['LICENSE.txt']))
     return data_files
 
 def _is_it_py2exe_compilation():
@@ -71,8 +72,10 @@ if __name__ == "__main__":
             python_path + r'DLLs\\tk85.dll',
         ]
         data_files += [('.', dlls)]
+        data_files += [('.', [os.path.join('onlywindows', 'configuration.ini')])]
     else:
         print 'Detected non-py2exe installation/building.'
+        data_files += [('.', ['configuration.ini'])]
 
     kwargs = dict(
         name=PROJECT_NAME,
