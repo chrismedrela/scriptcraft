@@ -946,4 +946,13 @@ def run():
         shutdown_logging()
 
 if __name__ == "__main__":
-    run()
+    # profile run function
+    filename = '.stats'
+    import cProfile
+    cProfile.run('run()', filename)
+    import pstats
+    p = pstats.Stats(filename)
+    p.strip_dirs()
+    p.sort_stats('cumulative')
+    p.dump_stats(filename)
+    p.print_stats(25)
