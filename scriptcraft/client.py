@@ -49,6 +49,23 @@ class GameViewer(Canvas):
     """
 
     SCROLLING_SENSITIVITY = 1.15 # in (1, +inf); greater means faster scrolling
+    TILE_WIDTH = 64
+    TILE_HEIGHT = 32
+    GROUND_TILE_WIDTH = 32
+    GROUND_TILE_HEIGHT = 32
+    GROUND_TILES_IN_ROW = 4
+    GROUND_TILES_IN_COLUMN = 4
+    GROUND_TYPE_TO_NAME = {
+        0:'ground-black',
+        1:'ground-dirt',
+        2:'ground-grass',
+        3:'ground-rock',
+        4:'ground-stones',
+        5:'ground-flowers',
+        6:'ground-hardearth',
+        7:'ground-tiles',
+        8:'ground-sand',
+    }
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -67,10 +84,12 @@ class GameViewer(Canvas):
         self.bind('<Button-1>', self._click_callback)
 
         # own attributes
-        self._zoom = 0.25
-        self._delta = (0.0, 0.0)
+        self._zoom = 1.0
+        self._delta = (-5.0, 0.0)
         self._game = None
         self._scaled_images_cache = {}
+        self._ground_image_cache = None
+        self._ground_tiles_cache = {}
         self._last_mouse_position = None # None unless button pressed
         self._click_position = None
         self.selection_position = None # None or (x, y)
@@ -95,39 +114,65 @@ class GameViewer(Canvas):
             self._set_selection_position(None)
 
         else:
+            redraw_ground = (previous_game is None)
+            if redraw_ground:
+                self._ground_image_cache = None
             self._draw_game(game)
             self._set_selection_position(self.selection_position)
 
-    def _draw_game(self, game):
+    def _draw_game(self, game, redraw_ground=True):
         def draw_arrow_from_to(source, destination):
             delta = map(lambda (a, b): a-b, zip(destination,
                                                 source))
             d = direction.FROM_RAY[tuple(delta)]
             direction_name = direction.TO_FULL_NAME[d]
-            self._draw('arrow-%s' % direction_name, source,
-                            extra_tags=['upper-layer'])
+            self._draw('arrow-red-%s' % direction_name, source, layer=2)
 
-        # go from west to east and in each row from north to south
+        self._draw('ground', (0, 0), layer=1)
+
+        # draw objects
         for position in itertools.product(xrange(game.game_map.size[0]),
                                           xrange(game.game_map.size[1])):
             field = game.game_map[position]
             obj = field.maybe_object
-            self._draw('flat_field', position) # draw ground
+
             if isinstance(obj, MineralDeposit): # draw minerals
-                self._draw('minerals', position)
+                if obj.minerals:
+                    self._draw('minerals', position, layer=3)
+                else:
+                    self._draw('minerals-ex', position, layer=3)
+
             if isinstance(obj, Tree): # draw trees
-                self._draw('tree', position)
+                name = 'tree%s' % obj.type
+                self._draw(name, position, layer=3)
 
             if isinstance(obj, Unit): # draw unit
                 unit = obj
-                switch = {'4': lambda u: 'base',
-                          '6': lambda u: 'tank',
-                          '5': lambda u: ('full_miner'
-                                          if u.minerals
-                                          else 'empty_miner')}
-                sprite_name = switch[unit.type.main_name](unit)
-                self._draw(sprite_name, position)
 
+                # build sprite name
+                if unit.type.main_name == '4': # base
+                    sprite_name = 'base'
+                elif unit.type.main_name == '5': # miner
+                    storage_state = 'loaded' if unit.minerals else 'empty'
+                    direction_name = direction.TO_FULL_NAME[unit.direction]
+                    sprite_name = 'miner-%s-%s' % \
+                      (storage_state, direction_name)
+                elif unit.type.main_name == '6':
+                    direction_name = direction.TO_FULL_NAME[unit.direction]
+                    sprite_name = 'tank-%s' % direction_name
+                else:
+                    assert False, 'oops, unknown unit type %r' % unit.type
+
+                # draw the unit
+                if isinstance(unit.action, actions.MoveAction):
+                    middle = lambda p1, p2: ((p1[0]+p2[0])/2.0,
+                                             (p1[1]+p2[1])/2.0)
+                    position = middle(unit.action.source,
+                                      unit.action.destination)
+
+                self._draw(sprite_name, position, layer=3)
+
+                # draw label for the unit
                 x, y = self._to_screen_coordinate(position)
                 color = '#' + "%02x%02x%02x" % unit.player.color
                 font = self._get_font_for_current_zoom()
@@ -135,6 +180,7 @@ class GameViewer(Canvas):
                                  font=font, tags=['text'],
                                  state=NORMAL if font else HIDDEN)
 
+                # draw arrows indicating executing action (or fire explosion)
                 if isinstance(unit.action, actions.GatherAction):
                     draw_arrow_from_to(unit.position, unit.action.source)
                 elif isinstance(unit.action, actions.StoreAction):
@@ -142,38 +188,72 @@ class GameViewer(Canvas):
                         unit.action.storage_ID]
                     destination = destination_unit.position
                     draw_arrow_from_to(unit.position, destination)
-                elif isinstance(unit.action, actions.MoveAction):
-                    draw_arrow_from_to(unit.action.source,
-                                       unit.action.destination)
                 elif isinstance(unit.action, actions.FireAction):
-                    self._draw('fire', unit.action.destination,
-                               extra_tags=['upper-layer'])
+                    self._draw('explosion', unit.action.destination, layer=3)
 
-        self.tag_raise('upper-layer')
+        with log_on_enter('raising layers', mode='only time'):
+            self.tag_raise('layer-1')
+            self.tag_raise('layer-2')
+            self.tag_raise('layer-3')
+            self.tag_raise('text')
+
+        # draw lines (debug)
+        def draw_grid():
+            for x in xrange(0, game.game_map.size[1] + 1):
+                start_position = (0, x)
+                end_position = (game.game_map.size[0], x)
+                start_position = self._to_screen_coordinate(start_position)
+                end_position = self._to_screen_coordinate(end_position)
+                self.create_line(*(start_position + end_position), fill='white')
+
+            for y in xrange(0, game.game_map.size[0] + 1):
+                start_position = (y, 0)
+                end_position = (y, game.game_map.size[1])
+                start_position = self._to_screen_coordinate(start_position)
+                end_position = self._to_screen_coordinate(end_position)
+                self.create_line(*(start_position + end_position), fill='white')
+
+        #draw_grid()
+
+    @memoized
+    def _gradient(self, align):
+        assert align in ('ns', 'we')
+        gradient = Image.new('L', (255, 1))
+        for x in range(255):
+            gradient.putpixel((254-x, 0), x)
+        gradient = gradient.resize((255, 255))
+        if align == 'ns':
+            gradient = gradient.rotate(-45, expand=True)
+        elif align == 'we':
+            gradient = gradient.rotate(45+180, expand=True)
+        gradient = gradient.resize((GameViewer.TILE_WIDTH+2,
+                                    GameViewer.TILE_HEIGHT+2))
+        return gradient
 
     def _set_selection_position(self, new_position):
         """ Create or move exisitng pointer. Argument new_position can
         be None if you want to disable the pointer. """
 
-        self.delete('selection')
-        state = HIDDEN if new_position is None else NORMAL
-        self._draw('pointer', new_position or (0, 0),
-                   state=state, extra_tags=['selection'])
+        #self.delete('selection')
+        #state = HIDDEN if new_position is None else NORMAL
+        #self._draw('pointer', new_position or (0, 0),
+        #           state=state, extra_tags=['selection'])
         self.selection_position = new_position
 
-    def _draw(self, name, position, state=NORMAL, extra_tags=None):
+    def _draw(self, name, position, layer, state=NORMAL, extra_tags=None):
         """ Draw sprite with name 'name' at position 'position' in
         game coordinates."""
 
         extra_tags = extra_tags or []
+        tags = [name, 'layer-%s' % layer]
         position = self._to_screen_coordinate(position)
-        x, y = self._to_image_position(position)
+        x, y = self._to_image_position(name, position)
         image = self._get_scaled_sprite(name)
         self.create_image(x, y, image=image, anchor=NW,
-                          state=state, tags=[name]+extra_tags)
+                          state=state, tags=tags+extra_tags)
 
     def _get_font_for_current_zoom(self):
-        size = int(40*self._zoom)
+        size = int(15*self._zoom)
         if size < 10:
             if size >= 6:
                 return tkFont.Font(size=10)
@@ -189,6 +269,76 @@ class GameViewer(Canvas):
         image = Image.open(datafile_path(path))
         return image
 
+    @log_on_enter('debug get ground tile', mode='only time')
+    def _get_ground_tile(self, name, (x, y)):
+        x %= GameViewer.GROUND_TILES_IN_ROW
+        y %= GameViewer.GROUND_TILES_IN_COLUMN
+
+        key = (name, (x, y))
+        if key not in self._ground_tiles_cache:
+            start_point_x = x*GameViewer.GROUND_TILE_WIDTH
+            start_point_y = y*GameViewer.GROUND_TILE_HEIGHT
+            image = self._get_image(name)
+            image = image.convert('RGBA')
+            box = (start_point_x, start_point_y,
+                GameViewer.GROUND_TILE_WIDTH+start_point_x,
+                GameViewer.GROUND_TILE_HEIGHT+start_point_y)
+            croped = image.crop(box)
+            rotated = croped.rotate(45, expand=True)
+            scaled = rotated.resize((GameViewer.TILE_WIDTH+2,
+                                     GameViewer.TILE_HEIGHT+2))
+            self._ground_tiles_cache[key] = scaled
+        return self._ground_tiles_cache[key]
+
+    @log_on_enter('debug computing ground image', mode='only time')
+    def _get_ground_image(self):
+        """ Return (PIL.)Image instance. """
+
+        if self._ground_image_cache is None: # then compute it and cache
+            log('computing ground image')
+
+            def blend(image_nw, image_ne, image_se, image_sw,
+                gradient_ns, gradient_we):
+                image_w = Image.composite(image_nw, image_sw, gradient_ns)
+                image_e = Image.composite(image_ne, image_se, gradient_ns)
+                return Image.composite(image_w, image_e, gradient_we)
+
+            gradient_ns = self._gradient('ns')
+            gradient_we = self._gradient('we')
+
+            size = self._game.game_map.size
+            image_size = (GameViewer.TILE_WIDTH/2.0*(size[0]+size[1]+2),
+                          GameViewer.TILE_HEIGHT/2.0*(size[0]+size[1]+2))
+            result = Image.new('RGB', map(int, image_size))
+            game_map = self._game.game_map
+
+            for (x, y) in itertools.product(xrange(-1, size[0]),
+                                              xrange(-1, size[1])):
+
+                ground_type_nw = game_map[x, y].ground_type or 0
+                ground_type_ne = game_map[x+1, y].ground_type or 0
+                ground_type_se = game_map[x+1, y+1].ground_type or 0
+                ground_type_sw = game_map[x, y+1].ground_type or 0
+
+                tile_name_nw = GameViewer.GROUND_TYPE_TO_NAME[ground_type_nw]
+                tile_name_ne = GameViewer.GROUND_TYPE_TO_NAME[ground_type_ne]
+                tile_name_se = GameViewer.GROUND_TYPE_TO_NAME[ground_type_se]
+                tile_name_sw = GameViewer.GROUND_TYPE_TO_NAME[ground_type_sw]
+
+                tile_nw = self._get_ground_tile(tile_name_nw, (x, y))
+                tile_ne = self._get_ground_tile(tile_name_ne, (x+1, y))
+                tile_se = self._get_ground_tile(tile_name_se, (x+1, y+1))
+                tile_sw = self._get_ground_tile(tile_name_sw, (x, y+1))
+
+                tile = blend(tile_nw, tile_ne, tile_se, tile_sw,
+                             gradient_ns, gradient_we)
+                box = [GameViewer.TILE_WIDTH/2.0*(-x+y+size[1]),
+                       GameViewer.TILE_HEIGHT/2.0*(x+y+2)]
+                result.paste(tile, tuple(map(int, box)), tile)
+
+            self._ground_image_cache = result
+        return self._ground_image_cache
+
     def _get_scaled_sprite(self, name):
         """ Return (PIL.)ImageTk scaled by self._zoom factor. """
 
@@ -198,8 +348,11 @@ class GameViewer(Canvas):
             return image
 
         # otherwise compute, cache and return
-        image = self._get_image(name)
-        width, height = 256, 288
+        if name == 'ground':
+            image = self._get_ground_image()
+        else:
+            image = self._get_image(name)
+        width, height = image.size
         new_width, new_height = (int(width*self._zoom+2),
                                  int(height*self._zoom+2))
         image = image.resize((new_width, new_height), Image.NEAREST)
@@ -212,19 +365,38 @@ class GameViewer(Canvas):
 
     def _to_screen_coordinate(self, (x, y)):
         """ From game coordinates. """
-        return (128*self._zoom*(x-y-2*self._delta[0]),
-                72*self._zoom*(x+y-2*self._delta[1]))
+        return (32*self._zoom*(x-y-2*self._delta[0]),
+                16*self._zoom*(x+y-2*self._delta[1]))
 
     def _to_game_coordinate(self, (x, y)):
         """ From screen coordinates. """
-        return (x/256.0/self._zoom + y/144.0/self._zoom \
+        return (x/64.0/self._zoom + y/32.0/self._zoom \
                 + self._delta[0] + self._delta[1],
-                -x/256.0/self._zoom + y/144.0/self._zoom \
+                -x/64.0/self._zoom + y/32.0/self._zoom \
                 - self._delta[0] + self._delta[1])
 
-    def _to_image_position(self, (x, y)):
+    def _to_image_position(self, image_name, (x, y)):
         """ From screen coordinaties. """
-        return x-128*self._zoom, y-144*self._zoom
+        if image_name == 'ground':
+            dx = GameViewer.TILE_WIDTH/2.0 * (self._game.game_map.size[1]+1)
+            dy = GameViewer.TILE_HEIGHT/2.0
+        else:
+            switch = {
+                'tank' : (22, 0),
+                'miner' : (18, 3),
+                'base' : (31, 13),
+                'minerals' : (20, 10),
+                'tree1' : (10, 45),
+                'tree2' : (20, 25),
+                'tree3' : (20, 40),
+                'tree4' : (15, 25),
+                'tree5' : (18, 15),
+                'tree6' : (22, 18),
+                'arrow' : (32, 0),
+                'explosion' : (10, -5),}
+            first_part = image_name.split('-', 1)[0]
+            dx, dy = switch[first_part]
+        return x-dx*self._zoom, y-dy*self._zoom
 
     @log_on_enter('GameViewer._set_zoom', mode='only time')
     def _set_zoom(self, zoom, (XS, YS)):
@@ -236,8 +408,8 @@ class GameViewer(Canvas):
 
         # compute new self._delta and self._zoom
         xS, yS = self._to_game_coordinate((XS, YS))
-        self._delta = [-XS/256.0/zoom + xS/2.0 - yS/2.0,
-                       -YS/144.0/zoom + xS/2.0 + yS/2.0]
+        self._delta = [-XS/64.0/zoom + xS/2.0 - yS/2.0,
+                       -YS/32.0/zoom + xS/2.0 + yS/2.0]
         self._zoom, old_zoom = zoom, self._zoom
 
         # scale all images
@@ -276,8 +448,8 @@ class GameViewer(Canvas):
                 dx, dy = (event.x - self._last_mouse_position[0],
                     event.y - self._last_mouse_position[1])
                 self.move(ALL, dx, dy)
-                self._delta = (self._delta[0]-dx/256.0/self._zoom,
-                           self._delta[1]-dy/144.0/self._zoom)
+                self._delta = (self._delta[0]-dx/64.0/self._zoom,
+                               self._delta[1]-dy/32.0/self._zoom)
 
         self._last_mouse_position = (event.x, event.y)
 
@@ -324,6 +496,8 @@ class ClientApplication(Frame):
     TIC_IN_LOOP_LABEL = "Symulacja gry w pętli"
     QUIT_LABEL = "Wyjdź"
 
+    MENU_ABOUT_LABEL = "O grze"
+
     CHOOSE_MAP_FILE = 'Wybierz mapę'
     CHOOSE_DIRECTORY_FOR_NEW_GAME = "Wybierz folder dla nowej gry"
     TITLE_CREATE_NEW_GAME = 'Stwórz nową grę'
@@ -352,6 +526,13 @@ class ClientApplication(Frame):
       'Czy jesteś pewien? Aktualna gra zostanie bezpowrotnie utracona.'
     TITLE_QUIT_PROGRAM = 'Wyjdź z programu'
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
+    ABOUT_TITLE = 'O grze'
+    ABOUT_CONTENT = ('Scriptcraft - gra programistyczna.\n\n'
+                     'Właścicielem grafiki i map jest Marek Szykuła. '
+                     'Nie mogą być one kopiowane ani rozpowszechniane. \n\n'
+                     'Kod źródłowy jest na licencji GPLv3 '
+                     'i może być rozpowszechniany i kopiowany.')
+
     TITLE_INVALID_CONFIGURATION_FILE = 'Niepoprawny plik konfiguracji'
     INVALID_CONFIGURATION_FILE = ('Nie można wczytać ustawień z pliku '
                                   'konfiguracji. Aplikacja zostanie '
@@ -398,20 +579,25 @@ class ClientApplication(Frame):
 
         def generate_simple_map():
             import random
-            size = 64
+            size = 96
             game_map = GameMap((size, size), [(10, 10), (53, 10), (10, 53), (53, 53)])
             number_of_trees = 0
             for x in xrange(size):
                 for y in xrange(size):
-                    p = 1.0
+                    p = 0.0
                     if (6 <= x <= 14 or 49 <= x <= 57 or
                         6 <= y <= 14 or 49 <= y <= 57):
                         p = 0.0
-                        if (random.random() < p):
-                            number_of_trees += 1
-                            game_map[x, y].place_object(Tree())
+                    if (random.random() < p):
+                        number_of_trees += 1
+                        game_map[x, y].place_object(Tree())
+                    game_map[x, y].change_ground(random.randint(1, 8))
             log('map size: %d, number of fields: %d' % (size, size**2))
             log('number of trees: %d' % number_of_trees)
+            return game_map
+
+        game = None
+        #game = Game(generate_simple_map(), DEFAULT_GAME_CONFIGURATION)
 
         #game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
 
@@ -521,6 +707,9 @@ class ClientApplication(Frame):
         self._game_menu.add_command(
             label=ClientApplication.QUIT_LABEL,
             command=self._quit_callback)
+
+        menubar.add_command(label=ClientApplication.MENU_ABOUT_LABEL,
+                            command=self._about_callback)
 
         global root
         root.config(menu=menubar)
@@ -699,6 +888,13 @@ class ClientApplication(Frame):
         global root
         root.destroy()
 
+    @log_on_enter('use case: about game', lvl='info')
+    def _about_callback(self):
+        tkMessageBox.showinfo(
+            title=ClientApplication.ABOUT_TITLE,
+            message=ClientApplication.ABOUT_CONTENT,
+            parent=self)
+
     def _field_select_callback(self, event):
         self._print_info_about_field_at(self._game_viewer.selection_position)
         self._refresh_game_menu_items_state()
@@ -816,4 +1012,13 @@ def run():
         shutdown_logging()
 
 if __name__ == "__main__":
-    run()
+    # profile run function
+    filename = '.stats'
+    import cProfile
+    cProfile.run('run()', filename)
+    import pstats
+    p = pstats.Stats(filename)
+    p.strip_dirs()
+    p.sort_stats('cumulative')
+    p.dump_stats(filename)
+    p.print_stats(25)

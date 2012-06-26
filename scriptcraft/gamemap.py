@@ -15,6 +15,7 @@ class FieldIsOccupied(Exception):
 
 class GameMap(object):
     DEFAULT_GROUND_TYPE = 1
+    INVALID_GROUND_TYPE = None
     MIN_GROUND_TYPE = 1
     MAX_GROUND_TYPE = 127
 
@@ -38,7 +39,7 @@ class GameMap(object):
         if valid_position:
             ground_type, obj = self._map[position]
         else:
-            ground_type, obj = GameMap.DEFAULT_GROUND_TYPE, None
+            ground_type, obj = GameMap.INVALID_GROUND_TYPE, None
 
         return Field(position, valid_position,
                      ground_type, obj, game_map=self)
@@ -50,7 +51,9 @@ class GameMap(object):
             raise ValueError('The field position was %r but you want assign '
                              'the field to %r.' % (field.position, position))
         old_ground_type, old_obj = self._map[position]
-        if old_obj is not None and field.maybe_object is not None:
+        if (old_obj is not None and
+            field.maybe_object is not None and
+            old_obj is not field.maybe_object):
             raise FieldIsOccupied('Cannot place object on occupied field. '
                                   'First remove the object.')
         assert (GameMap.MIN_GROUND_TYPE <=
