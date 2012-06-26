@@ -42,6 +42,14 @@ class TestGameMapAndField(unittest.TestCase):
         self.assertEqual(field.maybe_object, obj)
         self.assertEqual(field, game_map[9, 6])
 
+    def test_setting_field_with_object(self):
+        game_map = GameMap((16, 16), [])
+        field = game_map[9, 6]
+        field.place_object(object())
+
+        field = game_map[9, 6]
+        game_map[9, 6] = field # shouldn't raise error
+
     def test_remove_from_field_non_existing_object(self):
         game_map = GameMap((16, 16), [])
         empty_field = game_map[9, 6]
@@ -70,7 +78,7 @@ class TestGameMapAndField(unittest.TestCase):
 
         field = game_map[-1, 0]
 
-        self.assertEqual(field.ground_type, 1) # 1 is default ground type
+        self.assertEqual(field.ground_type, None) # None is default ground type
         self.assertEqual(field.valid_position, False)
         self.assertEqual(field.position, (-1, 0))
         self.assertEqual(field.maybe_object, None)
