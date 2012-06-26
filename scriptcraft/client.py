@@ -494,6 +494,8 @@ class ClientApplication(Frame):
     TIC_LABEL = "Symuluj jedną turę gry"
     QUIT_LABEL = "Wyjdź"
 
+    MENU_ABOUT_LABEL = "O grze"
+
     CHOOSE_MAP_FILE = 'Wybierz mapę'
     CHOOSE_DIRECTORY_FOR_NEW_GAME = "Wybierz folder dla nowej gry"
     TITLE_CREATE_NEW_GAME = 'Stwórz nową grę'
@@ -522,6 +524,13 @@ class ClientApplication(Frame):
       'Czy jesteś pewien? Aktualna gra zostanie bezpowrotnie utracona.'
     TITLE_QUIT_PROGRAM = 'Wyjdź z programu'
     QUIT_PROGRAM_QUESTION = 'Czy na pewno chcesz wyjść z programu?'
+    ABOUT_TITLE = 'O grze'
+    ABOUT_CONTENT = ('Scriptcraft - gra programistyczna.\n\n'
+                     'Właścicielem grafiki i map jest Marek Szykuła. '
+                     'Nie mogą być one kopiowane ani rozpowszechniane. \n\n'
+                     'Kod źródłowy jest na licencji GPLv3 '
+                     'i może być rozpowszechniany i kopiowany.')
+
 
     MAP_FILE_TYPES = (
         ('Plik mapy', '*.map'),
@@ -654,6 +663,9 @@ class ClientApplication(Frame):
         self._game_menu.add_command(
             label=ClientApplication.QUIT_LABEL,
             command=self._quit_callback)
+
+        menubar.add_command(label=ClientApplication.MENU_ABOUT_LABEL,
+                            command=self._about_callback)
 
         global root
         root.config(menu=menubar)
@@ -818,6 +830,13 @@ class ClientApplication(Frame):
 
         global root
         root.destroy()
+
+    @log_on_enter('use case: about game', lvl='info')
+    def _about_callback(self):
+        tkMessageBox.showinfo(
+            title=ClientApplication.ABOUT_TITLE,
+            message=ClientApplication.ABOUT_CONTENT,
+            parent=self)
 
     def _field_select_callback(self, event):
         self._print_info_about_field_at(self._game_viewer.selection_position)
