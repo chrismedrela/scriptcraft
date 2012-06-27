@@ -66,6 +66,8 @@ class GameViewer(Canvas):
         7:'ground-tiles',
         8:'ground-sand',
     }
+    MAX_ZOOM = 1.0
+    MIN_ZOOM = 1.0/4
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -403,6 +405,13 @@ class GameViewer(Canvas):
         """ Set zoom. The point (XS, YS) in screen coordinate doesn't
         move."""
 
+        # bound zoom
+        zoom = max(zoom, GameViewer.MIN_ZOOM)
+        zoom = min(zoom, GameViewer.MAX_ZOOM)
+        if zoom == self._zoom:
+            # zoom hasn't been changed
+            return
+
         # It clears cache of scaled images. Due to reference count bug
         # all images will be removed from memory!
 
@@ -446,7 +455,7 @@ class GameViewer(Canvas):
         if self._game and self._last_mouse_position:
             with log_on_enter('moving everything', mode='only time'):
                 dx, dy = (event.x - self._last_mouse_position[0],
-                    event.y - self._last_mouse_position[1])
+                          event.y - self._last_mouse_position[1])
                 self.move(ALL, dx, dy)
                 self._delta = (self._delta[0]-dx/64.0/self._zoom,
                                self._delta[1]-dy/32.0/self._zoom)
