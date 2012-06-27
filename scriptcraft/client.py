@@ -273,6 +273,7 @@ class GameViewer(Canvas):
 
     @log_on_enter('debug get ground tile', mode='only time')
     def _get_ground_tile(self, name, (x, y)):
+        x = -x
         x %= GameViewer.GROUND_TILES_IN_ROW
         y %= GameViewer.GROUND_TILES_IN_COLUMN
 
@@ -300,9 +301,15 @@ class GameViewer(Canvas):
             log('computing ground image')
 
             def blend(image_nw, image_ne, image_se, image_sw,
-                gradient_ns, gradient_we):
-                image_w = Image.composite(image_nw, image_sw, gradient_ns)
-                image_e = Image.composite(image_ne, image_se, gradient_ns)
+                      gradient_ns, gradient_we):
+                if image_nw == image_ne == image_se == image_sw:
+                    return image_nw
+                image_w = (Image.composite(image_nw, image_sw, gradient_ns)
+                           if image_nw != image_sw
+                           else image_nw)
+                image_e = (Image.composite(image_ne, image_se, gradient_ns)
+                           if image_ne != image_se
+                           else image_ne)
                 return Image.composite(image_w, image_e, gradient_we)
 
             gradient_ns = self._gradient('ns')
@@ -328,9 +335,9 @@ class GameViewer(Canvas):
                 tile_name_sw = GameViewer.GROUND_TYPE_TO_NAME[ground_type_sw]
 
                 tile_nw = self._get_ground_tile(tile_name_nw, (x, y))
-                tile_ne = self._get_ground_tile(tile_name_ne, (x+1, y))
-                tile_se = self._get_ground_tile(tile_name_se, (x+1, y+1))
-                tile_sw = self._get_ground_tile(tile_name_sw, (x, y+1))
+                tile_ne = self._get_ground_tile(tile_name_ne, (x, y))
+                tile_se = self._get_ground_tile(tile_name_se, (x, y))
+                tile_sw = self._get_ground_tile(tile_name_sw, (x, y))
 
                 tile = blend(tile_nw, tile_ne, tile_se, tile_sw,
                              gradient_ns, gradient_we)
