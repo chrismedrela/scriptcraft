@@ -225,9 +225,9 @@ class GameViewer(Canvas):
             gradient.putpixel((254-x, 0), x)
         gradient = gradient.resize((255, 255))
         if align == 'ns':
-            gradient = gradient.rotate(-45, expand=True)
+            gradient = gradient.rotate(45-180, expand=True)
         elif align == 'we':
-            gradient = gradient.rotate(45+180, expand=True)
+            gradient = gradient.rotate(-45, expand=True)
         gradient = gradient.resize((GameViewer.TILE_WIDTH+2,
                                     GameViewer.TILE_HEIGHT+2))
         return gradient
@@ -273,7 +273,6 @@ class GameViewer(Canvas):
 
     @log_on_enter('debug get ground tile', mode='only time')
     def _get_ground_tile(self, name, (x, y)):
-        x = -x
         x %= GameViewer.GROUND_TILES_IN_ROW
         y %= GameViewer.GROUND_TILES_IN_COLUMN
 
@@ -281,13 +280,13 @@ class GameViewer(Canvas):
         if key not in self._ground_tiles_cache:
             start_point_x = x*GameViewer.GROUND_TILE_WIDTH
             start_point_y = y*GameViewer.GROUND_TILE_HEIGHT
-            image = self._get_image(name)
+            image = self._get_image(name) # '.'+name for testing
             image = image.convert('RGBA')
             box = (start_point_x, start_point_y,
                 GameViewer.GROUND_TILE_WIDTH+start_point_x,
                 GameViewer.GROUND_TILE_HEIGHT+start_point_y)
             croped = image.crop(box)
-            rotated = croped.rotate(45, expand=True)
+            rotated = croped.rotate(-45, expand=True)
             scaled = rotated.resize((GameViewer.TILE_WIDTH+2,
                                      GameViewer.TILE_HEIGHT+2))
             self._ground_tiles_cache[key] = scaled
@@ -322,7 +321,7 @@ class GameViewer(Canvas):
             game_map = self._game.game_map
 
             for (x, y) in itertools.product(xrange(-1, size[0]),
-                                              xrange(-1, size[1])):
+                                            xrange(-1, size[1])):
 
                 ground_type_nw = game_map[x, y].ground_type or 0
                 ground_type_ne = game_map[x+1, y].ground_type or 0
@@ -341,11 +340,12 @@ class GameViewer(Canvas):
 
                 tile = blend(tile_nw, tile_ne, tile_se, tile_sw,
                              gradient_ns, gradient_we)
-                box = [GameViewer.TILE_WIDTH/2.0*(-x+y+size[1]),
+                box = [GameViewer.TILE_WIDTH/2.0*(x-y+size[1]),
                        GameViewer.TILE_HEIGHT/2.0*(x+y+2)]
                 result.paste(tile, tuple(map(int, box)), tile)
 
             self._ground_image_cache = result
+
         return self._ground_image_cache
 
     def _get_scaled_sprite(self, name):
@@ -633,11 +633,14 @@ class ClientApplication(Frame):
             program = Program(Language.PYTHON,
                               open('scriptcraft/.tmp/'+filename).read())
             game.set_program(game.units_by_IDs[unit_id], program)
-        set_program(8, 'build_tank.py')
-        for i in xrange(3,7):
-            set_program(i, 'move_randomly.py')
-        for i in xrange(9,13):
-            set_program(i, 'move_randomly.py')
+        try:
+            set_program(8, 'build_tank.py')
+            for i in xrange(3,7):
+                set_program(i, 'move_randomly.py')
+            for i in xrange(9,13):
+                set_program(i, 'move_randomly.py')
+        except Exception:
+            log_exception('cannot set program for testing game')
 
         self._set_game(game)
 
