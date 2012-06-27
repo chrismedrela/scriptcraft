@@ -104,7 +104,12 @@ class GameViewer(Canvas):
         In this method game instance passed during previous
         call is used. The previous game instance cannot be modified
         since the previous call!
+
+        Use set_game(None) and set_game(new_game) to force redrawing
+        ground and delete current selection.
         """
+
+        #import ipdb; ipdb.set_trace()
 
         previous_game = self._game
         self._game = game
@@ -115,14 +120,18 @@ class GameViewer(Canvas):
         if not game:
             self._set_selection_position(None)
 
+            # force redrawing ground during next set_game call
+            self._ground_image_cache = None
+            if 'ground' in self._scaled_images_cache:
+                del self._scaled_images_cache['ground']
+
+            self.zoom = 1.0
+            self._delta = (-5.0, 0.0)
         else:
-            redraw_ground = (previous_game is None)
-            if redraw_ground:
-                self._ground_image_cache = None
             self._draw_game(game)
             self._set_selection_position(self.selection_position)
 
-    def _draw_game(self, game, redraw_ground=True):
+    def _draw_game(self, game):
         def draw_arrow_from_to(source, destination):
             delta = map(lambda (a, b): a-b, zip(destination,
                                                 source))
@@ -625,10 +634,7 @@ class ClientApplication(Frame):
         self.set_game_session(session)
         game = session.game
 
-        # modify game (add players)
-        # game.new_player_with_units('Bob', self._reserve_color())
-        # game.new_player_with_units('Alice', self._reserve_color())
-
+        # modify game (set programs)
         def set_program(unit_id, filename):
             program = Program(Language.PYTHON,
                               open('scriptcraft/.tmp/'+filename).read())
