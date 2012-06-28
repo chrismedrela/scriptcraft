@@ -203,29 +203,33 @@ class GameViewer(Canvas):
                 elif isinstance(unit.action, actions.FireAction):
                     self._draw('explosion', unit.action.destination, layer=3)
 
-        with log_on_enter('raising layers', mode='only time'):
-            self.tag_raise('layer-1')
-            self.tag_raise('layer-2')
-            self.tag_raise('layer-3')
-            self.tag_raise('text')
-
         # draw lines (debug)
         def draw_grid():
+            line_color = 'black'
+
             for x in xrange(0, game.game_map.size[1] + 1):
                 start_position = (0, x)
                 end_position = (game.game_map.size[0], x)
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
-                self.create_line(*(start_position + end_position), fill='white')
+                self.create_line(*(start_position + end_position),
+                                 fill=line_color, tag=['layer-1'])
 
             for y in xrange(0, game.game_map.size[0] + 1):
                 start_position = (y, 0)
                 end_position = (y, game.game_map.size[1])
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
-                self.create_line(*(start_position + end_position), fill='white')
+                self.create_line(*(start_position + end_position),
+                                 fill=line_color, tag=['layer-1'])
 
         #draw_grid()
+
+        with log_on_enter('raising layers', mode='only time'):
+            self.tag_raise('layer-1')
+            self.tag_raise('layer-2')
+            self.tag_raise('layer-3')
+            self.tag_raise('text')
 
     @memoized
     def _gradient(self, align):
