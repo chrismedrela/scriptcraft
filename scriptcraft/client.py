@@ -739,8 +739,8 @@ class ClientApplication(Frame):
 
     def _load_configuration_file(self):
         try:
-            self.system_configuration = \
-               SystemConfiguration(ClientApplication.CONFIGURATION_FILE)
+            filename = datafile_path(ClientApplication.CONFIGURATION_FILE)
+            self.system_configuration = SystemConfiguration(filename)
         except (IOError, ValueError, ConfigParser.Error) as ex:
             log_exception('invalid configuration file')
             self._warning(
@@ -1198,10 +1198,23 @@ class ClientApplication(Frame):
         )
 
 
+def run_with_profiling():
+    # profile run function
+    filename = '.stats'
+    import cProfile
+    cProfile.run('run()', filename)
+    import pstats
+    p = pstats.Stats(filename)
+    p.strip_dirs()
+    p.sort_stats('cumulative')
+    p.dump_stats(filename)
+    p.print_stats(25)
+
 def run():
     # prevent "errors occured" message box in py2exe distribution
     turn_off_standard_streams_if_it_is_py2exe_distribution()
 
+    # run it!
     global root, app
     init_logging('debug')
     try:
@@ -1215,13 +1228,4 @@ def run():
         shutdown_logging()
 
 if __name__ == "__main__":
-    # profile run function
-    filename = '.stats'
-    import cProfile
-    cProfile.run('run()', filename)
-    import pstats
-    p = pstats.Stats(filename)
-    p.strip_dirs()
-    p.sort_stats('cumulative')
-    p.dump_stats(filename)
-    p.print_stats(25)
+    run_with_profiling()

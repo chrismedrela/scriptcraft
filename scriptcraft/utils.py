@@ -97,8 +97,9 @@ def datafile_path(relative_path):
         result = os.path.join(executable_filename, relative_path)
         return result
     else:
-        relative_path = os.path.join('..', relative_path)
-        result = pkg_resources.resource_filename('scriptcraft', relative_path)
+        dir = os.path.dirname(__file__)
+        result = os.path.join(dir, '..', relative_path)
+        result = os.path.normpath(result)
         return result
 
 
