@@ -133,12 +133,14 @@ class GameViewer(Canvas):
             self._set_selection_position(self.selection_position)
 
     def _draw_game(self, game):
-        def draw_arrow_from_to(source, destination):
+        def draw_arrow(source, destination, type='red'):
+            assert type in ('red', 'blue')
             delta = map(lambda (a, b): a-b, zip(destination,
                                                 source))
             d = direction.FROM_RAY[tuple(delta)]
             direction_name = direction.TO_FULL_NAME[d]
-            self._draw('arrow-red-%s' % direction_name, source, layer=2)
+            self._draw('arrow-%s-%s' % (type, direction_name),
+                       source, layer=2)
 
         self._draw('ground', (0, 0), layer=1)
 
@@ -176,12 +178,6 @@ class GameViewer(Canvas):
                     assert False, 'oops, unknown unit type %r' % unit.type
 
                 # draw the unit
-                if isinstance(unit.action, actions.MoveAction):
-                    middle = lambda p1, p2: ((p1[0]+p2[0])/2.0,
-                                             (p1[1]+p2[1])/2.0)
-                    position = middle(unit.action.source,
-                                      unit.action.destination)
-
                 self._draw(sprite_name, position, layer=3)
 
                 # draw label for the unit
@@ -193,13 +189,18 @@ class GameViewer(Canvas):
                                  state=NORMAL if font else HIDDEN)
 
                 # draw arrows indicating executing action (or fire explosion)
+                if isinstance(unit.action, actions.MoveAction):
+                    draw_arrow(unit.action.source,
+                               unit.action.destination,
+                               type='blue')
                 if isinstance(unit.action, actions.GatherAction):
-                    draw_arrow_from_to(unit.position, unit.action.source)
+                    draw_arrow(unit.position,
+                               unit.action.source)
                 elif isinstance(unit.action, actions.StoreAction):
                     destination_unit = self._game.units_by_IDs[
                         unit.action.storage_ID]
                     destination = destination_unit.position
-                    draw_arrow_from_to(unit.position, destination)
+                    draw_arrow(unit.position, destination)
                 elif isinstance(unit.action, actions.FireAction):
                     self._draw('explosion', unit.action.destination, layer=3)
 
@@ -465,13 +466,12 @@ class GameViewer(Canvas):
 
         # move all images
         factor = zoom/old_zoom
-        self.scale(ALL, XS, YS, factor, factor)
-        self.move(ALL,
+        self.scale('game', XS, YS, factor, factor)
+        self.move('game',
                   -delta_delta[0]*64.0*self._zoom,
                   -delta_delta[1]*32.0*self._zoom)
 
     def _clear_delta(self, delta):
-        #import ipdb; ipdb.set_trace()
         size = self.winfo_width(), self.winfo_height()
         center_of_screen = (size[0]/2, size[1]/2)
         map_width = self._game.game_map.size[0]
