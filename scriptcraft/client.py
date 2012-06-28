@@ -791,12 +791,14 @@ class ClientApplication(Frame):
         self._game_menu.entryconfigure(
             ClientApplication.TIC_LABEL,
             accelerator="t")
-        self.bind_all("<t>", lambda w: self._tic_callback())
+        args = ("<t>", lambda w: self._tic_callback())
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
 
         self._game_menu.entryconfigure(
             ClientApplication.TIC_IN_LOOP_LABEL,
             accelerator='spacja')
-        self.bind_all("<space>", \
+        self._game_viewer.bind("<space>", \
             lambda w: self._tic_in_loop_callback(switch=True))
 
     # callbacks ----------------------------------------------------------
