@@ -788,18 +788,60 @@ class ClientApplication(Frame):
         root.config(menu=menubar)
 
     def _create_keyboard_shortcuts(self):
+        # new game
+        self._game_menu.entryconfigure(
+            ClientApplication.NEW_GAME_LABEL,
+            accelerator="Ctrl+N")
+        args = ("<Control-n>", lambda w: self._new_game_callback())
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
+
+        # save game
+        self._game_menu.entryconfigure(
+            ClientApplication.SAVE_GAME_LABEL,
+            accelerator="Ctrl+S")
+        args = ("<Control-s>", lambda w: self._save_game_callback())
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
+
+        # load game
+        self._game_menu.entryconfigure(
+            ClientApplication.LOAD_GAME_LABEL,
+            accelerator="Ctrl+O")
+        args = ("<Control-o>", lambda w: self._load_game_callback())
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
+
+        # add player
+        self._game_menu.entryconfigure(
+            ClientApplication.ADD_PLAYER_LABEL,
+            accelerator="Ctrl+A")
+        args = ("<Control-a>", lambda w: self._add_player_callback())
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
+
+        # tic item
         self._game_menu.entryconfigure(
             ClientApplication.TIC_LABEL,
-            accelerator="t")
+            accelerator="T")
         args = ("<t>", lambda w: self._tic_callback())
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
+        # tic in loop item
         self._game_menu.entryconfigure(
             ClientApplication.TIC_IN_LOOP_LABEL,
             accelerator='spacja')
         self._game_viewer.bind("<space>", \
             lambda w: self._tic_in_loop_callback(switch=True))
+
+        # quit program
+        self._game_menu.entryconfigure(
+            ClientApplication.QUIT_LABEL,
+            accelerator="Ctrl+Q")
+        args = ("<Control-q>", lambda w: self._quit_callback())
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
 
     # callbacks ----------------------------------------------------------
 
@@ -891,6 +933,10 @@ class ClientApplication(Frame):
 
     @log_on_enter('use case: add player', lvl='info')
     def _add_player_callback(self):
+        pos = self._game_viewer.selection_position
+        if self._game is None:
+            return
+
         name = tkSimpleDialog.askstring(
             title=ClientApplication.TITLE_CREATE_PLAYER,
             prompt=ClientApplication.ENTER_NEW_PLAYER_NAME,
