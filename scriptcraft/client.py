@@ -937,10 +937,11 @@ class ClientApplication(Frame):
 
         directory = tkFileDialog.askdirectory(
             title=ClientApplication.TITLE_LOAD_GAME,
+            initialdir=datafile_path(ClientApplication.GAMES_DIRECTORY),
             mustexist=True,
             parent=self,
         )
-        if directory is None:
+        if not directory:
             return
 
         try:
