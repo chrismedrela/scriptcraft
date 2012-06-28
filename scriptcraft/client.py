@@ -578,6 +578,8 @@ class ClientApplication(Frame):
 
     CONFIGURATION_FILE = 'configuration.ini'
     FREQUENCY_OF_CHECKING_QUERY = 50 # ms
+    MAPS_DIRECTORY = 'maps'
+    GAMES_DIRECTORY = 'games'
 
     MENU_GAME_LABEL = "Gra"
     NEW_GAME_LABEL = "Stwórz nową grę..."
@@ -880,7 +882,7 @@ class ClientApplication(Frame):
         map_filename = tkFileDialog.askopenfilename(
             title=ClientApplication.CHOOSE_MAP_FILE,
             filetypes=ClientApplication.MAP_FILE_TYPES,
-            #initialdir=datafile_path('') # TODO
+            initialdir=datafile_path(ClientApplication.MAPS_DIRECTORY),
             parent=self,
         )
         if not map_filename:
@@ -888,6 +890,7 @@ class ClientApplication(Frame):
 
         directory = tkFileDialog.askdirectory(
             title=ClientApplication.CHOOSE_DIRECTORY_FOR_NEW_GAME,
+            initialdir=datafile_path(ClientApplication.GAMES_DIRECTORY),
             mustexist=True,
             parent=self,
         )
