@@ -84,6 +84,7 @@ class GameViewer(Canvas):
         self.bind('<Button-4>', self._roll_wheel_callback)
         self.bind('<Button-5>', self._roll_wheel_callback)
         self.bind('<Button-1>', self._click_callback)
+        self.bind("<Configure>", self._size_changed_callback)
 
         # own attributes
         self._zoom = 1.0
@@ -381,17 +382,21 @@ class GameViewer(Canvas):
         self._scaled_images_cache[name] = image
         return image
 
-    def _to_screen_coordinate(self, (x, y)):
+    def _to_screen_coordinate(self, (x, y), delta=None, zoom=None):
         """ From game coordinates. """
-        return (32*self._zoom*(x-y-2*self._delta[0]),
-                16*self._zoom*(x+y-2*self._delta[1]))
+        zoom = zoom or self._zoom
+        delta = delta or self._delta
+        return (32*zoom*(x-y-2*delta[0]),
+                16*zoom*(x+y-2*delta[1]))
 
-    def _to_game_coordinate(self, (x, y)):
+    def _to_game_coordinate(self, (x, y), delta=None, zoom=None):
         """ From screen coordinates. """
-        return (x/64.0/self._zoom + y/32.0/self._zoom \
-                + self._delta[0] + self._delta[1],
-                -x/64.0/self._zoom + y/32.0/self._zoom \
-                - self._delta[0] + self._delta[1])
+        zoom = zoom or self._zoom
+        delta = delta or self._delta
+        return (x/64.0/zoom + y/32.0/zoom \
+                + delta[0] + delta[1],
+                -x/64.0/zoom + y/32.0/zoom \
+                - delta[0] + delta[1])
 
     def _to_image_position(self, image_name, (x, y)):
         """ From screen coordinaties. """
@@ -433,9 +438,13 @@ class GameViewer(Canvas):
 
         # compute new self._delta and self._zoom
         xS, yS = self._to_game_coordinate((XS, YS))
-        self._delta = [-XS/64.0/zoom + xS/2.0 - yS/2.0,
-                       -YS/32.0/zoom + xS/2.0 + yS/2.0]
+        delta = [-XS/64.0/zoom + xS/2.0 - yS/2.0,
+                 -YS/32.0/zoom + xS/2.0 + yS/2.0]
         self._zoom, old_zoom = zoom, self._zoom
+        cleared_delta = self._clear_delta(delta)
+        self._delta = cleared_delta
+        delta_delta = (cleared_delta[0]-delta[0],
+                       cleared_delta[1]-delta[1])
 
         # scale all images
         with log_on_enter('GameViewer._set_zoom: rescaling', mode='only time'):
@@ -453,6 +462,30 @@ class GameViewer(Canvas):
         # move all images
         factor = zoom/old_zoom
         self.scale(ALL, XS, YS, factor, factor)
+        self.move(ALL,
+                  -delta_delta[0]*64.0*self._zoom,
+                  -delta_delta[1]*32.0*self._zoom)
+
+    def _clear_delta(self, delta):
+        #import ipdb; ipdb.set_trace()
+        size = self.winfo_width(), self.winfo_height()
+        center_of_screen = (size[0]/2, size[1]/2)
+        map_width = self._game.game_map.size[0]
+        map_height = self._game.game_map.size[1]
+        pos = self._to_game_coordinate(center_of_screen, delta=delta)
+        if (0 <= pos[0] < map_width and
+            0 <= pos[1] < map_height):
+            return delta
+
+        # If we are here it means that the delta is invalid.
+        # 1. Find valid position
+        pos = (min(map_width, max(0, pos[0])),
+               min(map_height, max(0, pos[1])))
+        # 2. Find delta which fullfils the condition:
+        # _to_screen_coordinate(pos) == center_of_screen
+        delta = (-(center_of_screen[0]/32.0/self._zoom - pos[0] + pos[1])/2.0,
+                 -(center_of_screen[1]/16.0/self._zoom - pos[0] - pos[1])/2.0)
+        return delta
 
     def _roll_wheel_callback(self, event):
         if self._game:
@@ -472,9 +505,13 @@ class GameViewer(Canvas):
             with log_on_enter('moving everything', mode='only time'):
                 dx, dy = (event.x - self._last_mouse_position[0],
                           event.y - self._last_mouse_position[1])
+                delta = (self._delta[0] - dx/64.0/self._zoom,
+                         self._delta[1] - dy/32.0/self._zoom)
+                delta = self._clear_delta(delta)
+                dx, dy = ((self._delta[0]-delta[0])*64.0*self._zoom,
+                          (self._delta[1]-delta[1])*32.0*self._zoom)
+                self._delta = delta
                 self.move(ALL, dx, dy)
-                self._delta = (self._delta[0]-dx/64.0/self._zoom,
-                               self._delta[1]-dy/32.0/self._zoom)
 
         self._last_mouse_position = (event.x, event.y)
 
@@ -502,6 +539,13 @@ class GameViewer(Canvas):
             elif self.selection_position:
                 self._set_selection_position(None)
                 self.event_generate("<<selection-removed>>")
+
+    def _size_changed_callback(self, event):
+        delta = self._clear_delta(self._delta)
+        dx, dy = ((self._delta[0]-delta[0])*64.0*self._zoom,
+                  (self._delta[1]-delta[1])*32.0*self._zoom)
+        self._delta = delta
+        self.move(ALL, dx, dy)
 
 
 class ClientApplication(Frame):
