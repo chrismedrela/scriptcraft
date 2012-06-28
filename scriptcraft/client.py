@@ -24,7 +24,7 @@ from scriptcraft.gamemap import GameMap
 from scriptcraft.gamestate import (actions, Game, DEFAULT_GAME_CONFIGURATION,
                                    Language, Program, STAR_PROGRAM, Unit,
                                    NoFreeStartPosition, Tree, MineralDeposit,
-                                   load_game_map, InvalidGameMapData)
+                                   load_game_map, InvalidGameMapData, cmds)
 from scriptcraft.gamesession import (GameSession, SystemConfiguration,
                                      AlreadyExecuteGame)
 from scriptcraft.utils import *
@@ -38,14 +38,11 @@ class GameViewer(Canvas):
 
     About selecting:
 
-    When a field is being selected (or the selection was selected
-    again), <<field-selected>> event is sent. The selected position
-    (in integer game coordinates) is stored in pointer_position
-    attribute.
+    When a mouse motion is detected and the selection changed then
+    <<selection-changed>> event is emitted. You can find out which
+    field is selected by checking GameViewer.selection_position which
+    is (x, y) tuple or None.
 
-    If the user click out of map and an selection exists, then the
-    existing selection is removed and <<selection-removed>> event is
-    sent. In this case pointer_position attribute is None.
     """
 
     SCROLLING_SENSITIVITY = 1.15 # in (1, +inf); greater means faster scrolling
@@ -68,6 +65,10 @@ class GameViewer(Canvas):
     }
     MAX_ZOOM = 1.0
     MIN_ZOOM = 1.0/4
+    CORNER_TEXT_POSITION = (7, 7) # position at screen
+    CORNER_TEXT_FONT_OPTIONS = {'size':12,
+                              'weight':'bold'}
+    CORNER_TEXT_COLOR = 'red'
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -78,7 +79,9 @@ class GameViewer(Canvas):
         self.focus_set()
 
         # bindings
-        self.bind('<B1-Motion>', self._mouse_motion_callback)
+        self.bind('<B1-Motion>',
+                  self._mouse_motion_with_button_pressed_callback)
+        self.bind('<Motion>', self._mouse_motion_callback)
         self.bind('<ButtonRelease-1>', self._release_callback)
         self.bind('<MouseWheel>', self._roll_wheel_callback)
         self.bind('<Button-4>', self._roll_wheel_callback)
@@ -96,6 +99,13 @@ class GameViewer(Canvas):
         self._last_mouse_position = None # None unless button pressed
         self._click_position = None
         self.selection_position = None # None or (x, y)
+        self._corner_text_id = self.create_text(
+            GameViewer.CORNER_TEXT_POSITION[0],
+            GameViewer.CORNER_TEXT_POSITION[1],
+            anchor=NW, text='debug',
+            font=tkFont.Font(**GameViewer.CORNER_TEXT_FONT_OPTIONS),
+            fill=GameViewer.CORNER_TEXT_COLOR,
+            tag=['interface'])
 
     @log_on_enter('set game in game viewer', mode='only time')
     def set_game(self, game):
@@ -116,21 +126,23 @@ class GameViewer(Canvas):
         self._game = game
 
         if previous_game:
-            self.delete(ALL)
+            self.delete('game')
 
         if not game:
-            self._set_selection_position(None)
-
             # force redrawing ground during next set_game call
             self._ground_image_cache = None
             if 'ground' in self._scaled_images_cache:
                 del self._scaled_images_cache['ground']
 
+            # reset zoom and delta
             self.zoom = 1.0
             self._delta = (-5.0, 0.0)
         else:
             self._draw_game(game)
-            self._set_selection_position(self.selection_position)
+
+    def set_corner_text(self, text):
+        self.itemconfigure(self._corner_text_id,
+                           text=text)
 
     def _draw_game(self, game):
         def draw_arrow(source, destination, type='red'):
@@ -185,7 +197,7 @@ class GameViewer(Canvas):
                 color = '#' + "%02x%02x%02x" % unit.player.color
                 font = self._get_font_for_current_zoom()
                 self.create_text(x, y, fill=color, text=unit.player.name,
-                                 font=font, tags=['text'],
+                                 font=font, tags=['layer-3', 'game'],
                                  state=NORMAL if font else HIDDEN)
 
                 # draw arrows indicating executing action (or fire explosion)
@@ -214,7 +226,7 @@ class GameViewer(Canvas):
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
                 self.create_line(*(start_position + end_position),
-                                 fill=line_color, tag=['layer-1'])
+                                 fill=line_color, tag=['layer-1', 'game'])
 
             for y in xrange(0, game.game_map.size[0] + 1):
                 start_position = (y, 0)
@@ -222,7 +234,7 @@ class GameViewer(Canvas):
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
                 self.create_line(*(start_position + end_position),
-                                 fill=line_color, tag=['layer-1'])
+                                 fill=line_color, tag=['layer-1', 'game'])
 
         #draw_grid()
 
@@ -230,7 +242,7 @@ class GameViewer(Canvas):
             self.tag_raise('layer-1')
             self.tag_raise('layer-2')
             self.tag_raise('layer-3')
-            self.tag_raise('text')
+            self.tag_raise('interface')
 
     @memoized
     def _gradient(self, align):
@@ -247,22 +259,12 @@ class GameViewer(Canvas):
                                     GameViewer.TILE_HEIGHT+2))
         return gradient
 
-    def _set_selection_position(self, new_position):
-        """ Create or move exisitng pointer. Argument new_position can
-        be None if you want to disable the pointer. """
-
-        #self.delete('selection')
-        #state = HIDDEN if new_position is None else NORMAL
-        #self._draw('pointer', new_position or (0, 0),
-        #           state=state, extra_tags=['selection'])
-        self.selection_position = new_position
-
     def _draw(self, name, position, layer, state=NORMAL, extra_tags=None):
         """ Draw sprite with name 'name' at position 'position' in
         game coordinates."""
 
         extra_tags = extra_tags or []
-        tags = [name, 'layer-%s' % layer]
+        tags = [name, 'layer-%s' % layer, 'game']
         position = self._to_screen_coordinate(position)
         x, y = self._to_image_position(name, position)
         image = self._get_scaled_sprite(name)
@@ -491,6 +493,12 @@ class GameViewer(Canvas):
                  -(center_of_screen[1]/16.0/self._zoom - pos[0] - pos[1])/2.0)
         return delta
 
+    def _set_selection_position(self, value):
+        old_selection = self.selection_position
+        self.selection_position = value
+        if old_selection != value:
+            self.event_generate('<<selection-changed>>')
+
     def _roll_wheel_callback(self, event):
         if self._game:
             delta = 0
@@ -504,7 +512,9 @@ class GameViewer(Canvas):
             factor = GameViewer.SCROLLING_SENSITIVITY**delta
             self._set_zoom(self._zoom*factor, (event.x, event.y))
 
-    def _mouse_motion_callback(self, event):
+    def _mouse_motion_with_button_pressed_callback(self, event):
+        # scrolling map
+
         if self._game and self._last_mouse_position:
             with log_on_enter('moving everything', mode='only time'):
                 dx, dy = (event.x - self._last_mouse_position[0],
@@ -515,9 +525,19 @@ class GameViewer(Canvas):
                 dx, dy = ((self._delta[0]-delta[0])*64.0*self._zoom,
                           (self._delta[1]-delta[1])*32.0*self._zoom)
                 self._delta = delta
-                self.move(ALL, dx, dy)
+                self.move('game', dx, dy)
 
         self._last_mouse_position = (event.x, event.y)
+
+    def _mouse_motion_callback(self, event):
+        # info about field/unit under mouse -- update corner text
+
+        pos = self._to_game_coordinate((event.x, event.y))
+        pos = tuple(map(lambda x: int(math.floor(x)), pos))
+        if self._game.game_map[pos].valid_position:
+            self._set_selection_position(pos)
+        else:
+            self._set_selection_position(None)
 
     def _click_callback(self, event):
         if self._game:
@@ -538,18 +558,14 @@ class GameViewer(Canvas):
                                          click_position)
             integer_click_position = tuple(integer_click_position)
             if self._game.game_map[integer_click_position].valid_position:
-                self._set_selection_position(integer_click_position)
-                self.event_generate("<<field-selected>>")
-            elif self.selection_position:
-                self._set_selection_position(None)
-                self.event_generate("<<selection-removed>>")
+                pass
 
     def _size_changed_callback(self, event):
         delta = self._clear_delta(self._delta)
         dx, dy = ((self._delta[0]-delta[0])*64.0*self._zoom,
                   (self._delta[1]-delta[1])*32.0*self._zoom)
         self._delta = delta
-        self.move(ALL, dx, dy)
+        self.move('game', dx, dy)
 
 
 class ClientApplication(Frame):
@@ -612,6 +628,13 @@ class ClientApplication(Frame):
                                   'zamknięta. Sprawdź zawartość pliku "' + \
                                   CONFIGURATION_FILE + \
                                   '".')
+
+    DIRECTION_TO_NAME = {
+        direction.N : 'północ',
+        direction.W : 'zachód',
+        direction.S : 'południe',
+        direction.E : 'wschód',
+    }
 
     MAP_FILE_TYPES = (
         ('Plik mapy', '*.map'),
@@ -726,13 +749,11 @@ class ClientApplication(Frame):
         self.pack(expand=YES, fill=BOTH)
         global root
         root.protocol("WM_DELETE_WINDOW", self._quit_callback)
+        self._game_viewer = GameViewer(self)
+        self._game_viewer.bind('<<selection-changed>>',
+                               self._selection_changed_callback)
         self._create_menubar()
         self._create_keyboard_shortcuts()
-        self._game_viewer = GameViewer(self)
-        self._game_viewer.bind('<<field-selected>>',
-                               self._field_select_callback)
-        self._game_viewer.bind('<<selection-removed>>',
-                               self._selection_removal_callback)
 
     def _create_menubar(self):
         menubar = Menu(self)
@@ -1016,12 +1037,66 @@ class ClientApplication(Frame):
             message=ClientApplication.ABOUT_CONTENT,
             parent=self)
 
-    def _field_select_callback(self, event):
-        self._print_info_about_field_at(self._game_viewer.selection_position)
+    def _selection_changed_callback(self, event):
+        pos = self._game_viewer.selection_position
+        #if pos is not None:
+        #    self._print_info_about_field_at(pos)
+        if pos is None:
+            text = " "
+        else:
+            field = self._game.game_map[pos]
+            obj = field.maybe_object
+            if obj is None:
+                obj_info = ""
+            elif isinstance(obj, Tree):
+                obj_info = "Drzewa."
+            elif isinstance(obj, MineralDeposit):
+                obj_info = "Złoża minerałów (%d jednostek minerałów)." % obj.minerals
+            elif isinstance(obj, Unit):
+                # type of the unit
+                if obj.type.main_name == '4': # base
+                    obj_info = "Baza"
+                elif obj.type.main_name == '5': # miner
+                    state = ('pełny' if obj.minerals else 'pusty')
+                    obj_info = "Zbieracz minerałów (%s)" % state
+                elif obj.type.main_name == '6': # tank
+                    obj_info = "Czołg"
+                else:
+                    assert False, 'oops, unknown unit type %r' % unit.type
+
+                # player
+                obj_info += ' gracza %s.' % obj.player.name
+
+                # command
+                if isinstance(obj.command, cmds.StopCommand):
+                    command_info = 'stop'
+                elif isinstance(obj.command, cmds.MoveCommand):
+                    d = ClientApplication.DIRECTION_TO_NAME[obj.command.direction]
+                    command_info = 'idź na %s' % d
+                elif isinstance(obj.command, cmds.ComplexMoveCommand):
+                    command_info = 'idź do (%d, %d)' \
+                      % obj.command.destination
+                elif isinstance(obj.command, cmds.ComplexGatherCommand):
+                    command_info = 'zbieraj minerały z (%d, %d)' \
+                      % obj.command.destination
+                elif isinstance(obj.command, cmds.FireCommand):
+                    command_info = 'ogień na (%d, %d)' \
+                      % obj.command.destination
+                elif isinstance(obj.command, cmds.ComplexAttackCommand):
+                    command_info = 'atak na (%d, %d)' \
+                      % obj.command.destination
+                elif isinstance(obj.command, cmds.BuildCommand):
+                    command_info = 'buduj "%s"' \
+                      % obj.command.unit_type_name
+                obj_info += ' Komenda: %s.' % command_info
+            else:
+                assert False, 'oops, unknown object on map %r' % obj
+            field_info = "Pole (%d, %d)." % (pos[0], pos[1])
+            text = " ".join([field_info, obj_info])
+
+        self._game_viewer.set_corner_text(text)
         self._refresh_game_menu_items_state()
 
-    def _selection_removal_callback(self, event):
-        self._refresh_game_menu_items_state()
 
 
     # other methods -------------------------------------------------------
