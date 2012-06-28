@@ -69,6 +69,7 @@ class GameViewer(Canvas):
     CORNER_TEXT_FONT_OPTIONS = {'size':12,
                               'weight':'bold'}
     CORNER_TEXT_COLOR = 'red'
+    CORNER_TEXT_INITIAL_TEXT = ''
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -102,7 +103,7 @@ class GameViewer(Canvas):
         self._corner_text_id = self.create_text(
             GameViewer.CORNER_TEXT_POSITION[0],
             GameViewer.CORNER_TEXT_POSITION[1],
-            anchor=NW, text='debug',
+            anchor=NW, text=GameViewer.CORNER_TEXT_INITIAL_TEXT,
             font=tkFont.Font(**GameViewer.CORNER_TEXT_FONT_OPTIONS),
             fill=GameViewer.CORNER_TEXT_COLOR,
             tag=['interface'])
@@ -474,6 +475,9 @@ class GameViewer(Canvas):
                   -delta_delta[1]*32.0*self._zoom)
 
     def _clear_delta(self, delta):
+        if not self._game:
+            return delta
+
         size = self.winfo_width(), self.winfo_height()
         center_of_screen = (size[0]/2, size[1]/2)
         map_width = self._game.game_map.size[0]
@@ -530,8 +534,10 @@ class GameViewer(Canvas):
         self._last_mouse_position = (event.x, event.y)
 
     def _mouse_motion_callback(self, event):
-        # info about field/unit under mouse -- update corner text
+        if not self._game:
+            return
 
+        # info about field/unit under mouse -- update corner text
         pos = self._to_game_coordinate((event.x, event.y))
         pos = tuple(map(lambda x: int(math.floor(x)), pos))
         if self._game.game_map[pos].valid_position:
