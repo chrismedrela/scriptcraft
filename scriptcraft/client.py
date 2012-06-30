@@ -171,7 +171,7 @@ class GameViewer(Canvas):
                 del self._scaled_images_cache['ground']
 
             # reset zoom and delta
-            self.zoom = 1.0
+            self._zoom = 1.0
             self._delta = (-5.0, 0.0)
 
             # hide loading indicator
