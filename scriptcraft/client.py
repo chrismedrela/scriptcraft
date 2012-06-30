@@ -304,7 +304,8 @@ class GameViewer(Canvas):
                 GameViewer.GROUND_TILE_WIDTH+start_point_x,
                 GameViewer.GROUND_TILE_HEIGHT+start_point_y)
             croped = image.crop(box)
-            rotated = croped.rotate(-45, expand=True)
+            rotated = croped.rotate(-45, expand=True,
+                                    resample=Image.BICUBIC)
             scaled = rotated.resize((GameViewer.TILE_WIDTH+2,
                                      GameViewer.TILE_HEIGHT+2))
             self._ground_tiles_cache[key] = scaled
