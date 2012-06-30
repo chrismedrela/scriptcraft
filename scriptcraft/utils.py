@@ -186,17 +186,19 @@ class memoized(object):
     def __init__(self, func):
         self.func = func
         self.cache = {}
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
+        kwargs_items = tuple(kwargs.items())
         try:
-            return self.cache[args]
+            return self.cache[(args, kwargs_items)]
         except KeyError:
-            value = self.func(*args)
-            self.cache[args] = value
+            value = self.func(*args, **kwargs)
+            self.cache[(args, kwargs_items)] = value
             return value
         except TypeError:
             # uncachable -- for instance, passing a list as an argument.
             # Better to not cache than to blow up entirely.
-            return self.func(*args)
+            log('unhashable')
+            return self.func(*args, **kwargs)
     def __repr__(self):
         """Return the function's docstring."""
         return self.func.__doc__
