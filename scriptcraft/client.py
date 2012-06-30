@@ -200,6 +200,7 @@ class GameViewer(Canvas):
             self._draw('arrow-%s-%s' % (type, direction_name),
                        source, layer=2)
 
+        # draw ground
         self._draw('ground', (0, 0), layer=1)
 
         # draw objects
@@ -282,13 +283,13 @@ class GameViewer(Canvas):
                 self.create_line(*(start_position + end_position),
                                  fill=line_color, tag=['layer-1', 'game'])
 
-        #draw_grid()
+        # draw_grid()
 
-        with log_on_enter('raising layers', mode='only time'):
-            self.tag_raise('layer-1')
-            self.tag_raise('layer-2')
-            self.tag_raise('layer-3')
-            self.tag_raise('interface')
+        # raise layers
+        self.tag_raise('layer-1')
+        self.tag_raise('layer-2')
+        self.tag_raise('layer-3')
+        self.tag_raise('interface')
 
     @memoized
     def _gradient(self, align):
@@ -334,7 +335,6 @@ class GameViewer(Canvas):
         image = Image.open(datafile_path(path))
         return image
 
-    @log_on_enter('debug get ground tile', mode='only time')
     def _get_ground_tile(self, name, (x, y)):
         x %= GameViewer.GROUND_TILES_IN_ROW
         y %= GameViewer.GROUND_TILES_IN_COLUMN
@@ -356,7 +356,7 @@ class GameViewer(Canvas):
             self._ground_tiles_cache[key] = scaled
         return self._ground_tiles_cache[key]
 
-    @log_on_enter('debug computing ground image', mode='only time')
+    @log_on_enter('GameViewer._get_ground_image', mode='only time')
     def _get_ground_image(self):
         """ Return (PIL.)Image instance. """
 
@@ -475,7 +475,6 @@ class GameViewer(Canvas):
             dx, dy = switch[first_part]
         return x-dx*self._zoom, y-dy*self._zoom
 
-    @log_on_enter('GameViewer._set_zoom', mode='only time')
     def _set_zoom(self, zoom, (XS, YS)):
         """ Set zoom. The point (XS, YS) in screen coordinate doesn't
         move."""
@@ -501,7 +500,8 @@ class GameViewer(Canvas):
                        cleared_delta[1]-delta[1])
 
         # scale all images
-        with log_on_enter('GameViewer._set_zoom: rescaling', mode='only time'):
+        with log_on_enter('GameViewer._set_zoom: rescaling images',
+                          mode='only time'):
             names = self._scaled_images_cache.keys()
             self._scaled_images_cache = {} # clear cache
             for name in names:
