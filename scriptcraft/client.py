@@ -426,9 +426,11 @@ class GameViewer(Canvas):
         else:
             image = self._get_image(name)
         width, height = image.size
-        new_width, new_height = (int(width*self._zoom+2),
-                                 int(height*self._zoom+2))
-        image = image.resize((new_width, new_height), Image.NEAREST)
+        delta = 0 if name == 'ground' else 2
+        new_width, new_height = (int(width*self._zoom)+delta,
+                                 int(height*self._zoom)+delta)
+        if width != new_width: # resize if it's necessary
+            image = image.resize((new_width, new_height), Image.NEAREST)
         image = ImageTk.PhotoImage(image)
 
         # no problem with bug connected with reference count --
