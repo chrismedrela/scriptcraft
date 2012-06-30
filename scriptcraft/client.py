@@ -88,7 +88,7 @@ class GameViewer(Canvas):
         self.bind('<Button-4>', self._roll_wheel_callback)
         self.bind('<Button-5>', self._roll_wheel_callback)
         self.bind('<Button-1>', self._click_callback)
-        self.bind("<Configure>", self._size_changed_callback)
+        self.bind("<Configure>", self._resized_callback)
 
         # own attributes
         self._zoom = 1.0
@@ -566,7 +566,8 @@ class GameViewer(Canvas):
             if self._game.game_map[integer_click_position].valid_position:
                 pass
 
-    def _size_changed_callback(self, event):
+    def _resized_callback(self, event):
+        # update delta
         delta = self._clear_delta(self._delta)
         dx, dy = ((self._delta[0]-delta[0])*64.0*self._zoom,
                   (self._delta[1]-delta[1])*32.0*self._zoom)
