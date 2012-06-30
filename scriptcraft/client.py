@@ -46,7 +46,7 @@ class GameViewer(Canvas):
 
     """
 
-    SCROLLING_SENSITIVITY = 1.15 # in (1, +inf); greater means faster scrolling
+    SCROLLING_SENSITIVITY = 2**(1/2.0) # in (1, +inf); greater means faster scrolling
     TILE_WIDTH = 64
     TILE_HEIGHT = 32
     GROUND_TILE_WIDTH = 32
