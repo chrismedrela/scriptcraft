@@ -265,7 +265,7 @@ class GameViewer(Canvas):
 
         # draw lines (debug)
         def draw_grid():
-            line_color = 'black'
+            line_color = '#333333'
 
             for x in xrange(0, game.game_map.size[1] + 1):
                 start_position = (0, x)
