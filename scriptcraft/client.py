@@ -758,13 +758,11 @@ class ClientApplication(Frame):
         game = None
         #game = Game(generate_simple_map(), DEFAULT_GAME_CONFIGURATION)
 
-        #game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
-
         # create game and game session
         session = GameSession(
             directory='scriptcraft/.tmp',
-            system_configuration=self.system_configuration)
-            #game=game)
+            system_configuration=self.system_configuration,
+            game=game)
         self.set_game_session(session)
         game = session.game
 
