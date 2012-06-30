@@ -11,6 +11,7 @@ import math
 import os.path
 from Queue import Queue
 import random
+import time
 from Tkinter import *
 import tkColorChooser
 import tkFileDialog
@@ -65,11 +66,16 @@ class GameViewer(Canvas):
     }
     MAX_ZOOM = 1.0
     MIN_ZOOM = 1.0/4
-    CORNER_TEXT_POSITION = (7, 7) # position at screen
+
+    CORNER_TEXT_POSITION = (15, 20) # position at screen
     CORNER_TEXT_FONT_OPTIONS = {'size':12,
                               'weight':'bold'}
     CORNER_TEXT_COLOR = 'red'
     CORNER_TEXT_INITIAL_TEXT = ''
+
+    LOADING_INDICATOR_POSITION = (-45, 15)
+    LOADING_INDICATOR_SPEED = int(-360*1.5) # degrees per second
+    FREQUENCY_OF_UPDATING_ANIMATIONS = 50 # ms
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -107,6 +113,35 @@ class GameViewer(Canvas):
             font=tkFont.Font(**GameViewer.CORNER_TEXT_FONT_OPTIONS),
             fill=GameViewer.CORNER_TEXT_COLOR,
             tag=['interface'])
+        image = self._get_image('loading')
+        self._loading_image = ImageTk.PhotoImage(image)
+        self._loading_indicator_id = self.create_image(
+            self._loading_indicator_position[0],
+            self._loading_indicator_position[1],
+            image=self._loading_image,
+            state=HIDDEN, anchor=NW,
+            tags=['interface'])
+        self._loading_indicator_turned_on = False
+        self._update_loading_indicator()
+
+    @property
+    def _loading_indicator_position(self):
+        x, y = GameViewer.LOADING_INDICATOR_POSITION
+        width, height = self.winfo_width(), self.winfo_height()
+        result = (x if x >= 0 else width+x,
+                  y if y >= 0 else height+y)
+        return result
+
+    def _update_loading_indicator(self):
+        if self._loading_indicator_turned_on:
+            image = self._get_image('loading')
+            angle = time.time()*GameViewer.LOADING_INDICATOR_SPEED % 360
+            image = image.rotate(angle, resample=Image.BICUBIC)
+            self._loading_image = ImageTk.PhotoImage(image)
+            self.itemconfig(self._loading_indicator_id,
+                            image=self._loading_image)
+        self.master.after(GameViewer.FREQUENCY_OF_UPDATING_ANIMATIONS,
+                          self._update_loading_indicator)
 
     @log_on_enter('set game in game viewer', mode='only time')
     def set_game(self, game):
@@ -138,12 +173,22 @@ class GameViewer(Canvas):
             # reset zoom and delta
             self.zoom = 1.0
             self._delta = (-5.0, 0.0)
+
+            # hide loading indicator
+            self.show_loading_indicator(False)
         else:
             self._draw_game(game)
 
     def set_corner_text(self, text):
         self.itemconfigure(self._corner_text_id,
                            text=text)
+
+    def show_loading_indicator(self, state):
+        assert isinstance(state, bool)
+        self._loading_indicator_turned_on = state
+        state = NORMAL if state else HIDDEN
+        self.itemconfig(self._loading_indicator_id,
+                        state=state)
 
     def _draw_game(self, game):
         def draw_arrow(source, destination, type='red'):
@@ -575,6 +620,12 @@ class GameViewer(Canvas):
         self._delta = delta
         self.move('game', dx, dy)
 
+        # update loading indicator's position
+        self.coords(
+            self._loading_indicator_id,
+            self._loading_indicator_position[0],
+            self._loading_indicator_position[1])
+
 
 class ClientApplication(Frame):
 
@@ -735,6 +786,7 @@ class ClientApplication(Frame):
         if not self._queue.empty():
             command = self._queue.get_nowait()
             assert command == 'ready'
+            self._game_viewer.show_loading_indicator(False)
             self._set_game(self._game_session.game)
             if self._tic_in_loop.get():
                 self._tic()
@@ -1114,6 +1166,7 @@ class ClientApplication(Frame):
     # other methods -------------------------------------------------------
     def _tic(self):
         try:
+            self._game_viewer.show_loading_indicator(True)
             self._game_session.tic(self._queue)
         except AlreadyExecuteGame as ex:
             log('already execute game')
