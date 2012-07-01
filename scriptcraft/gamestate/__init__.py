@@ -221,24 +221,33 @@ class Game(object):
             input = self._generate_input_for(unit)
 
             if isinstance(unit.program, Program):
-                status = compile_and_run_function(unit.program.language,
-                                                  unit.program.code,
-                                                  input,)
-                maybe_compilation_status, maybe_running_status = status
-                if maybe_compilation_status:
-                    output, error_output, killed, execution_time = \
-                       maybe_compilation_status
-                    compilation_status = CompilationStatus( \
-                       output, error_output, killed, execution_time)
-                    unit.maybe_last_compilation_status = compilation_status
-                if maybe_running_status:
-                    output, error_output, killed, execution_time = \
-                       maybe_running_status
-                    running_status = RunStatus(input, output, error_output,
-                                               killed, execution_time)
-                    unit.maybe_run_status = running_status
+                if unit.program.language == Language.OUTPUT:
+                    unit.maybe_run_status = RunStatus(
+                        input=input,
+                        output=unit.program.code,
+                        error_output='',
+                        killed=False,
+                        execution_time=0.0)
+
                 else:
-                    unit.maybe_run_status = None
+                    status = compile_and_run_function(unit.program.language,
+                                                      unit.program.code,
+                                                      input,)
+                    maybe_compilation_status, maybe_running_status = status
+                    if maybe_compilation_status:
+                        output, error_output, killed, execution_time = \
+                          maybe_compilation_status
+                        compilation_status = CompilationStatus( \
+                          output, error_output, killed, execution_time)
+                        unit.maybe_last_compilation_status = compilation_status
+                    if maybe_running_status:
+                        output, error_output, killed, execution_time = \
+                          maybe_running_status
+                        running_status = RunStatus(input, output, error_output,
+                                                   killed, execution_time)
+                        unit.maybe_run_status = running_status
+                    else:
+                        unit.maybe_run_status = None
 
             elif unit.program == STAR_PROGRAM:
                 unit.maybe_run_status = run_star_program(input)
@@ -1008,6 +1017,7 @@ def run_star_program(input):
                      execution_time=0.0)
 
 
+
 class Program(namedtuple("Program", ('language',
                                      'code'))):
     __slots__ = ()
@@ -1039,6 +1049,7 @@ class RunStatus(namedtuple("RunStatus", ('input',
 
 
 class Language(object):
+    OUTPUT = 'out'
     CPP = 'cpp'
     PYTHON = 'py'
 

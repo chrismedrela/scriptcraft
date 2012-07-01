@@ -951,6 +951,25 @@ class TestRunStarProgram(unittest.TestCase):
         self.assertEqual(run_status, excepted_run_status)
 
 
+class TestOutputProgram(BaseGameTestCase):
+    def test_basic(self):
+        self._prepare_game()
+        self.compile_and_run = CompileAndRunProgram(
+            'tmpdirectory', {}, {}, {}, {},)
+        program = Program(Language.OUTPUT,
+                          'code')
+        self.game.set_program(self.base, program)
+
+        self.game.tic(self.compile_and_run)
+
+        self.assertEqual(self.base.maybe_last_compilation_status, None)
+        run_status = self.base.maybe_run_status
+        self.assertEqual(run_status.output, 'code')
+        self.assertEqual(run_status.error_output, '')
+        self.assertEqual(run_status.killed, False)
+        self.assertEqual(run_status.execution_time, 0.0)
+
+
 class TestUnitType(unittest.TestCase):
     def setUp(self):
         self.kwargs = self._build_simple_arguments_for_unit_type_constructor()
