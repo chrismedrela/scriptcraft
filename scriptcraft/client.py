@@ -814,7 +814,8 @@ class ClientApplication(Frame):
         self._master = master
         self._check_queue()
         self._load_configuration_file()
-        self._load_testing_game()
+        if len(sys.argv) == 2 and sys.argv[1].lower() == '--test':
+            self._load_testing_game()
 
     @log_on_enter('load game for testing')
     def _load_testing_game(self):
