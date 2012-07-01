@@ -165,6 +165,9 @@ class GameViewer(Canvas):
             self.delete('non-cached')
 
         if not game:
+            # selection position
+            self._set_selection_position(None, force_emitting=True)
+
             # force redrawing ground during next set_game call
             self._ground_image_cache = None
             if 'ground' in self._scaled_images_cache:
@@ -180,6 +183,9 @@ class GameViewer(Canvas):
             # other stuff
             self._trees_ids_by_position.clear()
         else:
+            # selection position
+            self._set_selection_position(self.selection_position,
+                                         force_emitting=True)
             self._draw_game(game, old_game=previous_game)
 
     def set_corner_text(self, text):
@@ -577,10 +583,10 @@ class GameViewer(Canvas):
                  -(center_of_screen[1]/16.0/self._zoom - pos[0] - pos[1])/2.0)
         return delta
 
-    def _set_selection_position(self, value):
+    def _set_selection_position(self, value, force_emitting=False):
         old_selection = self.selection_position
         self.selection_position = value
-        if old_selection != value:
+        if old_selection != value or force_emitting:
             self.event_generate('<<selection-changed>>')
 
     def _roll_wheel_callback(self, event):
