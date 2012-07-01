@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+from copy import deepcopy
+
 from scriptcraft import aima, direction
 from scriptcraft.utils import *
 
@@ -19,7 +21,10 @@ class GameMap(object):
     MIN_GROUND_TYPE = 1
     MAX_GROUND_TYPE = 127
 
-    def __init__(self, size, start_positions):
+    def __init__(self, size=None, start_positions=None, raw_instance=False):
+        if raw_instance:
+            return
+
         assert size[0]>0 and size[1]>0, \
             "map size must be at least 1x1"
         assert all(0 <= pos[0] < size[0] and 0 <= pos[1] < size[1]
@@ -72,6 +77,21 @@ class GameMap(object):
                 del self._objs[position]
         else:
             self._objs[position] = field.maybe_object
+
+    def __deepcopy__(self, memo):
+        result = GameMap(raw_instance=True)
+        result._free_start_positions = deepcopy(self._free_start_positions, memo)
+        result._size = deepcopy(self._size, memo)
+        def copied_objs():
+            for pos, obj in self._objs.iteritems():
+                key = id(obj)
+                if key not in memo:
+                    memo[key] = deepcopy(obj, memo)
+                yield (pos, memo[key])
+        result._objs = dict(copied_objs())
+        # self._ground_types are ints so we don't need to do deep copy
+        result._ground_types = self._ground_types.copy()
+        return result
 
     def __repr__(self):
         return "GameMap(%dx%d, id=0x%x)" % \
@@ -140,7 +160,6 @@ class Field(object):
                 "maybe_object=%r, id(game_map)=0x%x)" % \
                 (self._position, self._valid_position, self._ground_type,
                  self._maybe_object, id(self._game_map)))
-
 
     @property
     def position(self):

@@ -30,6 +30,7 @@ haven't be sensible (for example every string is valid value for unit_type_name)
 
 
 from collections import namedtuple
+from copy import deepcopy
 import hashlib
 import random
 
@@ -709,16 +710,30 @@ class MineralDeposit(object):
         assert value >= 0
         self._minerals = value
 
+    def __deepcopy__(self, memo):
+        result = MineralDeposit(self._minerals)
+        memo[id(self)] = result
+        return result
+
 
 class Tree(object):
+    """ Immutable. """
+
     MIN_TREE_TYPE = 1
     MAX_TREE_TYPE = 6
-    __slots__ = ('type', )
+    __slots__ = ('_type', )
 
     def __init__(self, type=None):
         type = type or random.randint(Tree.MIN_TREE_TYPE,
                                       Tree.MAX_TREE_TYPE)
-        self.type = type
+        self._type = type
+
+    def __deepcopy__(self, memo):
+        return self
+
+    @property
+    def type(self):
+        return self._type
 
 
 class Unit(object):
