@@ -182,10 +182,13 @@ class GameViewer(Canvas):
 
             # other stuff
             self._trees_ids_by_position.clear()
+            self.delete('tree')
         else:
             # selection position
             self._set_selection_position(self.selection_position,
                                          force_emitting=True)
+
+            # draw game
             self._draw_game(game, old_game=previous_game)
 
     def set_corner_text(self, text):
@@ -239,7 +242,8 @@ class GameViewer(Canvas):
             if isinstance(obj, Tree): # draw tree
                 if position not in old_tree_positions:
                     name = 'tree%s' % obj.type
-                    id_ = self._draw(name, position, layer=3, cached=True)
+                    id_ = self._draw(name, position, layer=3, cached=True,
+                                     extra_tags=['tree'])
                     self._trees_ids_by_position[position] = id_
                 else:
                     pass
