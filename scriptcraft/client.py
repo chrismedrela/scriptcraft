@@ -106,6 +106,7 @@ class GameViewer(Canvas):
         self._last_mouse_position = None # None unless button pressed
         self._click_position = None
         self.selection_position = None # None or (x, y)
+        self._trees_ids_by_position = {}
         self._corner_text_id = self.create_text(
             GameViewer.CORNER_TEXT_POSITION[0],
             GameViewer.CORNER_TEXT_POSITION[1],
@@ -157,12 +158,11 @@ class GameViewer(Canvas):
         """
 
         #import ipdb; ipdb.set_trace()
-
         previous_game = self._game
         self._game = game
 
         if previous_game:
-            self.delete('game')
+            self.delete('non-cached')
 
         if not game:
             # force redrawing ground during next set_game call
@@ -176,8 +176,11 @@ class GameViewer(Canvas):
 
             # hide loading indicator
             self.show_loading_indicator(False)
+
+            # other stuff
+            self._trees_ids_by_position.clear()
         else:
-            self._draw_game(game)
+            self._draw_game(game, old_game=previous_game)
 
     def set_corner_text(self, text):
         self.itemconfigure(self._corner_text_id,
@@ -190,7 +193,31 @@ class GameViewer(Canvas):
         self.itemconfig(self._loading_indicator_id,
                         state=state)
 
-    def _draw_game(self, game):
+    def _draw_game(self, game, old_game):
+        # draw ground
+        self._draw('ground', (0, 0), layer=1)
+
+        # remove deleted trees
+        tree_positions = [position for (position, obj)
+                          in self._game.game_map._objs.items()
+                          if isinstance(obj, Tree)]
+        tree_positions = set(tree_positions)
+
+        if old_game is not None:
+            old_tree_positions = [
+                position for (position, obj)
+                in old_game.game_map._objs.items()
+                if isinstance(obj, Tree)]
+            old_tree_positions = set(old_tree_positions)
+        else:
+            old_tree_positions = set()
+
+        deleted_trees = old_tree_positions - tree_positions
+        for position in deleted_trees:
+            self.delete(self._trees_ids_by_position[position])
+            del self._trees_ids_by_position[position]
+
+        # draw objects
         def draw_arrow(source, destination, type='red'):
             assert type in ('red', 'blue')
             delta = map(lambda (a, b): a-b, zip(destination,
@@ -200,26 +227,25 @@ class GameViewer(Canvas):
             self._draw('arrow-%s-%s' % (type, direction_name),
                        source, layer=2)
 
-        # draw ground
-        self._draw('ground', (0, 0), layer=1)
+        objs = sorted(self._game.game_map._objs.items(),
+                      key=lambda (pos, obj): pos[0]+pos[1])
+        for position, obj in objs:
+            if isinstance(obj, Tree): # draw tree
+                if position not in old_tree_positions:
+                    name = 'tree%s' % obj.type
+                    id_ = self._draw(name, position, layer=3, cached=True)
+                    self._trees_ids_by_position[position] = id_
+                else:
+                    pass
+                    self.tag_raise(self._trees_ids_by_position[position])
 
-        # draw objects
-        for position in itertools.product(xrange(game.game_map.size[0]),
-                                          xrange(game.game_map.size[1])):
-            field = game.game_map[position]
-            obj = field.maybe_object
-
-            if isinstance(obj, MineralDeposit): # draw minerals
+            elif isinstance(obj, MineralDeposit): # draw minerals
                 if obj.minerals:
                     self._draw('minerals', position, layer=3)
                 else:
                     self._draw('minerals-ex', position, layer=3)
 
-            if isinstance(obj, Tree): # draw trees
-                name = 'tree%s' % obj.type
-                self._draw(name, position, layer=3)
-
-            if isinstance(obj, Unit): # draw unit
+            elif isinstance(obj, Unit): # draw unit
                 unit = obj
 
                 # build sprite name
@@ -243,8 +269,10 @@ class GameViewer(Canvas):
                 x, y = self._to_screen_coordinate(position)
                 color = '#' + "%02x%02x%02x" % unit.player.color
                 font = self._get_font_for_current_zoom()
+                # this operation costs a lot [optimization]
                 self.create_text(x, y, fill=color, text=unit.player.name,
-                                 font=font, tags=['layer-3', 'game'],
+                                 font=font, tags=['layer-3', 'game', 'text',
+                                                  'non-cached'],
                                  state=NORMAL if font else HIDDEN)
 
                 # draw arrows indicating executing action (or fire explosion)
@@ -306,17 +334,21 @@ class GameViewer(Canvas):
                                     GameViewer.TILE_HEIGHT+2))
         return gradient
 
-    def _draw(self, name, position, layer, state=NORMAL, extra_tags=None):
+    def _draw(self, name, position, layer, state=NORMAL,
+              extra_tags=None, cached=False):
         """ Draw sprite with name 'name' at position 'position' in
         game coordinates."""
 
         extra_tags = extra_tags or []
         tags = [name, 'layer-%s' % layer, 'game']
+        if not cached:
+            tags.append('non-cached')
         position = self._to_screen_coordinate(position)
         x, y = self._to_image_position(name, position)
         image = self._get_scaled_sprite(name)
-        self.create_image(x, y, image=image, anchor=NW,
-                          state=state, tags=tags+extra_tags)
+        id_ = self.create_image(x, y, image=image, anchor=NW,
+                                state=state, tags=tags+extra_tags)
+        return id_
 
     def _get_font_for_current_zoom(self):
         size = int(12.2*self._zoom)
