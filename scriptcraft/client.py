@@ -767,7 +767,7 @@ class ClientApplication(Frame):
         self._game_session = None
         self._queue = Queue()
         self._master = master
-        self._check_query()
+        self._check_queue()
         self._load_configuration_file()
         self._load_testing_game()
 
@@ -824,7 +824,7 @@ class ClientApplication(Frame):
 
         self._set_game(game)
 
-    def _check_query(self):
+    def _check_queue(self):
         if not self._queue.empty():
             command = self._queue.get_nowait()
             assert command == 'ready'
@@ -833,7 +833,7 @@ class ClientApplication(Frame):
             if self._tic_in_loop.get():
                 self._tic()
         self.master.after(ClientApplication.FREQUENCY_OF_CHECKING_QUERY,
-                          self._check_query)
+                          self._check_queue)
 
     def _load_configuration_file(self):
         try:
