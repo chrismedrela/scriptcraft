@@ -319,10 +319,10 @@ class GameViewer(Canvas):
                           state=state, tags=tags+extra_tags)
 
     def _get_font_for_current_zoom(self):
-        size = int(15*self._zoom)
-        if size < 10:
+        size = int(12.2*self._zoom)
+        if size < 9:
             if size >= 6:
-                return tkFont.Font(size=10)
+                return tkFont.Font(size=9)
             else:
                 return None
         else:
@@ -513,7 +513,7 @@ class GameViewer(Canvas):
         # scale all texts
         font = self._get_font_for_current_zoom()
         self.itemconfigure('text', font=font,
-                            state = NORMAL if font else HIDDEN)
+                           state = NORMAL if font else HIDDEN)
 
         # move all images
         factor = zoom/old_zoom
