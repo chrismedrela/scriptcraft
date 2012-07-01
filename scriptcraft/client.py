@@ -81,6 +81,8 @@ class GameViewer(Canvas):
     FREQUENCY_OF_CHECKING_QUERY = 100 # ms
     COLOR_OF_GROUND_IMITATION = '#336633'
 
+    GRID_COLOR = '#555555'
+
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
         self.pack(expand=YES, fill=BOTH)
@@ -323,7 +325,7 @@ class GameViewer(Canvas):
 
         # draw lines (debug)
         def draw_grid():
-            line_color = '#333333'
+            line_color = GameViewer.GRID_COLOR
 
             for x in xrange(0, game.game_map.size[1] + 1):
                 start_position = (0, x)
@@ -331,7 +333,7 @@ class GameViewer(Canvas):
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
                 self.create_line(*(start_position + end_position),
-                                 fill=line_color, tag=['layer-1', 'game'])
+                                 fill=line_color, tag=['layer-1.5', 'game'])
 
             for y in xrange(0, game.game_map.size[0] + 1):
                 start_position = (y, 0)
@@ -339,12 +341,13 @@ class GameViewer(Canvas):
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
                 self.create_line(*(start_position + end_position),
-                                 fill=line_color, tag=['layer-1', 'game'])
+                                 fill=line_color, tag=['layer-1.5', 'game'])
 
-        # draw_grid()
+        draw_grid()
 
         # raise layers
         self.tag_raise('layer-1')
+        self.tag_raise('layer-1.5')
         self.tag_raise('layer-2')
         self.tag_raise('layer-3')
         self.tag_raise('interface')
