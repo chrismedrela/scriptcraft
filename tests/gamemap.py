@@ -171,7 +171,7 @@ class TestGameMapAndField(unittest.TestCase):
 
 
 class TestGameMapEfficiency(unittest.TestCase):
-    @ max_time(25)
+    @ max_time(50, repeat=3)
     def test_deepcopying(self):
         original = GameMap((128, 128), ())
         copied = copy.deepcopy(original)
@@ -295,19 +295,19 @@ class TestFindingPathEfficiency(unittest.TestCase):
     @ max_time(10)
     def test_efficiency_on_blank_map_with_non_heura_algorythm(self):
         size_of_map = _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA/2-1
+        self._test_efficiency_on_blank_map(size_of_map)
         assert (distance(self.source, self.destination) < \
                 _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA)
-        self._test_efficiency_on_blank_map(size_of_map)
 
     @ max_time(150)
     def test_efficiency_on_blank_map_with_heura_algorythm(self):
         size_of_map = 128
-        assert (distance(self.source, self.destination) >= \
-                FindPathProblem.MIN_DISTANCE_TO_USE_HEURA)
         self._test_efficiency_on_blank_map(size_of_map)
+        assert (distance(self.source, self.destination) >= \
+                _FindPathProblem.MIN_DISTANCE_TO_USE_HEURA)
 
     def _test_efficiency_on_blank_map(self, size_of_map):
-        self.game_map = GameMap((size_of_map, size_of_map))
+        self.game_map = GameMap((size_of_map, size_of_map), [])
         self.source = size_of_map-1, 0
         self.destination = 0, size_of_map-1
         answered_direction = self._find_direction()

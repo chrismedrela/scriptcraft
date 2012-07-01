@@ -740,7 +740,7 @@ class TestGameEfficiency(BaseGameTestCase):
         super(TestGameEfficiency, self).setUp()
         self._prepare_game()
 
-    @ max_time(50, repeat=3)
+    @ max_time(50, repeat=1)
     def test_efficiency_of_deepcopy(self):
         game_copy = copy.deepcopy(self.game)
 

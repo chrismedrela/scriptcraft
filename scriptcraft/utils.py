@@ -229,6 +229,7 @@ class max_time(object):
 
     def __call__(self, f):
 
+        @ wraps(f)
         def result(test_case, *args, **kwargs):
             times = []
             for _ in xrange(self.repeat):
