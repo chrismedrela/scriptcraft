@@ -12,6 +12,7 @@ import os.path
 from Queue import Queue
 import random
 import time
+import threading
 from Tkinter import *
 import tkColorChooser
 import tkFileDialog
@@ -77,6 +78,9 @@ class GameViewer(Canvas):
     LOADING_INDICATOR_SPEED = int(-360*1.5) # degrees per second
     FREQUENCY_OF_UPDATING_ANIMATIONS = 50 # ms
 
+    FREQUENCY_OF_CHECKING_QUERY = 100 # ms
+    COLOR_OF_GROUND_IMITATION = '#336633'
+
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
         self.pack(expand=YES, fill=BOTH)
@@ -107,6 +111,8 @@ class GameViewer(Canvas):
         self._click_position = None
         self.selection_position = None # None or (x, y)
         self._trees_ids_by_position = {}
+        self._queue = Queue()
+        self._compute_ground_image_flag = False
         self._corner_text_id = self.create_text(
             GameViewer.CORNER_TEXT_POSITION[0],
             GameViewer.CORNER_TEXT_POSITION[1],
@@ -124,6 +130,7 @@ class GameViewer(Canvas):
             tags=['interface'])
         self._loading_indicator_turned_on = False
         self._update_loading_indicator()
+        self._check_queue()
 
     @property
     def _loading_indicator_position(self):
@@ -165,6 +172,10 @@ class GameViewer(Canvas):
             self.delete('non-cached')
 
         if not game:
+            # reset queue
+            self._queue = Queue()
+            self._compute_ground_image_flag = False
+
             # selection position
             self._set_selection_position(None, force_emitting=True)
 
@@ -203,8 +214,17 @@ class GameViewer(Canvas):
                         state=state)
 
     def _draw_game(self, game, old_game):
+        # draw imitation of ground
+        size = self._game.game_map.size
+        points = [(0, 0), (0, size[1]), (size[0], size[1]), (size[0], 0)]
+        points = [self._to_screen_coordinate(pos) for pos in points]
+        points = [coord for pos in points for coord in pos]
+        self.create_polygon(points,
+                            fill=GameViewer.COLOR_OF_GROUND_IMITATION,
+                            tags=['game', 'non-cached', 'layer-1'])
+
         # draw ground
-        self._draw('ground', (0, 0), layer=1)
+        self._draw_ground()
 
         # remove deleted trees
         tree_positions = [position for (position, obj)
@@ -328,6 +348,28 @@ class GameViewer(Canvas):
         self.tag_raise('layer-2')
         self.tag_raise('layer-3')
         self.tag_raise('interface')
+
+    def _draw_ground(self):
+        if self._ground_image_cache:
+            self._draw('ground', (0, 0), layer=1)
+            self.tag_lower('layer-1')
+        elif not self._compute_ground_image_flag:
+            target = lambda: self._compute_ground_image_asynch(self._queue)
+            thread = threading.Thread(target=target)
+            thread.start()
+
+    def _compute_ground_image_asynch(self, queue):
+        self._get_ground_image()
+        queue.put('ready')
+        self._compute_ground_image_flag = False
+
+    def _check_queue(self):
+        if not self._queue.empty():
+            command = self._queue.get_nowait()
+            assert command == 'ready'
+            self._draw_ground()
+        self.master.after(GameViewer.FREQUENCY_OF_CHECKING_QUERY,
+                          self._check_queue)
 
     @memoized
     def _gradient(self, align):
