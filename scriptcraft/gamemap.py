@@ -29,15 +29,18 @@ class GameMap(object):
         self._free_start_positions = set(start_positions)
         self._size = size
 
-        # self._map is dict {(x, y) : (ground_type, object_on_the_field)}
-        self._map = dict(((x, y), (GameMap.DEFAULT_GROUND_TYPE, None))
-                         for x in xrange(size[0])
-                         for y in xrange(size[1]))
+        # self._ground_types is dict {(x, y) : ground_type}
+        self._ground_types = dict(((x, y), GameMap.DEFAULT_GROUND_TYPE)
+                                  for x in xrange(size[0])
+                                  for y in xrange(size[1]))
+        # self._objs is dict {(x, y) : object on that field}
+        self._objs = {}
 
     def __getitem__(self, position):
         valid_position = self._is_valid_position(position)
         if valid_position:
-            ground_type, obj = self._map[position]
+            ground_type = self._ground_types[position]
+            obj = self._objs.get(position, None)
         else:
             ground_type, obj = GameMap.INVALID_GROUND_TYPE, None
 
@@ -50,7 +53,8 @@ class GameMap(object):
         if field.position != position:
             raise ValueError('The field position was %r but you want assign '
                              'the field to %r.' % (field.position, position))
-        old_ground_type, old_obj = self._map[position]
+        old_ground_type = self._ground_types[position]
+        old_obj = self._objs.get(position, None)
         if (old_obj is not None and
             field.maybe_object is not None and
             old_obj is not field.maybe_object):
@@ -62,7 +66,12 @@ class GameMap(object):
             ('Invalid ground type. Ground type must be integer '
              'between %r and %r' % (GameMap.MIN_GROUND_TYPE,
                                     GameMap.MAX_GROUND_TYPE))
-        self._map[position] = (field.ground_type, field.maybe_object)
+        self._ground_types[position] = field.ground_type
+        if field.maybe_object is None:
+            if position in self._objs:
+                del self._objs[position]
+        else:
+            self._objs[position] = field.maybe_object
 
     def __repr__(self):
         return "GameMap(%dx%d, id=0x%x)" % \
