@@ -45,6 +45,22 @@ class GameViewer(Canvas):
     field is selected by checking GameViewer.selection_position which
     is (x, y) tuple or None.
 
+    When a left mouse button is being pressed then <<field-clicked>>
+    event is emitted (it doesn't matter if the mouse is inside or
+    outside map). You can check position of clicked field by getting
+    GameViewer.selection_position.
+
+    You can set pointer at any valid position by calling
+    set_pointer_position. Pointer is special selection.
+
+    Layers:
+    layer-1 -- ground
+    layer-1.5 -- grid of ground
+    layer-2 -- arrows
+    layer-3 -- units, trees, objects on map, texts over units
+    layer-4 -- pointer
+    interface
+
     """
 
     SCROLLING_SENSITIVITY = 2**(1/2.0) # in (1, +inf); greater means faster scrolling
@@ -74,14 +90,18 @@ class GameViewer(Canvas):
     CORNER_TEXT_COLOR = 'red'
     CORNER_TEXT_INITIAL_TEXT = ''
 
+    FREQUENCY_OF_UPDATING_ANIMATIONS = 50 # ms
+
     LOADING_INDICATOR_POSITION = (-45, 15)
     LOADING_INDICATOR_SPEED = int(-360*1.5) # degrees per second
-    FREQUENCY_OF_UPDATING_ANIMATIONS = 50 # ms
 
     FREQUENCY_OF_CHECKING_QUERY = 100 # ms
     COLOR_OF_GROUND_IMITATION = '#336633'
 
     GRID_COLOR = '#555555'
+
+    POINTER_ROTATION_SPEED = int(-360*2.5) # degrees per second
+    POINTER_SIZE = (48, 32)
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -115,6 +135,8 @@ class GameViewer(Canvas):
         self._trees_ids_by_position = {}
         self._queue = Queue()
         self._compute_ground_image_flag = False
+
+        # corner text
         self._corner_text_id = self.create_text(
             GameViewer.CORNER_TEXT_POSITION[0],
             GameViewer.CORNER_TEXT_POSITION[1],
@@ -122,6 +144,8 @@ class GameViewer(Canvas):
             font=tkFont.Font(**GameViewer.CORNER_TEXT_FONT_OPTIONS),
             fill=GameViewer.CORNER_TEXT_COLOR,
             tag=['interface'])
+
+        # loading indicator
         image = self._get_image('loading')
         self._loading_image = ImageTk.PhotoImage(image)
         self._loading_indicator_id = self.create_image(
@@ -132,26 +156,20 @@ class GameViewer(Canvas):
             tags=['interface'])
         self._loading_indicator_turned_on = False
         self._update_loading_indicator()
+
+        # pointer
+        image = self._get_image('pointer')
+        self._pointer_image = ImageTk.PhotoImage(image)
+        self._pointer_position = None
+        self._pointer_id = self.create_image(
+            0, 0,
+            image=self._pointer_image,
+            state=HIDDEN, anchor=NW,
+            tags=['layer-4', 'game'])
+        self._update_pointer()
+
+        # run checking queue
         self._check_queue()
-
-    @property
-    def _loading_indicator_position(self):
-        x, y = GameViewer.LOADING_INDICATOR_POSITION
-        width, height = self.winfo_width(), self.winfo_height()
-        result = (x if x >= 0 else width+x,
-                  y if y >= 0 else height+y)
-        return result
-
-    def _update_loading_indicator(self):
-        if self._loading_indicator_turned_on:
-            image = self._get_image('loading')
-            angle = time.time()*GameViewer.LOADING_INDICATOR_SPEED % 360
-            image = image.rotate(angle, resample=Image.BICUBIC)
-            self._loading_image = ImageTk.PhotoImage(image)
-            self.itemconfig(self._loading_indicator_id,
-                            image=self._loading_image)
-        self.master.after(GameViewer.FREQUENCY_OF_UPDATING_ANIMATIONS,
-                          self._update_loading_indicator)
 
     @log_on_enter('set game in game viewer', mode='only time')
     def set_game(self, game):
@@ -214,6 +232,51 @@ class GameViewer(Canvas):
         state = NORMAL if state else HIDDEN
         self.itemconfig(self._loading_indicator_id,
                         state=state)
+
+    def set_pointer_position(self, position_or_None):
+        self._pointer_position = position_or_None
+
+    @property
+    def _loading_indicator_position(self):
+        x, y = GameViewer.LOADING_INDICATOR_POSITION
+        width, height = self.winfo_width(), self.winfo_height()
+        result = (x if x >= 0 else width+x,
+                  y if y >= 0 else height+y)
+        return result
+
+    def _update_loading_indicator(self):
+        if self._loading_indicator_turned_on:
+            angle = time.time()*GameViewer.LOADING_INDICATOR_SPEED % 360
+            image = self._get_image('loading')
+            image = image.rotate(angle, resample=Image.BICUBIC)
+            self._loading_image = ImageTk.PhotoImage(image)
+            self.itemconfig(self._loading_indicator_id,
+                            image=self._loading_image)
+        self.master.after(GameViewer.FREQUENCY_OF_UPDATING_ANIMATIONS,
+                          self._update_loading_indicator)
+
+    def _update_pointer(self):
+        if self._pointer_position is not None:
+            angle = time.time()*GameViewer.POINTER_ROTATION_SPEED % 360
+            image = self._get_image('pointer')
+            image = image.rotate(angle, resample=Image.BICUBIC)
+            size = GameViewer.POINTER_SIZE
+            size = (size[0]*self._zoom,
+                    size[1]*self._zoom)
+            size = tuple(map(int, size))
+            image = image.resize(size)
+            self._pointer_image = ImageTk.PhotoImage(image)
+            self.itemconfig(self._pointer_id, state=NORMAL,
+                            image=self._pointer_image)
+
+            pos = self._to_screen_coordinate(self._pointer_position)
+            x, y = self._to_image_position('pointer', pos)
+            self.coords(self._pointer_id, x, y)
+        else:
+            self.itemconfig(self._pointer_id, state=HIDDEN)
+
+        self.master.after(GameViewer.FREQUENCY_OF_UPDATING_ANIMATIONS,
+                          self._update_pointer)
 
     def _draw_game(self, game, old_game):
         # draw imitation of ground
@@ -345,13 +408,18 @@ class GameViewer(Canvas):
                                  fill=line_color,
                                  tag=['layer-1.5', 'game', 'non-cached'])
 
+        # draw grid
         draw_grid()
 
-        # raise layers
+        # sort layers
+        self._sort_layers()
+
+    def _sort_layers(self):
         self.tag_raise('layer-1')
         self.tag_raise('layer-1.5')
         self.tag_raise('layer-2')
         self.tag_raise('layer-3')
+        self.tag_raise('layer-4')
         self.tag_raise('interface')
 
     def _draw_ground(self):
@@ -505,7 +573,8 @@ class GameViewer(Canvas):
         """ Return (PIL.)ImageTk scaled by self._zoom factor. """
 
         # if cached, return cached value
-        image = self._scaled_images_cache.get(name, None)
+        key = name
+        image = self._scaled_images_cache.get(key, None)
         if image:
             return image
 
@@ -524,7 +593,7 @@ class GameViewer(Canvas):
 
         # no problem with bug connected with reference count --
         # caching keeps image reference
-        self._scaled_images_cache[name] = image
+        self._scaled_images_cache[key] = image
         return image
 
     def _to_screen_coordinate(self, (x, y), delta=None, zoom=None):
@@ -561,6 +630,7 @@ class GameViewer(Canvas):
                 'tree5' : (18, 15),
                 'tree6' : (22, 18),
                 'arrow' : (32, 0),
+                'pointer' : (GameViewer.POINTER_SIZE[0]/2, 10),
                 'explosion' : (10, -5),}
             first_part = image_name.split('-', 1)[0]
             dx, dy = switch[first_part]
@@ -700,8 +770,8 @@ class GameViewer(Canvas):
             integer_click_position = map(lambda i: int(math.floor(i)),
                                          click_position)
             integer_click_position = tuple(integer_click_position)
-            if self._game.game_map[integer_click_position].valid_position:
-                pass
+            # generate event even click position is outside map
+            self.event_generate('<<field-selected>>')
 
     def _resized_callback(self, event):
         # update delta
@@ -814,6 +884,7 @@ class ClientApplication(Frame):
         self._game_session = None
         self._queue = Queue()
         self._master = master
+        self._pointed_unit_id = None
         self._check_queue()
         self._load_configuration_file()
         if len(sys.argv) == 2 and sys.argv[1].lower() == '--test':
@@ -896,7 +967,6 @@ class ClientApplication(Frame):
             global root
             root.destroy()
 
-
     def _init_gui(self):
         self.pack(expand=YES, fill=BOTH)
         global root
@@ -904,6 +974,8 @@ class ClientApplication(Frame):
         self._game_viewer = GameViewer(self)
         self._game_viewer.bind('<<selection-changed>>',
                                self._selection_changed_callback)
+        self._game_viewer.bind('<<field-selected>>',
+                               self._field_selected_callback)
         self._create_menubar()
         self._create_keyboard_shortcuts()
 
@@ -1251,7 +1323,19 @@ class ClientApplication(Frame):
         self._game_viewer.set_corner_text(text)
         self._refresh_game_menu_items_state()
 
+    def _field_selected_callback(self, event):
+        pos = self._game_viewer.selection_position
 
+        if pos is None:
+            self._game_viewer.set_pointer_position(None)
+        else:
+            obj = self._game.game_map[pos].maybe_object
+            if obj and isinstance(obj, Unit):
+                self._pointed_unit_id = obj.ID
+                self._game_viewer.set_pointer_position(pos)
+            else:
+                self._pointed_unit_id = None
+                self._game_viewer.set_pointer_position(None)
 
     # other methods -------------------------------------------------------
     def _tic(self):
@@ -1273,12 +1357,22 @@ class ClientApplication(Frame):
     def _set_game(self, game):
         """ Call it if game instance was changed and you want to make
         the application up to date."""
-        if game is not None: # set game.free_colors
+        # set game.free_colors
+        if game is not None:
             if self._game is None or not hasattr(self._game, 'free_colors'):
                 game.free_colors = \
                   list(ClientApplication.DEFAULT_PLAYER_COLORS)
             else:
                 game.free_colors = self._game.free_colors
+
+        # track pointed unit
+        self._game_viewer.set_pointer_position(None)
+        if game and self._pointed_unit_id:
+            unit = game.units_by_IDs.get(self._pointed_unit_id, None)
+            if unit:
+                self._game_viewer.set_pointer_position(unit.position)
+
+        # other stuff
         self._game = game
         self._game_viewer.set_game(game)
         self._refresh_game_menu_items_state()
