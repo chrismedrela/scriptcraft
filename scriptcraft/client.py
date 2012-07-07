@@ -333,7 +333,8 @@ class GameViewer(Canvas):
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
                 self.create_line(*(start_position + end_position),
-                                 fill=line_color, tag=['layer-1.5', 'game'])
+                                 fill=line_color,
+                                 tag=['layer-1.5', 'game', 'non-cached'])
 
             for y in xrange(0, game.game_map.size[0] + 1):
                 start_position = (y, 0)
@@ -341,7 +342,8 @@ class GameViewer(Canvas):
                 start_position = self._to_screen_coordinate(start_position)
                 end_position = self._to_screen_coordinate(end_position)
                 self.create_line(*(start_position + end_position),
-                                 fill=line_color, tag=['layer-1.5', 'game'])
+                                 fill=line_color,
+                                 tag=['layer-1.5', 'game', 'non-cached'])
 
         draw_grid()
 
