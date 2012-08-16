@@ -110,7 +110,7 @@ class ComplexAttackCommand(namedtuple('ComplexAttackCommand',
 
     @staticmethod
     def CONSTRUCTOR(x, y):
-        return ComplexAttackCommand()
+        return ComplexAttackCommand((x, y))
 
     def __str__(self):
         return '<Command attack at (%d, %d)>' \
