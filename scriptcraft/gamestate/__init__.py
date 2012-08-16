@@ -584,7 +584,9 @@ class Game(object):
             if unit_on_destination_field.player != unit.player:
                 alien_on_destination_field = True
 
-        if alien_on_destination_field:
+        if (alien_on_destination_field and
+            distance(unit_on_destination_field.position,
+                     unit.position) <= unit.type.attack_range):
             # attack alien on destination field
             return actions.FireAction(destination=unit.command.destination)
 
@@ -1156,5 +1158,3 @@ def load_game_map(data):
             obj = _CHAR_TO_OBJECT_CONSTRUCTOR[objects[y][x]]()
             field.place_object(obj)
     return result
-
-
