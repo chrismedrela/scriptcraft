@@ -977,6 +977,9 @@ class Player(object):
                    self.start_position[0], self.start_position[1],
                    ", ".join(map(lambda unit: str(unit.ID), self.units)))
 
+    def __eq__(self, other):
+        return self.ID == other.ID
+
 
 STAR_PROGRAM = Const('star program')
 def run_star_program(input):

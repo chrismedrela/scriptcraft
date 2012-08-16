@@ -53,6 +53,9 @@ class GameViewer(Canvas):
     You can set pointer at any valid position by calling
     set_pointer_position. Pointer is special selection.
 
+    There is also second pointer. Its color can be changed. Use
+    set_pointer_2_position and set_pointer_2_color methods.
+
     Layers:
     layer-1 -- ground
     layer-1.5 -- grid of ground
@@ -102,6 +105,16 @@ class GameViewer(Canvas):
 
     POINTER_ROTATION_SPEED = int(-360*2.5) # degrees per second
     POINTER_SIZE = (80, 40)
+
+    POINTER_COLORS = [
+        ('white', '#ffffff'),
+        ('red', '#ff0000'),
+        ('green', '#00ff00'),
+        ('darkblue', '#0000aa'),
+    ]
+
+    POINTER_2_ROTATION_SPEED = int(-360*1.2)
+    POINTER_2_SIZE = (64, 32)
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -157,8 +170,17 @@ class GameViewer(Canvas):
         self._loading_indicator_turned_on = False
         self._update_loading_indicator()
 
+        # load pointer images
+        self._pointer_images_by_color = {}
+        image = self._get_image('loading')
+        alpha = image.split()[-1]
+        for color_name, color in GameViewer.POINTER_COLORS:
+            colored = Image.new('RGBA', image.size, color)
+            colored.putalpha(alpha)
+            self._pointer_images_by_color[color_name] = colored
+
         # pointer
-        image = self._get_image('pointer')
+        image = self._pointer_images_by_color['white']
         self._pointer_image = ImageTk.PhotoImage(image)
         self._pointer_position = None
         self._pointer_id = self.create_image(
@@ -167,6 +189,17 @@ class GameViewer(Canvas):
             state=HIDDEN, anchor=NW,
             tags=['layer-2', 'game'])
         self._update_pointer()
+
+        # second pointer
+        self._pointer_2_image = None
+        self._pointer_2_color = 'white'
+        self._pointer_2_position = None
+        self._pointer_2_id = self.create_image(
+            0, 0,
+            image=self._pointer_2_image,
+            state=HIDDEN, anchor=NW,
+            tags=['layer-2', 'game'])
+        self._update_pointer_2()
 
         # run checking queue
         self._check_queue()
@@ -236,6 +269,13 @@ class GameViewer(Canvas):
     def set_pointer_position(self, position_or_None):
         self._pointer_position = position_or_None
 
+    def set_pointer_2_position(self, position_or_None):
+        self._pointer_2_position = position_or_None
+
+    def set_pointer_2_color(self, color):
+        assert color in self._pointer_images_by_color, 'unknown color'
+        self._pointer_2_color = color
+
     @property
     def _loading_indicator_position(self):
         x, y = GameViewer.LOADING_INDICATOR_POSITION
@@ -277,6 +317,29 @@ class GameViewer(Canvas):
 
         self.master.after(GameViewer.FREQUENCY_OF_UPDATING_ANIMATIONS,
                           self._update_pointer)
+
+    def _update_pointer_2(self):
+        if self._pointer_2_position is not None:
+            angle = time.time()*GameViewer.POINTER_2_ROTATION_SPEED % 360
+            image = self._pointer_images_by_color[self._pointer_2_color]
+            image = image.rotate(angle, resample=Image.BICUBIC)
+            size = GameViewer.POINTER_2_SIZE
+            size = (size[0]*self._zoom,
+                    size[1]*self._zoom)
+            size = tuple(map(int, size))
+            image = image.resize(size)
+            self._pointer_2_image = ImageTk.PhotoImage(image)
+            self.itemconfig(self._pointer_2_id, state=NORMAL,
+                            image=self._pointer_2_image)
+
+            pos = self._to_screen_coordinate(self._pointer_2_position)
+            x, y = self._to_image_position('pointer2', pos)
+            self.coords(self._pointer_2_id, x, y)
+        else:
+            self.itemconfig(self._pointer_2_id, state=HIDDEN)
+
+        self.master.after(GameViewer.FREQUENCY_OF_UPDATING_ANIMATIONS,
+                          self._update_pointer_2)
 
     def _draw_game(self, game, old_game):
         # draw imitation of ground
@@ -581,6 +644,9 @@ class GameViewer(Canvas):
         # otherwise compute, cache and return
         if name == 'ground':
             image = self._get_ground_image()
+        elif name.startswith('pointer-'):
+            _, color = name.split('-')
+            image = self._pointer_images_by_color[color]
         else:
             image = self._get_image(name)
         width, height = image.size
@@ -631,6 +697,7 @@ class GameViewer(Canvas):
                 'tree6' : (22, 18),
                 'arrow' : (32, 0),
                 'pointer' : (GameViewer.POINTER_SIZE[0]/2, 4),
+                'pointer2' : (GameViewer.POINTER_2_SIZE[0]/2, 0),
                 'explosion' : (10, -5),}
             first_part = image_name.split('-', 1)[0]
             dx, dy = switch[first_part]
@@ -976,6 +1043,8 @@ class ClientApplication(Frame):
                                self._selection_changed_callback)
         self._game_viewer.bind('<<field-selected>>',
                                self._field_selected_callback)
+        self._game_viewer.bind('<Button-3>',
+                               self._command_ordered_callback)
         self._create_menubar()
         self._create_keyboard_shortcuts()
 
@@ -1264,9 +1333,8 @@ class ClientApplication(Frame):
             parent=self)
 
     def _selection_changed_callback(self, event):
+        # first, update the corner text
         pos = self._game_viewer.selection_position
-        #if pos is not None:
-        #    self._print_info_about_field_at(pos)
         if pos is None:
             text = " "
         else:
@@ -1323,6 +1391,9 @@ class ClientApplication(Frame):
         self._game_viewer.set_corner_text(text)
         self._refresh_game_menu_items_state()
 
+        # second, update second pointer
+        self._update_pointer_2()
+
     def _field_selected_callback(self, event):
         pos = self._game_viewer.selection_position
 
@@ -1336,6 +1407,90 @@ class ClientApplication(Frame):
             else:
                 self._pointed_unit_id = None
                 self._game_viewer.set_pointer_position(None)
+
+        self._update_pointer_2()
+
+    def _command_ordered_callback(self, event):
+        command = self._command_for_pointed_unit()
+        clicked_pos = self._game_viewer._pointer_position
+        if clicked_pos is None:
+            return
+        clicked_obj = self._game.game_map[clicked_pos].maybe_object
+        pointed_pos = self._game_viewer.selection_position
+        if clicked_obj is None or not isinstance(clicked_obj, Unit):
+            return
+
+        unit = clicked_obj
+        if command == '':
+            self._game.set_program(unit, Program(Language.OUTPUT, ''))
+            return
+
+        command = {
+            'move' : 'MOVE %(x)d %(y)d',
+            'attack' : 'ATTACK %(x)d %(y)d',
+            'gather' : 'GATHER %(x)d %(y)d',
+        }[command]
+        command = command % {'x':pointed_pos[0], 'y':pointed_pos[1]}
+        self._game.set_program(unit, Program(Language.OUTPUT, command))
+
+        self._game_viewer.set_pointer_2_position(None)
+        self._game_viewer.set_pointer_position(None)
+
+    def _update_pointer_2(self):
+        command = self._command_for_pointed_unit()
+
+        if command == '':
+            self._game_viewer.set_pointer_2_position(None)
+            return
+
+        pos = self._game_viewer.selection_position
+        self._game_viewer.set_pointer_2_position(pos)
+
+        color = {
+            'attack' : 'red',
+            'gather' : 'darkblue',
+            'move' : 'green',
+        }[command]
+        self._game_viewer.set_pointer_2_color(color)
+
+    def _command_for_pointed_unit(self):
+        """ Or '' if there is no pointed unit """
+
+        pos = self._game_viewer._pointer_position # selected (clicked) field
+        if pos is None:
+            return ''
+
+        clicked_unit = self._game.game_map[pos].maybe_object
+        if not clicked_unit or not isinstance(clicked_unit, Unit):
+            return ''
+
+        pointed_position = self._game_viewer.selection_position # field under cursor
+        if pointed_position is None:
+            return ''
+
+        selected_obj = self._game.game_map[pointed_position].maybe_object
+
+        if (clicked_unit.type.can_attack and
+            clicked_unit.type.movable):
+            selected_own_unit = (selected_obj is not None and
+                                 isinstance(selected_obj, Unit) and
+                                 selected_obj.player == clicked_unit.player)
+            if selected_own_unit:
+                return 'move'
+            else:
+                return 'attack'
+
+        elif (clicked_unit.type.has_storage and
+              clicked_unit.type.movable and
+              selected_obj is not None and
+              isinstance(selected_obj, MineralDeposit)):
+            return 'gather'
+
+        elif (clicked_unit.type.movable
+              and pos != pointed_position):
+            return 'move'
+
+        return ''
 
     # other methods -------------------------------------------------------
     def _tic(self):
