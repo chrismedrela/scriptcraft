@@ -101,7 +101,7 @@ class GameViewer(Canvas):
     GRID_COLOR = '#555555'
 
     POINTER_ROTATION_SPEED = int(-360*2.5) # degrees per second
-    POINTER_SIZE = (48, 32)
+    POINTER_SIZE = (80, 40)
 
     def __init__(self, master):
         Canvas.__init__(self, master, width=800, height=600, bg='black')
@@ -165,7 +165,7 @@ class GameViewer(Canvas):
             0, 0,
             image=self._pointer_image,
             state=HIDDEN, anchor=NW,
-            tags=['layer-4', 'game'])
+            tags=['layer-2', 'game'])
         self._update_pointer()
 
         # run checking queue
@@ -630,7 +630,7 @@ class GameViewer(Canvas):
                 'tree5' : (18, 15),
                 'tree6' : (22, 18),
                 'arrow' : (32, 0),
-                'pointer' : (GameViewer.POINTER_SIZE[0]/2, 10),
+                'pointer' : (GameViewer.POINTER_SIZE[0]/2, 4),
                 'explosion' : (10, -5),}
             first_part = image_name.split('-', 1)[0]
             dx, dy = switch[first_part]
