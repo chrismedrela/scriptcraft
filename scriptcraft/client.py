@@ -40,18 +40,18 @@ class GameViewer(Canvas):
 
     About selecting:
 
-    When a mouse motion is detected and the selection changed then
-    <<selection-changed>> event is emitted. You can find out which
-    field is selected by checking GameViewer.selection_position which
-    is (x, y) tuple or None.
+    When a mouse motion is detected and the selection (the selection is the
+    field under the cursor) changed then <<selection-changed>> event is
+    emitted. You can find out which field is selected by checking
+    GameViewer.selection_position which is (x, y) tuple or None.
 
-    When a left mouse button is being pressed then <<field-clicked>>
-    event is emitted (it doesn't matter if the mouse is inside or
-    outside map). You can check position of clicked field by getting
+    When a left mouse button is being pressed then <<field-selected>> event is
+    emitted (it doesn't matter if the mouse is inside or outside map). You can
+    check position of clicked field by getting
     GameViewer.selection_position.
 
     You can set pointer at any valid position by calling
-    set_pointer_position. Pointer is special selection.
+    set_pointer_position. Pointer is a special selection.
 
     There is also second pointer. Its color can be changed. Use
     set_pointer_2_position and set_pointer_2_color methods.
