@@ -114,8 +114,8 @@ class GameSession(object):
         languages = self._system_configuration.languages_configurations.items()
         source_file_names = dict([(k, v.source_file_name) for k, v in languages])
         binary_file_names = dict([(k, v.binary_file_name) for k, v in languages])
-        compilation_commands = dict([(k, v.compilation_command) for i in languages])
-        running_commands = dict([(k, v.running_command) for i in languages])
+        compilation_commands = dict([(k, v.compilation_command) for k, v in languages])
+        running_commands = dict([(k, v.running_command) for k, v in languages])
         compile_and_run = CompileAndRunProgram(
             self._directory,
             source_file_names,
