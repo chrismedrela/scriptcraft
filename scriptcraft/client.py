@@ -48,7 +48,8 @@ class GameViewer(Canvas):
     When a left mouse button is being pressed then <<field-selected>> event is
     emitted (it doesn't matter if the mouse is inside or outside map). You can
     check position of clicked field by getting
-    GameViewer.selection_position.
+    GameViewer.selection_position. If there is a double click, then
+    <<field-double-clicked>> event is also emitted.
 
     You can set pointer at any valid position by calling
     set_pointer_position. Pointer is a special selection.
@@ -133,6 +134,7 @@ class GameViewer(Canvas):
         self.bind('<Button-4>', self._roll_wheel_callback)
         self.bind('<Button-5>', self._roll_wheel_callback)
         self.bind('<Button-1>', self._click_callback)
+        self.bind('<Double-Button-1>', self._double_click_callback)
         self.bind("<Configure>", self._resized_callback)
 
         # own attributes
@@ -823,6 +825,10 @@ class GameViewer(Canvas):
         if self._game:
             self._click_position = (event.x, event.y)
 
+    def _double_click_callback(self, event):
+        if self._game:
+            self.event_generate('<<field-double-clicked>>')
+
     def _release_callback(self, event):
         self._last_mouse_position = None
 
@@ -854,6 +860,240 @@ class GameViewer(Canvas):
             self._loading_indicator_position[0],
             self._loading_indicator_position[1])
 
+
+class Scrolled(Frame):
+    """Example:
+
+    >>> scroll = Scrolled(master)
+    >>> label = Label(scroll, text='Label')
+    >>> scroll.set_widget(label) # ==> label packed
+    >>> scroll.pack()
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        Frame.__init__(self, *args, **kwargs)
+
+    def set_widget(self, widget):
+        scroll = Scrollbar(self)
+        scroll.pack(side=RIGHT, fill=Y)
+        scroll.config(command=widget.yview)
+        widget.configure(yscrollcommand=scroll.set)
+        widget.pack(side=LEFT, fill=BOTH, expand=1)
+
+
+class UnitInfoWindow(tkSimpleDialog.Dialog):
+    LANGUAGES = [None, STAR_PROGRAM]
+    LANGUAGES += (lang for lang in Language.ALL)
+    LANGUAGE_NAMES = tuple(('brak programu' if lang is None else
+                            'star program' if lang is STAR_PROGRAM else
+                            Language.TO_NAME[lang])
+                            for lang in LANGUAGES)
+
+    def __init__(self, master, program,
+                 maybe_compilation_status,
+                 maybe_run_status,
+                 ok_callback):
+        self._program = program
+        self._maybe_compilation_status = maybe_compilation_status
+        self._maybe_run_status = maybe_run_status
+        self._ok_callback = ok_callback
+        tkSimpleDialog.Dialog.__init__(self, master)
+
+    def buttonbox(self):
+        tkSimpleDialog.Dialog.buttonbox(self)
+        self.unbind('<Return>') # so we can use enter in code textarea
+
+    def body(self, master):
+        left_box = Frame(master)
+        separator = Frame(master, width=2, bd=1, relief=SUNKEN)
+        right_box = Frame(master)
+
+        self._create_program_editor_part(left_box)
+        self._create_compilation_part(right_box)
+        self._add_horizontal_separator(right_box)
+        self._create_execution_part(right_box)
+
+        left_box.pack(side=LEFT, fill=BOTH, expand=1)
+        separator.pack(side=LEFT, fill=Y, padx=15, pady=15)
+        right_box.pack(side=RIGHT, fill=BOTH, expand=1)
+        master.pack(fill=BOTH, expand=1)
+
+        self.minsize(640, 480)
+        self.geometry('800x600')
+        self.attributes('-zoomed', '1')
+
+    def _add_horizontal_separator(self, master):
+        separator = Frame(master, height=2, bd=1, relief=SUNKEN)
+        separator.pack(fill=X, padx=15, pady=15)
+
+    def _create_program_editor_part(self, master):
+        box = Frame(master)
+        self._create_language_label(box)
+        self._create_language_listbox(box)
+        box.pack(fill=BOTH)
+
+        self._create_code_label(master)
+        self._create_code_textarea(master)
+
+    def _create_language_label(self, master):
+        self._language_label = Label(master, text='Język: ')
+        self._language_label.pack(side=LEFT)
+
+    def _create_language_listbox(self, master):
+        scroll = Scrolled(master)
+        language_list = StringVar(value=UnitInfoWindow.LANGUAGE_NAMES)
+        self._language_listbox = Listbox(scroll,
+                                         selectmode=SINGLE,
+                                         height=5,
+                                         width=20,
+                                         exportselection=0, # to keep selection highlighted
+                                         listvariable=language_list)
+        language_index = UnitInfoWindow.LANGUAGES.index(
+            self._program.language
+            if isinstance(self._program, Program)
+            else self._program)
+        self._language_listbox.select_set(language_index)
+        scroll.set_widget(self._language_listbox)
+        scroll.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_code_label(self, master):
+        self._code_label = Label(master, text='Kod: ', anchor=W)
+        self._code_label.pack(fill=BOTH)
+
+    def _create_code_textarea(self, master):
+        scroll = Scrolled(master)
+        self._code_textarea = Text(scroll,
+                                   height=1, width=1)
+        text = (""
+                if self._program in (None, STAR_PROGRAM)
+                else self._program.code)
+        self._code_textarea.insert('1.0', text)
+        scroll.set_widget(self._code_textarea)
+        scroll.pack(fill=BOTH, expand=1)
+
+    def _create_compilation_part(self, master):
+        self._create_compilation_label(master)
+
+        box = Frame(master)
+        self._create_compilation_output_label(box)
+        self._create_compilation_error_output_label(box)
+        box.pack(fill=BOTH)
+
+        box = Frame(master)
+        self._create_compilation_output_textarea(box)
+        self._create_compilation_error_output_textarea(box)
+        box.pack(fill=BOTH, expand=1)
+
+    def _create_compilation_label(self, master):
+        self._compilation_label = Label(master, text='Kompilacja: ', anchor=W)
+        self._compilation_label.pack(fill=BOTH)
+
+    def _create_compilation_output_label(self, master):
+        label = Label(master, text="Standardowe wyjście: ")
+        label.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_compilation_error_output_label(self, master):
+        label = Label(master, text="Standardowe wyjście błędów: ")
+        label.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_compilation_output_textarea(self, master):
+        scroll = Scrolled(master)
+        self._compilation_output_area = Text(scroll,
+                                             height=1, width=1)
+        text = (self._maybe_compilation_status.output
+                if self._maybe_compilation_status
+                else "")
+        self._compilation_output_area.insert('1.0', text)
+        self._compilation_output_area.configure(state=DISABLED)
+        scroll.set_widget(self._compilation_output_area)
+        scroll.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_compilation_error_output_textarea(self, master):
+        scroll = Scrolled(master)
+        self._compilation_error_output_area = Text(scroll,
+                                                   height=1, width=1)
+        text = (self._maybe_compilation_status.error_output
+                if self._maybe_compilation_status
+                else "")
+        self._compilation_error_output_area.insert('1.0', text)
+        self._compilation_error_output_area.configure(state=DISABLED)
+        scroll.set_widget(self._compilation_error_output_area)
+        scroll.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_execution_part(self, master):
+        self._create_execution_label(master)
+        self._create_execution_input_label(master)
+        self._create_execution_input_area(master)
+
+        box = Frame(master)
+        self._create_execution_output_label(box)
+        self._create_execution_error_output_label(box)
+        box.pack(fill=BOTH)
+
+        box = Frame(master)
+        self._create_execution_output_textarea(box)
+        self._create_execution_error_output_textarea(box)
+        box.pack(fill=BOTH, expand=1)
+
+    def _create_execution_label(self, master):
+        self._execution_label = Label(master, text='Wykonanie: ', anchor=W)
+        self._execution_label.pack(fill=BOTH)
+
+    def _create_execution_input_label(self, master):
+        label = Label(master, text='Standardowe wejście: ')
+        label.pack(fill=BOTH)
+
+    def _create_execution_input_area(self, master):
+        scroll = Scrolled(master)
+        self._execution_input_area = Text(scroll,
+                                          height=1, width=1)
+        text = (self._maybe_run_status.input
+                if self._maybe_run_status
+                else "")
+        self._execution_input_area.insert('1.0', text)
+        self._execution_input_area.configure(state=DISABLED)
+        scroll.set_widget(self._execution_input_area)
+        scroll.pack(fill=BOTH, expand=1)
+
+    def _create_execution_output_label(self, master):
+        label = Label(master, text="Standardowe wyjście: ")
+        label.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_execution_error_output_label(self, master):
+        label = Label(master, text="Standardowe wyjście błędów: ")
+        label.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_execution_output_textarea(self, master):
+        scroll = Scrolled(master)
+        self._execution_output_area = Text(scroll,
+                                           height=1, width=1)
+        text = (self._maybe_run_status.output
+                if self._maybe_run_status
+                else "")
+        self._execution_output_area.insert('1.0', text)
+        self._execution_output_area.configure(state=DISABLED)
+        scroll.set_widget(self._execution_output_area)
+        scroll.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def _create_execution_error_output_textarea(self, master):
+        scroll = Scrolled(master)
+        self._execution_error_output_area = Text(scroll,
+                                                 height=1, width=1)
+        text = (self._maybe_run_status.error_output
+                if self._maybe_run_status
+                else "")
+        self._execution_error_output_area.insert('1.0', text)
+        self._execution_error_output_area.configure(state=DISABLED)
+        scroll.set_widget(self._execution_error_output_area)
+        scroll.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def apply(self):
+        language_index = int(self._language_listbox.curselection()[0])
+        language = UnitInfoWindow.LANGUAGES[language_index]
+        program = (language if language in (None, STAR_PROGRAM) else
+                   Program(language, self._code_textarea.get('1.0', END)))
+        self._ok_callback(program)
 
 class ClientApplication(Frame):
 
@@ -1045,6 +1285,8 @@ class ClientApplication(Frame):
                                self._field_selected_callback)
         self._game_viewer.bind('<Button-3>',
                                self._command_ordered_callback)
+        self._game_viewer.bind('<<field-double-clicked>>',
+                               self._field_double_clicked_callback)
         self._create_menubar()
         self._create_keyboard_shortcuts()
 
@@ -1408,6 +1650,29 @@ class ClientApplication(Frame):
                 self._game_viewer.set_pointer_position(None)
 
         self._update_pointer_2()
+
+    def _field_double_clicked_callback(self, event):
+        if self._game is None:
+            return
+
+        pos = self._game_viewer._pointer_position
+        if pos is None:
+            return
+
+        unit = self._game.game_map[pos].maybe_object
+
+        assert unit is not None
+        # because self._game_viewer._pointer_position is set to sth other than
+        # None only if there is an object on pointed field
+
+        def ok_callback(program):
+            self._game_session.set_program(unit, program)
+
+        window = UnitInfoWindow(self,
+                                program=unit.program,
+                                maybe_compilation_status=unit.maybe_last_compilation_status,
+                                maybe_run_status=unit.maybe_run_status,
+                                ok_callback=ok_callback)
 
     def _command_ordered_callback(self, event):
         command = self._command_for_pointed_unit()

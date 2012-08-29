@@ -1058,6 +1058,13 @@ class Language(object):
     CPP = 'cpp'
     PYTHON = 'py'
 
+    ALL = (OUTPUT, CPP, PYTHON)
+    TO_NAME = {
+        OUTPUT : 'output',
+        CPP : 'C++',
+        PYTHON : 'python',
+    }
+
 
 class Message(namedtuple('Message', ('sender_ID',
                                      'receiver_ID',
