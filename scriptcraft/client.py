@@ -1625,4 +1625,4 @@ def run():
         shutdown_logging()
 
 if __name__ == "__main__":
-    run_with_profiling()
+    run() # replace with run_with_profiling to enable profiling
