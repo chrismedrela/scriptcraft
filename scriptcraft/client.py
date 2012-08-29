@@ -1249,7 +1249,6 @@ class ClientApplication(Frame):
 
     @log_on_enter('use case: add player', lvl='info')
     def _add_player_callback(self):
-        pos = self._game_viewer.selection_position
         if self._game is None:
             return
 
