@@ -1288,20 +1288,20 @@ class ClientApplication(Frame):
                           ClientApplication.CANNOT_SET_PROGRAM + ' ' + \
                           ClientApplication.UNKNOWN_SOURCE_FILE_EXTENSION)
             return
-        field = self._game.game_map[self._game_viewer.selection_position]
+        field = self._game.game_map[self._game_viewer._pointer_position]
         unit = field.maybe_object
         program = Program(language=language, code=stream.read())
         self._game.set_program(unit, program)
 
     @log_on_enter('use case: set star program', lvl='info')
     def _set_star_program_callback(self):
-        field = self._game.game_map[self._game_viewer.selection_position]
+        field = self._game.game_map[self._game_viewer._pointer_position]
         unit = field.maybe_object
         self._game.set_program(unit, STAR_PROGRAM)
 
     @log_on_enter('use case: delete program', lvl='info')
     def _delete_program_callback(self):
-        field = self._game.game_map[self._game_viewer.selection_position]
+        field = self._game.game_map[self._game_viewer._pointer_position]
         unit = field.maybe_object
         self._game.set_program(unit, None)
 
@@ -1550,11 +1550,11 @@ class ClientApplication(Frame):
 
     def _refresh_game_menu_items_state(self):
         has_game = self._game is not None
-        obj = (self._game.game_map[self._game_viewer.selection_position].maybe_object
-               if has_game and self._game_viewer.selection_position is not None
+        obj = (self._game.game_map[self._game_viewer._pointer_position].maybe_object
+               if has_game and self._game_viewer._pointer_position is not None
                else None)
         has_unit = (self._game is not None and
-                    self._game_viewer.selection_position is not None and
+                    self._game_viewer._pointer_position is not None and
                     isinstance(obj, Unit))
 
         state = NORMAL if has_game else DISABLED
