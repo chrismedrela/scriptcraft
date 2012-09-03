@@ -693,7 +693,7 @@ class GameViewer(Canvas):
                 'minerals' : (20, 10),
                 'tree1' : (10, 45),
                 'tree2' : (20, 25),
-                'tree3' : (20, 40),
+                'tree3' : (20, 33),
                 'tree4' : (15, 25),
                 'tree5' : (18, 15),
                 'tree6' : (22, 18),
