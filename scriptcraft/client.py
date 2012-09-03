@@ -1620,7 +1620,7 @@ class ClientApplication(Frame):
             elif isinstance(obj, Unit):
                 # type of the unit
                 if obj.type.main_name == '4': # base
-                    obj_info = u"Baza"
+                    obj_info = u"Baza (%d minerałów)" % obj.minerals
                 elif obj.type.main_name == '5': # miner
                     state = (u'pełny' if obj.minerals else u'pusty')
                     obj_info = u"Zbieracz minerałów (%s)" % state
