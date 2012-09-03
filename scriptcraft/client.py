@@ -1607,57 +1607,58 @@ class ClientApplication(Frame):
         # first, update the corner text
         pos = self._game_viewer.selection_position
         if pos is None:
-            text = " "
+            text = u" "
         else:
             field = self._game.game_map[pos]
             obj = field.maybe_object
             if obj is None:
-                obj_info = ""
+                obj_info = u""
             elif isinstance(obj, Tree):
-                obj_info = "Drzewa."
+                obj_info = u"Drzewa."
             elif isinstance(obj, MineralDeposit):
-                obj_info = "Złoża minerałów (%d jednostek minerałów)." % obj.minerals
+                obj_info = u"Złoża minerałów (%d jednostek minerałów)." % obj.minerals
             elif isinstance(obj, Unit):
                 # type of the unit
                 if obj.type.main_name == '4': # base
-                    obj_info = "Baza"
+                    obj_info = u"Baza"
                 elif obj.type.main_name == '5': # miner
-                    state = ('pełny' if obj.minerals else 'pusty')
-                    obj_info = "Zbieracz minerałów (%s)" % state
+                    state = (u'pełny' if obj.minerals else u'pusty')
+                    obj_info = u"Zbieracz minerałów (%s)" % state
                 elif obj.type.main_name == '6': # tank
-                    obj_info = "Czołg"
+                    obj_info = u"Czołg"
                 else:
                     assert False, 'oops, unknown unit type %r' % unit.type
 
                 # player
-                obj_info += ' gracza %s.' % obj.player.name
+                obj_info += u' gracza %s.' % obj.player.name
 
                 # command
                 if isinstance(obj.command, cmds.StopCommand):
-                    command_info = 'stop'
+                    command_info = u'stop'
                 elif isinstance(obj.command, cmds.MoveCommand):
                     d = ClientApplication.DIRECTION_TO_NAME[obj.command.direction]
-                    command_info = 'idź na %s' % d
+                    command_info = u'idź na %s' % d
                 elif isinstance(obj.command, cmds.ComplexMoveCommand):
-                    command_info = 'idź do (%d, %d)' \
+                    command_info = u'idź do (%d, %d)' \
                       % obj.command.destination
                 elif isinstance(obj.command, cmds.ComplexGatherCommand):
-                    command_info = 'zbieraj minerały z (%d, %d)' \
+                    command_info = u'zbieraj minerały z (%d, %d)' \
                       % obj.command.destination
                 elif isinstance(obj.command, cmds.FireCommand):
-                    command_info = 'ogień na (%d, %d)' \
+                    command_info = u'ogień na (%d, %d)' \
                       % obj.command.destination
                 elif isinstance(obj.command, cmds.ComplexAttackCommand):
-                    command_info = 'atak na (%d, %d)' \
+                    command_info = u'atak na (%d, %d)' \
                       % obj.command.destination
                 elif isinstance(obj.command, cmds.BuildCommand):
-                    command_info = 'buduj "%s"' \
+                    command_info = u'buduj "%s"' \
                       % obj.command.unit_type_name
-                obj_info += ' Komenda: %s.' % command_info
+                #import ipdb; ipdb.set_trace()
+                obj_info += u' Komenda: %s.' % command_info
             else:
                 assert False, 'oops, unknown object on map %r' % obj
-            field_info = "Pole (%d, %d)." % (pos[0], pos[1])
-            text = " ".join([field_info, obj_info])
+            field_info = u"Pole (%d, %d)." % (pos[0], pos[1])
+            text = u" ".join([field_info, obj_info])
 
         self._game_viewer.set_corner_text(text)
         self._refresh_game_menu_items_state()
