@@ -1099,6 +1099,7 @@ class ClientApplication(Frame):
 
     CONFIGURATION_FILE = 'configuration.ini'
     FREQUENCY_OF_CHECKING_QUERY = 50 # ms
+    TIME_BETWEEN_TICS = 100 # ms
     MAPS_DIRECTORY = 'maps'
     GAMES_DIRECTORY = 'games'
 
@@ -1257,10 +1258,12 @@ class ClientApplication(Frame):
         if not self._queue.empty():
             command = self._queue.get_nowait()
             assert command == 'ready'
-            self._game_viewer.show_loading_indicator(False)
             self._set_game(self._game_session.game)
             if self._tic_in_loop.get():
-                self._tic()
+                self.master.after(ClientApplication.TIME_BETWEEN_TICS,
+                                  self._tic)
+            else:
+                self._game_viewer.show_loading_indicator(False)
         self.master.after(ClientApplication.FREQUENCY_OF_CHECKING_QUERY,
                           self._check_queue)
 
