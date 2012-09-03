@@ -1123,6 +1123,9 @@ class ClientApplication(Frame):
     CANNOT_OPEN_FILE = ('Nie można otworzyć pliku '
                         '(być może nie masz wystarczających uprawnień).')
     MAP_FILE_IS_CORRUPTED = 'Plik mapy jest uszkodzony.'
+    CANNOT_CREATE_FOLDER = 'Nie można utworzyć folderu gry.'
+    FILE_WITH_THE_SAME_NAME_EXISTS = ('Nie można utworzyć folderu gry ponieważ '
+                                      'istnieje już plik o takiej samej nazwie.')
     IO_ERROR_DURING_READING = 'Wystąpił błąd podczas czytania pliku.'
     TITLE_SAVE_GAME = 'Zapisz grę'
     CANNOT_SAVE_GAME = 'Nie można zapisać gry.'
@@ -1426,7 +1429,7 @@ class ClientApplication(Frame):
         directory = tkFileDialog.askdirectory(
             title=ClientApplication.CHOOSE_DIRECTORY_FOR_NEW_GAME,
             initialdir=datafile_path(ClientApplication.GAMES_DIRECTORY),
-            mustexist=True,
+            mustexist=False,
             parent=self,
         )
         if not directory:
@@ -1438,25 +1441,41 @@ class ClientApplication(Frame):
             self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                           ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
                           ClientApplication.CANNOT_OPEN_FILE)
-        else:
+            return
+
+        if not os.path.exists(directory):
             try:
-                game_map = load_game_map(stream.read())
-            except InvalidGameMapData as ex:
+                os.makedirs(directory)
+            except OSError as ex:
                 self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                               ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
-                              ClientApplication.MAP_FILE_IS_CORRUPTED)
-            except IOError as ex:
+                              ClientApplication.CANNOT_CREATE_FOLDER)
+                return
+        else:
+            if not os.path.isdir(directory):
                 self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                               ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
-                              ClientApplication.IO_ERROR_DURING_READING)
-            else:
-                game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
-                game_session = GameSession(directory,
-                                           self.system_configuration,
-                                           game=game)
-                self.set_game_session(game_session)
-            finally:
-                stream.close()
+                              ClientApplication.FILE_WITH_THE_SAME_NAME_EXISTS)
+                return
+
+        try:
+            game_map = load_game_map(stream.read())
+        except InvalidGameMapData as ex:
+            self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
+                          ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
+                          ClientApplication.MAP_FILE_IS_CORRUPTED)
+        except IOError as ex:
+            self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
+                          ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
+                          ClientApplication.IO_ERROR_DURING_READING)
+        else:
+            game = Game(game_map, DEFAULT_GAME_CONFIGURATION)
+            game_session = GameSession(directory,
+                                       self.system_configuration,
+                                       game=game)
+            self.set_game_session(game_session)
+        finally:
+            stream.close()
 
     @log_on_enter('use case: save game', mode='time', lvl='info')
     def _save_game_callback(self):
