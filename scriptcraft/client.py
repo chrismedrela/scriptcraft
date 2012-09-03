@@ -1808,8 +1808,9 @@ class ClientApplication(Frame):
     def _set_game(self, game):
         """ Call it if game instance was changed and you want to make
         the application up to date."""
+
         # set game.free_colors
-        if game is not None:
+        if game is not None and not hasattr(game, 'free_colors'):
             if self._game is None or not hasattr(self._game, 'free_colors'):
                 game.free_colors = \
                   list(ClientApplication.DEFAULT_PLAYER_COLORS)
