@@ -1727,6 +1727,7 @@ class ClientApplication(Frame):
         command = command % {'x':pointed_pos[0], 'y':pointed_pos[1]}
         self._game.set_program(unit, Program(Language.OUTPUT, command))
 
+        self._pointed_unit_id = None
         self._game_viewer.set_pointer_2_position(None)
         self._game_viewer.set_pointer_position(None)
 
