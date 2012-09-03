@@ -1349,6 +1349,7 @@ class ClientApplication(Frame):
             ClientApplication.NEW_GAME_LABEL,
             accelerator="Ctrl+N")
         args = ("<Control-n>", lambda w: self._new_game_callback())
+        self.bind(*args)
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
@@ -1357,6 +1358,7 @@ class ClientApplication(Frame):
             ClientApplication.SAVE_GAME_LABEL,
             accelerator="Ctrl+S")
         args = ("<Control-s>", lambda w: self._save_game_callback())
+        self.bind(*args)
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
@@ -1365,6 +1367,7 @@ class ClientApplication(Frame):
             ClientApplication.LOAD_GAME_LABEL,
             accelerator="Ctrl+O")
         args = ("<Control-o>", lambda w: self._load_game_callback())
+        self.bind(*args)
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
@@ -1373,6 +1376,7 @@ class ClientApplication(Frame):
             ClientApplication.ADD_PLAYER_LABEL,
             accelerator="Ctrl+A")
         args = ("<Control-a>", lambda w: self._add_player_callback())
+        self.bind(*args)
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
@@ -1381,6 +1385,7 @@ class ClientApplication(Frame):
             ClientApplication.TIC_LABEL,
             accelerator="T")
         args = ("<t>", lambda w: self._tic_callback())
+        self.bind(*args)
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
@@ -1388,14 +1393,17 @@ class ClientApplication(Frame):
         self._game_menu.entryconfigure(
             ClientApplication.TIC_IN_LOOP_LABEL,
             accelerator='spacja')
-        self._game_viewer.bind("<space>", \
-            lambda w: self._tic_in_loop_callback(switch=True))
+        args = ("<space>", lambda w: self._tic_in_loop_callback(switch=True))
+        self.bind(*args)
+        self._game_viewer.bind(*args)
+        self._game_menu.bind(*args)
 
         # quit program
         self._game_menu.entryconfigure(
             ClientApplication.QUIT_LABEL,
             accelerator="Ctrl+Q")
         args = ("<Control-q>", lambda w: self._quit_callback())
+        self.bind(*args)
         self._game_viewer.bind(*args)
         self._game_menu.bind(*args)
 
