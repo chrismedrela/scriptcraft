@@ -1441,6 +1441,7 @@ class ClientApplication(Frame):
         try:
             stream = open(map_filename, 'r')
         except IOError as ex:
+            log_exception('io error during opening stream to map file')
             self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                           ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
                           ClientApplication.CANNOT_OPEN_FILE)
@@ -1450,6 +1451,7 @@ class ClientApplication(Frame):
             try:
                 os.makedirs(directory)
             except OSError as ex:
+                log_exception('cannot create directory for a game')
                 self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                               ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
                               ClientApplication.CANNOT_CREATE_FOLDER)
@@ -1464,10 +1466,12 @@ class ClientApplication(Frame):
         try:
             game_map = load_game_map(stream.read())
         except InvalidGameMapData as ex:
+            log_exception('invalid game map data')
             self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                           ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
                           ClientApplication.MAP_FILE_IS_CORRUPTED)
         except IOError as ex:
+            log_exception('io error during loading map file')
             self._warning(ClientApplication.TITLE_CREATE_NEW_GAME,
                           ClientApplication.CANNOT_CREATE_NEW_GAME + ' ' + \
                           ClientApplication.IO_ERROR_DURING_READING)
@@ -1485,7 +1489,7 @@ class ClientApplication(Frame):
         try:
             self._game_session.save()
         except IOError as ex:
-            log_exception()
+            log_exception('io error duing saving game')
             self._warning(ClientApplication.TITLE_SAVE_GAME,
                           ClientApplication.CANNOT_SAVE_GAME + ' ' + \
                           ClientApplication.IO_ERROR_DURING_SAVING)
@@ -1507,12 +1511,12 @@ class ClientApplication(Frame):
         try:
             game_session = GameSession(directory, self.system_configuration)
         except IOError as ex:
-            log_exception()
+            log_exception('io error during loading game')
             self._warning(ClientApplication.TITLE_LOAD_GAME,
                           ClientApplication.CANNOT_LOAD_GAME + ' ' + \
                           ClientApplication.IO_ERROR_DURING_READING)
         except pickle.UnpicklingError as ex:
-            log_exception()
+            log_exception('pickle error during loading game')
             self._warning(ClientApplication.TITLE_LOAD_GAME,
                           ClientApplication.CANNOT_LOAD_GAME + ' ' + \
                           ClientApplication.MAP_FILE_IS_CORRUPTED)
