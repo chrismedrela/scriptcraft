@@ -1535,7 +1535,7 @@ class ClientApplication(Frame):
         try:
             self._game.new_player_with_units(name, color)
         except NoFreeStartPosition:
-            self._warning(ClientApplication.CREATE_PLAYER,
+            self._warning(ClientApplication.TITLE_CREATE_PLAYER,
                           ClientApplication.CANNOT_CREATE_PLAYER + ' ' + \
                           ClientApplication.NO_FREE_START_POSITION)
         else:
