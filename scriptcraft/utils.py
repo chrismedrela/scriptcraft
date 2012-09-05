@@ -11,6 +11,7 @@ __all__ = [
     'log_on_enter',
     'log_exception',
     'log_error_callback',
+    'is_it_py2exe_distribution',
     'max_time',
     'memoized',
     'on_error_do',
@@ -91,7 +92,7 @@ def datafile_path(relative_path):
     relative path should be main scriptcraft directory. An example of
     valid filename: "graphic/base.png"."""
 
-    if _is_it_py2exe_distribution():
+    if is_it_py2exe_distribution():
         relative_path = relative_path.replace('/', '\\')
         executable_filename = unicode(sys.prefix, sys.getfilesystemencoding())
         result = os.path.join(executable_filename, relative_path)
@@ -167,7 +168,7 @@ def skip(f):
 
 
 def turn_off_standard_streams_if_it_is_py2exe_distribution():
-    if _is_it_py2exe_distribution():
+    if is_it_py2exe_distribution():
         class Blackhole(object):
             def write(self, text):
                 pass
@@ -292,6 +293,6 @@ class TemporaryFileSystem(object):
                 shutil.rmtree(folder)
         self._temporary_folders = []
 
-def _is_it_py2exe_distribution():
+def is_it_py2exe_distribution():
     """Returns whether we are frozen via py2exe."""
     return hasattr(sys, "frozen")

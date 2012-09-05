@@ -1447,6 +1447,9 @@ class ClientApplication(Frame):
             mustexist=False,
             parent=self,
         )
+        if is_it_py2exe_distribution():
+            directory = directory.replace('/', '\\')
+
         if not directory:
             return
 
@@ -1517,6 +1520,9 @@ class ClientApplication(Frame):
             mustexist=True,
             parent=self,
         )
+        if is_it_py2exe_distribution():
+            directory = directory.replace('/', '\\')
+
         if not directory:
             return
 
