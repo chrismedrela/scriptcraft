@@ -219,7 +219,6 @@ class GameViewer(Canvas):
         ground and delete current selection.
         """
 
-        #import ipdb; ipdb.set_trace()
         previous_game = self._game
         self._game = game
 
@@ -1675,7 +1674,6 @@ class ClientApplication(Frame):
                 elif isinstance(obj.command, cmds.BuildCommand):
                     command_info = u'buduj "%s"' \
                       % obj.command.unit_type_name
-                #import ipdb; ipdb.set_trace()
                 obj_info += u' Komenda: %s.' % command_info
             else:
                 assert False, 'oops, unknown object on map %r' % obj
