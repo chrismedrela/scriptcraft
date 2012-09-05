@@ -92,12 +92,12 @@ class GameSession(object):
         if game:
             self.game = game
         else:
-            self.game = pickle.load(open(self._game_file, 'r'))
+            self.game = pickle.load(open(self._game_file, 'rb'))
         self._already_execute_game_turn = False
 
     def save(self):
         """ Save game. May raise errors. """
-        pickle.dump(self.game, open(self._game_file, 'w'),
+        pickle.dump(self.game, open(self._game_file, 'wb'),
                     GameSession.PICKLE_PROTOCOL)
 
     def tic(self, queue):
