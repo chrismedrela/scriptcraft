@@ -19,7 +19,14 @@ import tkFileDialog
 import tkFont
 import tkMessageBox
 import tkSimpleDialog
-from PIL import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter import statement
+
+# Imports from PIL
+import Image, ImageTk # it overrides Tkinter.Image so it must be after Tkinter
+                      # import statement
+# We have to explicitly statically import PIL plugins so py2exe know that they
+# are necessary.
+import PngImagePlugin
+import GifImagePlugin
 
 from scriptcraft import direction
 from scriptcraft.gamemap import GameMap
