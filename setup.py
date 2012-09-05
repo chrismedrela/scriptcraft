@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if _is_it_py2exe_compilation():
         print 'Detected py2exe installation/building.'
         import py2exe
-        drive_c_path = r'Z:\\home\\krzysiumed\\.wine\\drive_c\\'
+        drive_c_path = r'Z:\\home\\chris\\.wine\\drive_c\\'
         python_version = sys.version_info[0:2] # for example (2, 6)
         python_version = "".join(map(str, python_version)) # for example "26"
         assert python_version in ('26', '27'), ('Is it valid python version? ' +
@@ -123,4 +123,3 @@ if __name__ == "__main__":
         ]
 
     setup(**kwargs)
-
