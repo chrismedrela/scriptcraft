@@ -890,6 +890,13 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
                             Language.TO_NAME[lang])
                             for lang in LANGUAGES)
 
+    FONT_ATTRS = {
+        'family':'Courier New',
+        'size':8,
+    }
+    CODE_FONT_ATTRS = dict(FONT_ATTRS)
+    CODE_FONT_ATTRS['size'] = 10
+
     def __init__(self, master, program,
                  maybe_compilation_status,
                  maybe_run_status,
@@ -962,8 +969,9 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
 
     def _create_code_textarea(self, master):
         scroll = Scrolled(master)
-        self._code_textarea = Text(scroll,
-                                   height=1, width=1)
+        self._code_textarea = Text(
+            scroll, height=1, width=1,
+            font=tkFont.Font(**UnitInfoWindow.CODE_FONT_ATTRS))
         text = (""
                 if self._program in (None, STAR_PROGRAM)
                 else self._program.code)
@@ -998,8 +1006,9 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
 
     def _create_compilation_output_textarea(self, master):
         scroll = Scrolled(master)
-        self._compilation_output_area = Text(scroll,
-                                             height=1, width=1)
+        self._compilation_output_area = Text(
+            scroll, height=1, width=1,
+            font=tkFont.Font(**UnitInfoWindow.FONT_ATTRS))
         text = (self._maybe_compilation_status.output
                 if self._maybe_compilation_status
                 else "")
@@ -1010,8 +1019,9 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
 
     def _create_compilation_error_output_textarea(self, master):
         scroll = Scrolled(master)
-        self._compilation_error_output_area = Text(scroll,
-                                                   height=1, width=1)
+        self._compilation_error_output_area = Text(
+            scroll, height=1, width=1,
+            font=tkFont.Font(**UnitInfoWindow.FONT_ATTRS))
         text = (self._maybe_compilation_status.error_output
                 if self._maybe_compilation_status
                 else "")
@@ -1045,8 +1055,9 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
 
     def _create_execution_input_area(self, master):
         scroll = Scrolled(master)
-        self._execution_input_area = Text(scroll,
-                                          height=1, width=1)
+        self._execution_input_area = Text(
+            scroll, height=1, width=1,
+            font=tkFont.Font(**UnitInfoWindow.FONT_ATTRS))
         text = (self._maybe_run_status.input
                 if self._maybe_run_status
                 else "")
@@ -1065,8 +1076,9 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
 
     def _create_execution_output_textarea(self, master):
         scroll = Scrolled(master)
-        self._execution_output_area = Text(scroll,
-                                           height=1, width=1)
+        self._execution_output_area = Text(
+            scroll, height=1, width=1,
+            font=tkFont.Font(**UnitInfoWindow.FONT_ATTRS))
         text = (self._maybe_run_status.output
                 if self._maybe_run_status
                 else "")
@@ -1077,8 +1089,9 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
 
     def _create_execution_error_output_textarea(self, master):
         scroll = Scrolled(master)
-        self._execution_error_output_area = Text(scroll,
-                                                 height=1, width=1)
+        self._execution_error_output_area = Text(
+            scroll, height=1, width=1,
+            font=tkFont.Font(**UnitInfoWindow.FONT_ATTRS))
         text = (self._maybe_run_status.error_output
                 if self._maybe_run_status
                 else "")
