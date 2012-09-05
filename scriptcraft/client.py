@@ -919,9 +919,8 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
         right_box.pack(side=RIGHT, fill=BOTH, expand=1)
         master.pack(fill=BOTH, expand=1)
 
-        self.minsize(640, 480)
         self.geometry('800x600')
-        self.attributes('-zoomed', '1')
+        self.attributes('-fullscreen', '1')
 
     def _add_horizontal_separator(self, master):
         separator = Frame(master, height=2, bd=1, relief=SUNKEN)
