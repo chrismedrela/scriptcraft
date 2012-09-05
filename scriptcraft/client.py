@@ -1719,7 +1719,8 @@ class ClientApplication(Frame):
         # None only if there is an object on pointed field
 
         def ok_callback(program):
-            self._game_session.set_program(unit, program)
+            if unit.ID in self._game_session.units_by_IDs:
+                self._game_session.set_program(unit, program)
 
         window = UnitInfoWindow(self,
                                 program=unit.program,
