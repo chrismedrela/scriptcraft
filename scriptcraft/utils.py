@@ -55,7 +55,7 @@ def on_error_return(errors, return_value):
             try:
                 return f(*args, **kwargs)
             except errors as ex:
-                traceback.print_exc(ex)
+                log_exception('exception in on_error_return')
                 return return_value
 
         return wraper
