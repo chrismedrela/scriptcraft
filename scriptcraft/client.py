@@ -999,7 +999,15 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
         box.pack(fill=BOTH, expand=1)
 
     def _create_compilation_label(self, master):
-        self._compilation_label = Label(master, text='Kompilacja: ', anchor=W)
+        text = u"Kompilacja: "
+        if self._maybe_compilation_status is None:
+            text += u"brak informacji"
+        else:
+            text += u"czas %.2f s" % self._maybe_compilation_status.execution_time
+            if self._maybe_compilation_status.killed:
+                text += u" (zabity)"
+        text += u"."
+        self._compilation_label = Label(master, text=text, anchor=W)
         self._compilation_label.pack(fill=BOTH)
 
     def _create_compilation_output_label(self, master):
@@ -1052,7 +1060,16 @@ class UnitInfoWindow(tkSimpleDialog.Dialog):
         box.pack(fill=BOTH, expand=1)
 
     def _create_execution_label(self, master):
-        self._execution_label = Label(master, text='Wykonanie: ', anchor=W)
+        text = u"Wykonanie: "
+        if self._maybe_run_status is None:
+            text += u"program nie został wykonany"
+        else:
+            text += u"czas %.2f s" % self._maybe_run_status.execution_time
+            if self._maybe_run_status.killed:
+                text += u" (zabity)"
+        text += u"."
+
+        self._execution_label = Label(master, text=text, anchor=W)
         self._execution_label.pack(fill=BOTH)
 
     def _create_execution_input_label(self, master):
