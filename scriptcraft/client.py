@@ -1198,10 +1198,10 @@ class ClientApplication(Frame):
                                   '".')
 
     DIRECTION_TO_NAME = {
-        direction.N : 'północ',
-        direction.W : 'zachód',
-        direction.S : 'południe',
-        direction.E : 'wschód',
+        direction.N : u'północ',
+        direction.W : u'zachód',
+        direction.S : u'południe',
+        direction.E : u'wschód',
     }
 
     MAP_FILE_TYPES = (
