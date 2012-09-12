@@ -35,10 +35,7 @@ class CompileAndRunProgram(object):
         self._language = language
         self._program_code = program_code
         self._input_data = input_data
-        hasher = hashlib.sha1()
-        hasher.update(language)
-        hasher.update(program_code)
-        self._sha = hasher.hexdigest()
+        self._sha = self._get_program_hash(language, program_code)
         self._compilation_command = self._compilation_commands_by_languages[language]
         self._running_command = self._running_commands_by_languages[language]
         self._source_file_name = self._source_file_names_by_languages[language]
@@ -47,6 +44,12 @@ class CompileAndRunProgram(object):
         compilation_status = self._compile()
         running_status = self._run()
         return (compilation_status, running_status)
+
+    def _get_program_hash(self, language, program_code):
+        hasher = hashlib.sha1()
+        hasher.update(language)
+        hasher.update(program_code.encode('utf8'))
+        return hasher.hexdigest()
 
     @on_error_return((OSError, IOError), None)
     def _compile(self):
