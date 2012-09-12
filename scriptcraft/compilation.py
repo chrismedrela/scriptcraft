@@ -192,8 +192,25 @@ class Environment(object):
         if not killed:
             output = process.stdout.read()
             errors_output = process.stderr.read()
+
+            # We need to replace \r\n with \n under Windows. Decoding assumes
+            # that the encoding is utf8 which isn't always true --
+            # i. e. commands (under Windows) like `copy` produces output of
+            # which encoding depends on current code page which is defaultly
+            # cp850. So we use try-except clauses.
+            output = output.replace('\r\n', '\n')
+            errors_output = errors_output.replace('\r\n', '\n')
+            try:
+                output = output.decode('utf8')
+            except UnicodeDecodeError as e:
+                log_exception('unable to decode output')
+            try:
+                errors_output = errors_output.decode('utf8')
+            except UnicodeDecodeError as e:
+                log_exception('unable to decode output')
+
         else:
-            output, errors_output = '', ''
+            output, errors_output = u'', u''
         return output, errors_output, exit_code, killed, execution_time
 
     def _cleaned_path(self, dirty_path):
@@ -217,4 +234,3 @@ class Environment(object):
         else:
             if not os.path.isdir(path):
                 raise IOError('Cannot create folder - the file with the same name exists.')
-
