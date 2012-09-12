@@ -1578,7 +1578,7 @@ class ClientApplication(Frame):
 
         color = self._reserve_color()
         try:
-            self._game.new_player_with_units(name, color)
+            self._game_session.new_player_with_units(name, color)
         except NoFreeStartPosition:
             self._warning(ClientApplication.TITLE_CREATE_PLAYER,
                           ClientApplication.CANNOT_CREATE_PLAYER + ' ' + \
@@ -1608,19 +1608,19 @@ class ClientApplication(Frame):
         field = self._game.game_map[self._game_viewer._pointer_position]
         unit = field.maybe_object
         program = Program(language=language, code=stream.read())
-        self._game.set_program(unit, program)
+        self._game_session.set_program(unit, program)
 
     @log_on_enter('use case: set star program', lvl='info')
     def _set_star_program_callback(self):
         field = self._game.game_map[self._game_viewer._pointer_position]
         unit = field.maybe_object
-        self._game.set_program(unit, STAR_PROGRAM)
+        self._game_session.set_program(unit, STAR_PROGRAM)
 
     @log_on_enter('use case: delete program', lvl='info')
     def _delete_program_callback(self):
         field = self._game.game_map[self._game_viewer._pointer_position]
         unit = field.maybe_object
-        self._game.set_program(unit, None)
+        self._game_session.set_program(unit, None)
 
     @log_on_enter('use case: tic', mode='time', lvl='info')
     def _tic_callback(self):
@@ -1762,7 +1762,7 @@ class ClientApplication(Frame):
 
         unit = clicked_obj
         if command == '':
-            self._game.set_program(unit, Program(Language.OUTPUT, ''))
+            self._game_session.set_program(unit, Program(Language.OUTPUT, ''))
             return
 
         command = {
@@ -1771,7 +1771,7 @@ class ClientApplication(Frame):
             'gather' : 'GATHER %(x)d %(y)d',
         }[command]
         command = command % {'x':pointed_pos[0], 'y':pointed_pos[1]}
-        self._game.set_program(unit, Program(Language.OUTPUT, command))
+        self._game_session.set_program(unit, Program(Language.OUTPUT, command))
 
         self._pointed_unit_id = None
         self._game_viewer.set_pointer_2_position(None)
