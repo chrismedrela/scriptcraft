@@ -94,6 +94,7 @@ class GameSession(object):
         else:
             self.game = pickle.load(open(self._game_file, 'rb'))
         self._already_execute_game_turn = False
+        self._set_program_queue = []
 
     def save(self):
         """ Save game. May raise errors. """
@@ -126,9 +127,24 @@ class GameSession(object):
             self._system_configuration.max_execution_time)
         game.tic(compile_and_run)
 
+        # apply new programs
+        set_program_queue = self._set_program_queue
+        self._set_program_queue = []
+        for unit_ID, program in set_program_queue:
+            if unit_ID in game.units_by_IDs:
+                unit = game.units_by_IDs[unit_ID]
+                game.set_program(unit, program)
+
+        # finish!
         self.game = game
         queue.put('ready')
         self._already_execute_game_turn = False
+
+    def set_program(self, unit, program):
+        if self._already_execute_game_turn:
+            self._set_program_queue.append((unit.ID, program))
+        else:
+            return self.game.set_program(unit, program)
 
     def __getattr__(self, name):
         return getattr(self.game, name)
