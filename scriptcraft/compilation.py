@@ -132,7 +132,7 @@ class Environment(object):
         if os.path.exists(path):
             raise IOError('Cannot create folder - the file with the same name exists.')
         with open(path, 'w') as s:
-            s.write(data)
+            s.write(data.encode('utf8'))
 
     def remove_folder_recursively(self, dirty_path):
         iterable_path, path = self._cleaned_path(dirty_path)
