@@ -15,6 +15,7 @@ rm `find . | grep ".pyc$"`
 # create distributions for windows
 wine C:\\Python27\\python.exe setup.py py2exe
 cd dist/py2exe
+mkdir games # create empty games directory
 zip -r zipus.zip .
 mv zipus.zip ../../scriptcraft-for-windows.zip
 cd ../..

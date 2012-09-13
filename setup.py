@@ -11,6 +11,7 @@ reload(sys).setdefaultencoding("UTF-8")
 
 PROJECT_NAME = 'scriptcraft'
 DIRECTORIES_WITH_DATA_FILES = ('graphic', 'maps')
+# Empty 'games' directory is added to Windows distribution in build script.
 
 def _fullsplit(path, result=None):
     """
