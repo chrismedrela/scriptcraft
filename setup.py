@@ -5,10 +5,6 @@ from setuptools import setup, find_packages
 from scriptcraft.utils import datafile_path
 import os, sys
 
-# that ugly trick solve problem with encoding of README file
-import sys
-reload(sys).setdefaultencoding("UTF-8")
-
 PROJECT_NAME = 'scriptcraft'
 DIRECTORIES_WITH_DATA_FILES = ('graphic', 'maps')
 # Empty 'games' directory is added to Windows distribution in build script.
@@ -85,7 +81,7 @@ if __name__ == "__main__":
         author = "Krzysztof Medrela",
         author_email = "krzysiumed@gmail.com",
         description = "Scriptcraft programming game - program your units to fight against other players.",
-        long_description = open(datafile_path('README.rst'), 'r').read(),
+        long_description = open(datafile_path('README.rst'), 'r').read().decode('utf8'),
         license = "GPLv3",
         keywords = [PROJECT_NAME, 'programming game', 'game'],
         url = "http://github.com/krzysiumed/scriptcraft",
