@@ -11,7 +11,7 @@ komputerze**. W ten sposób można szybko przetestować programy swoich
 jednostek, zanim zmierzą się one z prawdziwymi graczami w internetowej wersji
 Scriptcrafta!
 
-.. image:: https://github.com/krzysiumed/scriptcraft/raw/experimental/screenshot.png
+.. image:: https://github.com/chrismedrela/scriptcraft/raw/experimental/screenshot.png
    :alt: Zdjęcie niedostępne.
    :align: center
 
@@ -56,7 +56,7 @@ Instalacja pod Windowsem
 
 Ściągnij `to archiwum zip`_ i rozpakuj. Gotowe!
 
-.. _`to archiwum zip`: https://github.com/krzysiumed/scriptcraft/raw/windows-dist/scriptcraft-for-windows.zip
+.. _`to archiwum zip`: https://github.com/chrismedrela/scriptcraft/raw/windows-dist/scriptcraft-for-windows.zip
 
 Instalacja ze źródeł
 --------------------
@@ -72,9 +72,9 @@ Zainstaluj niezbędne pakiety.
 
 ::
 
-  git clone https://github.com/krzysiumed/scriptcraft.git
+  git clone https://github.com/chrismedrela/scriptcraft.git
 
-.. _`githuba`: https://github.com/krzysiumed/scriptcraft
+.. _`githuba`: https://github.com/chrismedrela/scriptcraft
 
 =================
 Krótki przewodnik

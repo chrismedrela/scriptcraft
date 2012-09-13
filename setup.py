@@ -85,7 +85,7 @@ if __name__ == "__main__":
         long_description = open(datafile_path('README.rst'), 'r').read().decode('utf8'),
         license = "GPLv3",
         keywords = [PROJECT_NAME, 'programming game', 'game'],
-        url = "http://github.com/krzysiumed/scriptcraft",
+        url = "http://github.com/chrismedrela/scriptcraft",
         classifiers = [
             "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
             "Natural Language :: Polish",
