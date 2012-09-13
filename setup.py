@@ -6,7 +6,7 @@ from scriptcraft.utils import datafile_path
 import os, sys
 
 PROJECT_NAME = 'scriptcraft'
-DIRECTORIES_WITH_DATA_FILES = ('graphic', 'maps')
+DIRECTORIES_WITH_DATA_FILES = ('graphic', 'maps', '_static')
 # Empty 'games' directory is added to Windows distribution in build script.
 
 def _fullsplit(path, result=None):
@@ -71,6 +71,7 @@ if __name__ == "__main__":
         ]
         data_files += [('.', dlls)]
         data_files += [('.', [os.path.join('onlywindows', 'configuration.ini')])]
+        data_files += [('.', ['README.html'])]
     else:
         print 'Detected non-py2exe installation/building.'
         data_files += [('.', ['configuration.ini'])]

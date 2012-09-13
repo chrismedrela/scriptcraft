@@ -8,11 +8,15 @@ cd .. # so we are in scriptcraft root directory
 pwd=`pwd`
 printf "Changed current directory to: ${pwd}\n"
 
+# make README.html
+. scripts/build_html.sh
+
+# clean up before creating distributions
 rm -r dist
 rm -r build
 rm `find . | grep ".pyc$"`
 
-# create distributions for windows
+# create distribution for windows
 wine C:\\Python27\\python.exe setup.py py2exe
 cd dist/py2exe
 mkdir games # create empty games directory
@@ -21,3 +25,6 @@ mv zipus.zip ../../scriptcraft-for-windows.zip
 cd ../..
 
 printf ">>> Now commit scriptcraft-for-windows.zip. <<<\n"
+
+# clean up
+rm README.html
