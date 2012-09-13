@@ -40,14 +40,15 @@ def _find_data_files():
     data_files = []
     for directory in DIRECTORIES_WITH_DATA_FILES:
         for dirpath, dirnames, filenames in os.walk(directory):
-            for i, dirname in enumerate(dirnames):
+            for i, dirname in enumerate(dirnames[:]):
                 if dirname.startswith('.'):
-                    del dirnames[i]
+                    dirnames.remove(dirname)
             if '__init__.py' in filenames:
                 pass
             elif filenames:
-                data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+                data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames if not f.startswith('.')]])
     data_files.append(('.', ['LICENSE.txt']))
+
     return data_files
 
 def _is_it_py2exe_compilation():
