@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     kwargs = dict(
         name=PROJECT_NAME,
-        version='0.2.0.a1',
+        version='0.2.0',
         author = "Krzysztof Medrela",
         author_email = "chris.medrela+scriptcraft@gmail.com",
         description = "Scriptcraft programming game - program your units to fight against other players.",
