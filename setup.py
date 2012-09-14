@@ -90,6 +90,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
             "Natural Language :: Polish",
             "Operating System :: Unix",
+            "Operating System :: Microsoft :: Windows",
             "Programming Language :: Python :: 2.6",
             "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 2 :: Only",
