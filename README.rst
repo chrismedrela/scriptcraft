@@ -61,20 +61,22 @@ Instalacja pod Windowsem
 Instalacja ze źródeł
 --------------------
 
-Zainstaluj niezbędne pakiety.
+Potrzebujesz Pythona w wersji 2.6 lub 2.7 (ale nie 3.x!) z zainstalowanym
+`PIL`_ oraz ``tcl/tk``. Pod Ubuntu wystarczy wpisać w shellu:
 
 ::
 
   sudo apt-get install python-imaging-tk tk8.5 tk8.5-dev tcl8.5 tcl8.5-dev python-tk
   sudo pip install PIL
 
-Ściągnij kod źródłowy z `githuba`_.
+Potrzebujesz także kod źródłowy z `githuba`_.
 
 ::
 
   git clone https://github.com/chrismedrela/scriptcraft.git
 
 .. _`githuba`: https://github.com/chrismedrela/scriptcraft
+.. _`PIL`: http://www.pythonware.com/products/pil/
 
 =================
 Krótki przewodnik
